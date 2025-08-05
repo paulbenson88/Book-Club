@@ -118,8 +118,31 @@
       ctx.rotate(angle + arc * (i + 0.5));
       ctx.textAlign = "right";
       ctx.fillStyle = "#222";
-      ctx.font = "15px Arial";
-      ctx.fillText(books[i], 130, 8);
+
+      // Adjust font size dynamically based on text length
+      const text = books[i];
+      const fontSize = text.length > 20 ? "12px Arial" : "15px Arial";
+      ctx.font = fontSize;
+
+      // Wrap text if it's too long
+      const maxWidth = 130; // Maximum width for text
+      const lineHeight = 15; // Line height for wrapped text
+      const words = text.split(" ");
+      let line = "";
+      let y = 8; // Initial y position for text
+      for (let j = 0; j < words.length; j++) {
+        const testLine = line + words[j] + " ";
+        const testWidth = ctx.measureText(testLine).width;
+        if (testWidth > maxWidth && j > 0) {
+          ctx.fillText(line, maxWidth, y);
+          line = words[j] + " ";
+          y += lineHeight;
+        } else {
+          line = testLine;
+        }
+      }
+      ctx.fillText(line, maxWidth, y);
+
       ctx.restore();
     }
     // Draw pointer
