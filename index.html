@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Book Club Hub</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body { font-family: sans-serif; max-width: 600px; margin: 2em auto; text-align: center;}
+    nav { margin: 2em 0; }
+    nav a {
+      display: inline-block;
+      margin: 1em 1.2em;
+      padding: 1em 2em;
+      background: #f6f6f6;
+      color: #333;
+      border-radius: 10px;
+      text-decoration: none;
+      border: 1px solid #ddd;
+      font-size: 1.1em;
+      transition: background 0.2s, color 0.2s;
+    }
+    nav a:hover { background: #aee; color: #105; }
+    h1 { margin-top: 0.5em; }
+  </style>
+</head>
+<body>
+  <h1>📚 Welcome to Our Book Club!</h1>
+  <p>Find all your club activities below.</p>
+  <nav>
+    <a href="voting.html">Vote for Next Book</a>
+    <a href="past-books.html">Past Books Read</a>
+    <a href="character-lists.html">Character Lists</a>
+  </nav>
+  <footer style="margin-top:3em;font-size:0.95em;color:#999;">
+    &copy; Book Club – <span id="year"></span>
+  </footer>
+  <script>
+    document.getElementById("year").textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>
