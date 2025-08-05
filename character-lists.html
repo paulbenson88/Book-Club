@@ -2,22 +2,33 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Character Lists</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
-    body { font-family: sans-serif; max-width: 600px; margin: 2em auto; }
-    a { color: #225; }
-    .book { margin: 2em 0 1em 0; font-weight: bold;}
-    .characters { margin: 0 0 2em 1em; }
+    body { font-family: Arial, sans-serif; max-width: 700px; margin: 2em auto; padding: 0 1em; line-height: 1.5; }
+    header { display: flex; justify-content: space-between; align-items: center; }
+    header a.home { text-decoration: none; color: #007bff; font-size: 1em; }
+    h1 { text-align: center; flex: 1; margin: 0; }
+    ul.book-list { list-style: none; padding: 0; }
+    ul.book-list li { margin: 0.7em 0; }
+    ul.book-list a { text-decoration: none; color: #007bff; font-size: 1.2em; }
+    footer { margin-top: 2em; text-align: center; }
   </style>
 </head>
 <body>
-  <h1>👤 Character Lists</h1>
-  <div class="book">The Missing Half</div>
-  <div class="characters">
-    <a href="missing_half_character_list.html">View character list</a>
-  </div>
-  <!-- Add more books here as you make more character lists! -->
-  <a href="index.html" style="display:inline-block;margin-top:2em;">← Back to Home</a>
+  <header>
+    <a href="index.html" class="home">🏠 Main Page</a>
+    <h1>👤 Character Lists</h1>
+    <div style="width:1em;"></div>
+  </header>
+
+  <ul class="book-list">
+    <li><a href="the-missing-half.html">The Missing Half</a></li>
+    <!-- Add more books here -->
+  </ul>
+
+  <footer>
+    <a href="index.html" class="home">🏠 Main Page</a>
+  </footer>
 </body>
 </html>
