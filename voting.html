@@ -73,5 +73,136 @@
     </div>
   </div>
 
+  <div class="section">
+    <h2>🎡 Spin for 3 Books</h2>
+    <div id="wheel-container" style="margin: 30px 0;">
+      <canvas id="wheel" width="340" height="340"></canvas><br>
+      <button id="spinBtn" disabled>Spin!</button>
+      <div id="result" style="margin-top:18px; font-size:1.1em;"></div>
+      <div id="loading" style="color:#888; margin-top:10px;">Loading book list...</div>
+    </div>
+  </div>
+
+  <script>
+  const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSLdPdPu4pwIwsAjADiCQOXYUJ8ACgWXaJn0DUVgNEy8ZZfc06EUGz2G9imE4gQ9FRs_zoDamhYTHhQ/pub?output=csv";
+
+  let books = [];
+  let winners = []; // To store the winners
+  const colors = ["#FFB347", "#B19CD9", "#77DD77", "#FF6961", "#FDFD96", "#AEC6CF", "#CFCFC4", "#836953"];
+  const wheel = document.getElementById('wheel');
+  const ctx = wheel.getContext('2d');
+  const spinBtn = document.getElementById('spinBtn');
+  const resultDiv = document.getElementById('result');
+  const loadingDiv = document.getElementById('loading');
+  const winnersDiv = document.createElement('div'); // Create a div for winners
+  winnersDiv.style.marginTop = "20px";
+  winnersDiv.style.fontSize = "1.1em";
+  document.body.appendChild(winnersDiv); // Append it to the body
+  let angle = 0;
+  let spinning = false;
+
+  function drawWheel() {
+    ctx.clearRect(0, 0, wheel.width, wheel.height);
+    if (books.length === 0) return;
+    const numBooks = books.length;
+    const arc = Math.PI * 2 / numBooks;
+    for (let i = 0; i < numBooks; i++) {
+      ctx.beginPath();
+      ctx.fillStyle = colors[i % colors.length];
+      ctx.moveTo(170, 170);
+      ctx.arc(170, 170, 150, angle + arc * i, angle + arc * (i + 1));
+      ctx.lineTo(170, 170);
+      ctx.fill();
+      ctx.save();
+      ctx.translate(170, 170);
+      ctx.rotate(angle + arc * (i + 0.5));
+      ctx.textAlign = "right";
+      ctx.fillStyle = "#222";
+      ctx.font = "15px Arial";
+      ctx.fillText(books[i], 130, 8);
+      ctx.restore();
+    }
+    // Draw pointer
+    ctx.beginPath();
+    ctx.moveTo(170, 20);
+    ctx.lineTo(160, 50);
+    ctx.lineTo(180, 50);
+    ctx.closePath();
+    ctx.fillStyle = "#222";
+    ctx.fill();
+  }
+
+  function spinWheel() {
+    if (spinning || books.length === 0) return;
+    spinning = true;
+    resultDiv.textContent = '';
+    let spins = 30 + Math.floor(Math.random() * 10);
+    let currentSpin = 0;
+    let spinInterval = setInterval(() => {
+      angle += Math.PI / 16;
+      drawWheel();
+      currentSpin++;
+      if (currentSpin > spins) {
+        clearInterval(spinInterval);
+        pickWinner();
+        spinning = false;
+      }
+    }, 40);
+  }
+
+  function pickWinner() {
+    if (books.length === 0) {
+      resultDiv.innerHTML = "No more books to choose from!";
+      return;
+    }
+    const idx = Math.floor(Math.random() * books.length);
+    const winner = books[idx];
+    winners.push(winner); // Add the winner to the winners list
+    books.splice(idx, 1); // Remove the winner from the books list
+    resultDiv.innerHTML = `<strong>Winner:</strong> ${winner}`;
+
+    // Create a div for the winner with a Google search link
+    const winnerDiv = document.createElement("div");
+    winnerDiv.style.marginTop = "10px";
+    winnerDiv.innerHTML = `
+      <strong>${winner}</strong><br>
+      <a href="https://www.google.com/search?q=${encodeURIComponent(winner + ' book synopsis')}" target="_blank">
+        Search for Synopsis
+      </a>
+    `;
+    winnersDiv.appendChild(winnerDiv);
+
+    drawWheel(); // Redraw the wheel with the remaining books
+    if (books.length === 0) {
+      spinBtn.disabled = true; // Disable the spin button if no books are left
+    }
+  }
+
+  spinBtn.addEventListener('click', spinWheel);
+
+  // Fetch book list from Google Sheets CSV
+  fetch(SHEET_CSV_URL)
+    .then(r => r.text())
+    .then(csv => {
+      books = csv
+        .split('\n') // Split rows
+        .slice(1) // Skip the first row (title row)
+        .map(row => row.split(',')[1]?.trim()) // Extract column B (index 1)
+        .filter(b => b); // Remove empty or undefined entries
+      loadingDiv.style.display = 'none';
+      if (books.length === 0) {
+        resultDiv.innerHTML = "No books available in the sheet!";
+        spinBtn.disabled = true;
+      } else {
+        drawWheel();
+        spinBtn.disabled = false;
+      }
+    })
+    .catch(() => {
+      loadingDiv.textContent = "Failed to load book list.";
+      spinBtn.disabled = true;
+    });
+  </script>
+
 </body>
 </html>
