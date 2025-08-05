@@ -58,6 +58,27 @@
   <a href="index.html" style="display:inline-block;margin-top:1.5em;font-size:1.03em;">← Back to Home</a>
 
   <script>
+     // 1. On page load, fetch the published CSV and fill the textarea
+  document.addEventListener('DOMContentLoaded', () => {
+    const csvUrl = 'https://docs.google.com/spreadsheets/d/ABCDEFG12345_hijklMnOPQrSTuVWxyz/pub?gid=0&single=true&output=csv';
+    fetch(csvUrl)
+      .then(res => res.text())
+      .then(csvText => {
+        // Split lines, trim, filter out any empty rows
+        const lines = csvText
+          .split('\n')
+          .map(l => l.trim())
+          .filter(l => l && !l.toLowerCase().startsWith('book')); 
+          // (optional: skip a header row that starts with "Book")
+        // Join into one string for the textarea
+        document.getElementById('choices').value = lines.join('\n');
+      })
+      .catch(err => {
+        console.error('Could not load suggestions:', err);
+        // leave textarea blank on error
+      });
+  });
+    
     function shuffle(array) {
       for (let i = array.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
