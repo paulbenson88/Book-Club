@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Book Club Voting</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body { font-family: sans-serif; max-width: 500px; margin: 2em auto; text-align: center; }
+    textarea { width: 100%; height: 100px; margin-bottom: 1em; }
+    button { font-size: 1.1em; padding: 0.6em 1em; margin: 1em 0 0.5em 0;}
+    .selected { font-size: 1.2em; margin: 1em 0; }
+    .finals { font-size: 1.1em; margin: 1em 0; font-weight: bold;}
+    .instructions { font-size: 0.97em; color: #333; margin-bottom: 1em;}
+    .section { background: #fafafa; border-radius: 12px; border: 1px solid #ddd; margin: 1.5em 0; padding: 1em 0.5em;}
+    img.qr { margin-top: 0.6em; width: 140px; border: 1px solid #eee; border-radius: 6px;}
+    a { color: #225; }
+  </style>
+</head>
+<body>
+  <h1>📚 Book Club Voting</h1>
+
+  <div class="section">
+    <h2>📖 Book Suggestion</h2>
+    <a href="https://example.com/suggestion-form" target="_blank">
+      <button>Suggest a Book (Google Form)</button>
+    </a>
+    <div>
+      <img class="qr" src="https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=https://example.com/suggestion-form" alt="QR code for suggestion form">
+    </div>
+    <div style="font-size:0.93em;color:#666;margin-top:0.5em;">
+      (Scan QR or click to open suggestion form)
+    </div>
+  </div>
+
+  <div class="instructions">
+    <b>Step 1:</b> Copy book suggestions from the Google Form sheet and paste below.<br>
+    <b>Step 2:</b> Spin to get 3 random books.<br>
+    <b>Step 3:</b> Create a voting poll for the club!
+  </div>
+  <textarea id="choices" placeholder="Book Title & Author&#10;Another Book Title&#10;..."></textarea><br>
+  <button onclick="spinWheel()">🎡 Spin & Pick 3 Books</button>
+  <div class="selected" id="results"></div>
+  <div class="finals" id="voting"></div>
+
+  <div class="section">
+    <h2>🗳️ Voting</h2>
+    <div style="font-size:0.97em;margin-bottom:0.4em;">
+      After you spin, click below to create a quick voting poll!
+    </div>
+    <button onclick="window.open('https://polltab.com/', '_blank')">
+      Create Voting Poll (Polltab)
+    </button>
+    <div style="font-size:0.93em;color:#666;margin-top:0.5em;">
+      Paste in the 3 picks, create poll, then share the poll link or QR code with everyone!
+    </div>
+  </div>
+
+  <a href="index.html" style="display:inline-block;margin-top:1.5em;font-size:1.03em;">← Back to Home</a>
+
+  <script>
+    function shuffle(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
+    }
+    function spinWheel() {
+      let input = document.getElementById('choices').value.trim();
+      let books = input.split('\n').map(b => b.trim()).filter(Boolean);
+      if (books.length < 3) {
+        document.getElementById('results').innerHTML = 'Enter at least 3 books!';
+        document.getElementById('voting').innerHTML = '';
+        return;
+      }
+      books = shuffle(books);
+      let selected = books.slice(0, 3);
+      document.getElementById('results').innerHTML =
+        `<div>🎯 The 3 books to vote on are:</div>
+         <ol><li>${selected[0]}</li><li>${selected[1]}</li><li>${selected[2]}</li></ol>`;
+      document.getElementById('voting').innerHTML =
+        `<div style="margin-top:1em;font-size:1em;"><b>⏩ Next:</b> Click "Create Voting Poll" above, paste in these 3 books, then share the poll link or its QR code with your club!</div>`;
+    }
+  </script>
+</body>
+</html>
