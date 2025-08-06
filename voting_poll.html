@@ -2,63 +2,151 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Book Club Voting Poll</title>
+  <title>Voting Poll</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
     body { font-family: sans-serif; max-width: 500px; margin: 2em auto; text-align: center; }
-    button { font-size: 1.1em; padding: 0.6em 1em; margin: 1em 0 0.5em 0; cursor: pointer; }
     .section { background: #fafafa; border-radius: 12px; border: 1px solid #ddd; margin: 1.5em 0; padding: 1em 0.5em; }
+    .poll-item { margin: 15px 0; padding: 15px; border: 1px solid #ccc; border-radius: 8px; background: #f9f9f9; display: flex; align-items: center; }
+    .vote-container { display: flex; align-items: center; justify-content: center; padding: 10px; border: 1px solid #ddd; border-radius: 8px; background: #f0f0f0; margin-right: 15px; }
+    .vote-container input[type="checkbox"] { transform: scale(1.5); margin-right: 10px; cursor: pointer; }
+    .vote-container input[type="checkbox"]:disabled { cursor: not-allowed; opacity: 0.5; } /* Grayed-out style for disabled checkboxes */
+    .vote-container label { font-size: 1.1em; color: #333; font-weight: normal; } /* Un-bolded by default */
+    .vote-container label.bold { font-weight: bold; } /* Bold when enabled */
+    .poll-content { text-align: center; flex: 1; }
+    .poll-content label { font-size: 1.2em; display: block; margin-bottom: 5px; font-weight: bold; } /* Bold book names */
+    .poll-content .suggested-by { font-size: 1em; color: #555; margin-top: 5px; font-style: italic; } /* Author name under book title */
+    .voters { font-size: 0.9em; color: #555; margin-top: 10px; text-align: center; }
+    .voters span { margin-right: 5px; display: inline-block; }
+    #nameInput { margin-bottom: 15px; padding: 10px; font-size: 1em; width: 70%; border: 1px solid #ccc; border-radius: 5px; display: inline-block; transition: width 0.3s ease; }
+    #submitNameBtn { margin-left: 10px; padding: 10px 15px; font-size: 1em; cursor: pointer; display: inline-block; }
+    #editNameBtn { margin-top: 10px; padding: 10px 15px; font-size: 1em; cursor: pointer; }
   </style>
 </head>
+
 <body>
-  <h1>📚 Book Club Voting Poll</h1>
+  <h1>📊 Voting Poll</h1>
+
   <div class="section">
-    <h2>🗳️ Vote for the Monthly Winner</h2>
-    <form id="poll-form">
-      <p><strong>Choose your favorite book:</strong></p>
-      <div id="poll-options"></div>
-      <button type="button" id="submitVoteBtn" style="margin-top: 10px;">Submit Vote</button>
-    </form>
-    <div id="poll-result" style="margin-top: 20px; font-size: 1.1em;"></div>
+    <h2>Vote for the next book - toggle your votes</h2>
+    <input type="text" id="nameInput" placeholder="Enter your name" />
+    <button id="submitNameBtn">Submit Name</button>
+    <button id="editNameBtn" style="display: none;">Edit Name</button>
+    <div id="poll-options"></div>
   </div>
 
   <script>
+    const pollChoices = JSON.parse(localStorage.getItem("pollChoices")) || []; // Load poll choices
+    const votes = JSON.parse(localStorage.getItem("votes")) || {}; // Load votes
+    const pollOptions = document.getElementById("poll-options");
+    const nameInput = document.getElementById("nameInput");
+    const submitNameBtn = document.getElementById("submitNameBtn");
+    const editNameBtn = document.getElementById("editNameBtn");
+    let voterName = ""; // Store the confirmed voter name
+
+    // Display poll options
     function loadPollChoices() {
-      const pollChoices = JSON.parse(localStorage.getItem("pollChoices")) || [];
-      const pollOptions = document.getElementById("poll-options");
-
-      if (pollChoices.length === 0) {
-        pollOptions.innerHTML = "<p>No books available for voting.</p>";
-        return;
-      }
-
-      // Populate poll options
+      pollOptions.innerHTML = ""; // Clear existing options
       pollChoices.forEach((choice, index) => {
         const option = document.createElement("div");
+        option.className = "poll-item";
         option.innerHTML = `
-          <input type="radio" id="choice${index}" name="poll" value="${choice.book}">
-          <label for="choice${index}">${choice.book} (suggested by ${choice.name})</label>
+          <div class="vote-container">
+            <input type="checkbox" id="choice${index}" name="poll" value="${choice.book}" disabled>
+            <label for="choice${index}" class="vote-label">Vote</label>
+          </div>
+          <div class="poll-content">
+            <label for="choice${index}">${choice.book}</label>
+            <div class="suggested-by">Suggested by ${choice.name}</div>
+            <div class="voters" id="voters-${choice.book}">Voted by: ${getVoters(choice.book)}</div>
+          </div>
         `;
         pollOptions.appendChild(option);
+
+        // Add event listener for toggling votes
+        const checkbox = option.querySelector("input[type='checkbox']");
+        checkbox.addEventListener("change", () => toggleVote(choice.book));
       });
     }
 
-    function submitVote() {
-      const selectedOption = document.querySelector('input[name="poll"]:checked');
-      const pollResult = document.getElementById("poll-result");
+    // Check if the current user has voted for a book
+    function isUserVoted(book) {
+      return votes[book]?.includes(voterName);
+    }
 
-      if (!selectedOption) {
-        pollResult.innerHTML = "<strong>Please select a book to vote!</strong>";
+    // Get the list of voters for a book
+    function getVoters(book) {
+      return votes[book]?.join(", ") || "No votes yet"; // Separate voters with commas
+    }
+
+    // Toggle vote for a book
+    function toggleVote(book) {
+      if (!voterName) {
+        alert("Please submit your name before voting!");
         return;
       }
 
-      const winner = selectedOption.value;
-      pollResult.innerHTML = `<strong>Thank you for voting! The winner is:</strong> ${winner}`;
+      if (!votes[book]) votes[book] = []; // Initialize votes array for the book
+
+      if (isUserVoted(book)) {
+        // Remove the user's vote
+        votes[book] = votes[book].filter(voter => voter !== voterName);
+      } else {
+        // Add the user's vote
+        votes[book].push(voterName);
+      }
+
+      localStorage.setItem("votes", JSON.stringify(votes)); // Save votes to localStorage
+      updateVoters(book); // Update the voters list
     }
 
-    document.getElementById("submitVoteBtn").addEventListener("click", submitVote);
+    // Update the voters list for a book
+    function updateVoters(book) {
+      const votersDiv = document.getElementById(`voters-${book}`);
+      votersDiv.innerHTML = `Voted by: ${getVoters(book)}`;
+    }
 
-    // Load poll choices when the page loads
+    // Handle name submission
+    function submitName() {
+      const name = nameInput.value.trim();
+      if (!name) {
+        alert("Please enter your name!");
+        return;
+      }
+
+      voterName = name; // Save the confirmed name
+      nameInput.disabled = true; // Disable the name input
+      nameInput.style.width = `${name.length + 2}ch`; // Adjust the width to fit the name
+      submitNameBtn.style.display = "none"; // Hide the submit button
+      editNameBtn.style.display = "inline-block"; // Show the edit button
+
+      // Enable all checkboxes and bold the "Vote" labels
+      const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+      const labels = document.querySelectorAll('.vote-label');
+      checkboxes.forEach(checkbox => checkbox.disabled = false);
+      labels.forEach(label => label.classList.add('bold'));
+    }
+
+    // Handle name editing
+    function editName() {
+      nameInput.disabled = false; // Enable the name input
+      nameInput.style.width = "70%"; // Reset the width
+      submitNameBtn.style.display = "inline-block"; // Show the submit button
+      editNameBtn.style.display = "none"; // Hide the edit button
+      voterName = ""; // Clear the confirmed name
+
+      // Disable all checkboxes and un-bold the "Vote" labels
+      const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+      const labels = document.querySelectorAll('.vote-label');
+      checkboxes.forEach(checkbox => checkbox.disabled = true);
+      labels.forEach(label => label.classList.remove('bold'));
+    }
+
+    // Event listeners for name submission and editing
+    submitNameBtn.addEventListener("click", submitName);
+    editNameBtn.addEventListener("click", editName);
+
+    // Load poll choices on page load
     loadPollChoices();
   </script>
 </body>
