@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Book Club Voting Poll</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body { font-family: sans-serif; max-width: 500px; margin: 2em auto; text-align: center; }
+    button { font-size: 1.1em; padding: 0.6em 1em; margin: 1em 0 0.5em 0; cursor: pointer; }
+    .section { background: #fafafa; border-radius: 12px; border: 1px solid #ddd; margin: 1.5em 0; padding: 1em 0.5em; }
+  </style>
+</head>
+<body>
+  <h1>📚 Book Club Voting Poll</h1>
+  <div class="section">
+    <h2>🗳️ Vote for the Monthly Winner</h2>
+    <form id="poll-form">
+      <p><strong>Choose your favorite book:</strong></p>
+      <div id="poll-options"></div>
+      <button type="button" id="submitVoteBtn" style="margin-top: 10px;">Submit Vote</button>
+    </form>
+    <div id="poll-result" style="margin-top: 20px; font-size: 1.1em;"></div>
+  </div>
+
+  <script>
+    function loadPollChoices() {
+      const pollChoices = JSON.parse(localStorage.getItem("pollChoices")) || [];
+      const pollOptions = document.getElementById("poll-options");
+
+      if (pollChoices.length === 0) {
+        pollOptions.innerHTML = "<p>No books available for voting.</p>";
+        return;
+      }
+
+      // Populate poll options
+      pollChoices.forEach((choice, index) => {
+        const option = document.createElement("div");
+        option.innerHTML = `
+          <input type="radio" id="choice${index}" name="poll" value="${choice.book}">
+          <label for="choice${index}">${choice.book} (suggested by ${choice.name})</label>
+        `;
+        pollOptions.appendChild(option);
+      });
+    }
+
+    function submitVote() {
+      const selectedOption = document.querySelector('input[name="poll"]:checked');
+      const pollResult = document.getElementById("poll-result");
+
+      if (!selectedOption) {
+        pollResult.innerHTML = "<strong>Please select a book to vote!</strong>";
+        return;
+      }
+
+      const winner = selectedOption.value;
+      pollResult.innerHTML = `<strong>Thank you for voting! The winner is:</strong> ${winner}`;
+    }
+
+    document.getElementById("submitVoteBtn").addEventListener("click", submitVote);
+
+    // Load poll choices when the page loads
+    loadPollChoices();
+  </script>
+</body>
+</html>
