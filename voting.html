@@ -56,7 +56,7 @@
   <div class="section">
     <h2>🎡 Spin for 3 Books</h2>
     <div id="wheel-container" style="margin: 30px 0;">
-      <canvas id="wheel" width="340" height="340"></canvas><br>
+      <canvas id="wheel" width="492" height="492"></canvas><br>
       <button id="spinBtn" disabled>Spin!</button>
       <div id="result" style="margin-top:18px; font-size:1.1em;"></div>
       <div id="loading" style="color:#888; margin-top:10px;">Loading book list...</div>
@@ -65,7 +65,7 @@
 
   <!-- Winners Section -->
   <div class="section">
-    <h2>🏆 Choices</h2>
+    <h2>🏆 Winners</h2>
     <div id="winners-container" style="margin-top: 20px; font-size: 1.1em;"></div>
     <button id="eraseBtn" style="margin-top: 10px;">Erase All Choices</button>
   </div>
@@ -88,203 +88,240 @@
   </div>
 
   <script>
-  const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSLdPdPu4pwIwsAjADiCQOXYUJ8ACgWXaJn0DUVgNEy8ZZfc06EUGz2G9imE4gQ9FRs_zoDamhYTHhQ/pub?output=csv";
+    const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSLdPdPu4pwIwsAjADiCQOXYUJ8ACgWXaJn0DUVgNEy8ZZfc06EUGz2G9imE4gQ9FRs_zoDamhYTHhQ/pub?output=csv";
 
-  let books = [];
-  let names = [];
-  let winners = JSON.parse(localStorage.getItem("winners")) || []; // Load winners from localStorage
-  const wheel = document.getElementById('wheel');
-  const ctx = wheel.getContext('2d');
-  const spinBtn = document.getElementById('spinBtn');
-  const resultDiv = document.getElementById('result');
-  const loadingDiv = document.getElementById('loading');
-  const winnersContainer = document.getElementById("winners-container");
-  const eraseBtn = document.getElementById("eraseBtn");
-  let angle = 0;
-  let spinning = false;
+    let books = [];
+    let names = [];
+    let winners = JSON.parse(localStorage.getItem("winners")) || []; // Load winners from localStorage
+    const wheel = document.getElementById('wheel');
+    const ctx = wheel.getContext('2d');
+    const spinBtn = document.getElementById('spinBtn');
+    const resultDiv = document.getElementById('result');
+    const loadingDiv = document.getElementById('loading');
+    const winnersContainer = document.getElementById("winners-container");
+    const eraseBtn = document.getElementById("eraseBtn");
+    let angle = 0;
+    let spinning = false;
 
-  function drawWheel() {
-    ctx.clearRect(0, 0, wheel.width, wheel.height);
-    if (books.length === 0) return;
-    const numBooks = books.length;
-    const arc = Math.PI * 2 / numBooks;
-    for (let i = 0; i < numBooks; i++) {
-      ctx.beginPath();
-      ctx.fillStyle = ["#FFB347", "#B19CD9", "#77DD77", "#FF6961", "#FDFD96", "#AEC6CF", "#CFCFC4", "#836953"][i % 8];
-      ctx.moveTo(170, 170);
-      ctx.arc(170, 170, 150, angle + arc * i, angle + arc * (i + 1));
-      ctx.lineTo(170, 170);
-      ctx.fill();
-      ctx.save();
-      ctx.translate(170, 170);
-      ctx.rotate(angle + arc * (i + 0.5));
-      ctx.textAlign = "right";
-      ctx.fillStyle = "#222";
+    function drawWheel() {
+      ctx.clearRect(0, 0, wheel.width, wheel.height);
+      if (books.length === 0) return;
+      const numBooks = books.length;
+      const arc = Math.PI * 2 / numBooks;
+      const centerX = 246;
+      const centerY = 246;
+      const radius = 220; // matches your arc radius
 
-      const text = books[i];
-      const fontSize = text.length > 20 ? "12px Arial" : "15px Arial";
-      ctx.font = fontSize;
+      for (let i = 0; i < numBooks; i++) {
+        ctx.beginPath();
+        ctx.fillStyle = ["#FFB347", "#B19CD9", "#77DD77", "#FF6961", "#FDFD96", "#AEC6CF", "#CFCFC4", "#836953"][i % 8];
+        ctx.moveTo(centerX, centerY);
+        ctx.arc(centerX, centerY, radius, angle + arc * i, angle + arc * (i + 1));
+        ctx.lineTo(centerX, centerY);
+        ctx.fill();
+        ctx.save();
+        ctx.translate(centerX, centerY);
+        ctx.rotate(angle + arc * (i + 0.5));
+        ctx.textAlign = "right"; // Align text to the edge
+        ctx.textBaseline = "middle"; // Vertically center in the wedge
+        ctx.fillStyle = "#222";
 
-      const maxWidth = 130;
-      const lineHeight = 15;
-      const words = text.split(" ");
-      let line = "";
-      let y = 8;
-      for (let j = 0; j < words.length; j++) {
-        const testLine = line + words[j] + " ";
-        const testWidth = ctx.measureText(testLine).width;
-        if (testWidth > maxWidth && j > 0) {
-          ctx.fillText(line, maxWidth, y);
-          line = words[j] + " ";
-          y += lineHeight;
-        } else {
-          line = testLine;
+        // Truncate to just the book name (before the " - ")
+        let text = books[i];
+        if (text.includes(' - ')) {
+          text = text.split(' - ')[0].trim();
         }
-      }
-      ctx.fillText(line, maxWidth, y);
 
+        // Make font size 20% smaller than before
+        const fontSize = text.length > 20 ? "7.7px Arial" : "9.6px Arial";
+        ctx.font = fontSize;
+
+        // Vertically center, horizontally just inside the edge of the wheel (move 5% closer to edge)
+        ctx.fillText(text, radius - 15 + radius * 0.05, 0);
+
+        ctx.restore();
+      }
+      // Remove the old arrow code (inside the wheel)
+      // ctx.beginPath();
+      // ctx.moveTo(centerX, 20);
+      // ctx.lineTo(centerX - 10, 50);
+      // ctx.lineTo(centerX + 10, 50);
+      // ctx.closePath();
+      // ctx.fillStyle = "#222";
+      // ctx.fill();
+
+      // Draw arrow on the outside of the wheel pointing inward
+      ctx.save();
+      ctx.translate(centerX, centerY);
+      ctx.beginPath();
+      ctx.moveTo(-18, -radius - 35); // Left base
+      ctx.lineTo(18, -radius - 35);  // Right base
+      ctx.lineTo(0, -radius - 5);    // Tip closer to center
+      ctx.closePath();
+      ctx.fillStyle = "#222";
+      ctx.fill();
       ctx.restore();
     }
-    ctx.beginPath();
-    ctx.moveTo(170, 20);
-    ctx.lineTo(160, 50);
-    ctx.lineTo(180, 50);
-    ctx.closePath();
-    ctx.fillStyle = "#222";
-    ctx.fill();
-  }
 
-  function spinWheel() {
-    if (spinning || books.length === 0 || winners.length >= 3) {
-      if (winners.length >= 3) {
-        resultDiv.innerHTML = "You already have 3 choices! Delete one or more to spin again.";
-      }
-      return;
-    }
-    spinning = true;
-    resultDiv.textContent = '';
-    let spins = 30 + Math.floor(Math.random() * 10);
-    let currentSpin = 0;
-    let spinInterval = setInterval(() => {
-      angle += Math.PI / 16;
-      drawWheel();
-      currentSpin++;
-      if (currentSpin > spins) {
-        clearInterval(spinInterval);
-        pickWinner();
-        spinning = false;
-      }
-    }, 40);
-  }
+    function spinWheel() {
+      if (spinning || books.length === 0) return;
+      spinning = true;
+      resultDiv.textContent = '';
 
-  function pickWinner() {
-    if (books.length === 0) {
-      resultDiv.innerHTML = "No more books to choose from!";
-      return;
-    }
-    const idx = Math.floor(Math.random() * books.length);
-    const winner = books[idx];
-    const suggestedBy = names[idx];
-    winners.push({ book: winner, name: suggestedBy });
-    books.splice(idx, 1);
-    names.splice(idx, 1);
-    resultDiv.innerHTML = `<strong>Winner:</strong> ${winner} (suggested by ${suggestedBy})`;
+      const numBooks = books.length;
+      const arc = Math.PI * 2 / numBooks;
+      const winnerIdx = Math.floor(Math.random() * numBooks);
+      const finalAngle = (3 * Math.PI / 2) - (winnerIdx * arc) - (arc / 2);
 
-    displayWinner({ book: winner, name: suggestedBy });
+      const minRotations = 2;
+      const duration = 5000; // total duration in ms
 
-    localStorage.setItem("winners", JSON.stringify(winners)); // Save winners to localStorage
-    localStorage.setItem("pollChoices", JSON.stringify(winners)); // Update poll choices
+      // Phases: 20% speed up, 40% constant, 40% slow down
+      const accelPhase = 0.2;
+      const constantPhase = 0.4;
+      const easePhase = 0.4;
 
-    drawWheel();
-    if (winners.length >= 3) {
-      spinBtn.disabled = true;
-      resultDiv.innerHTML = "You already have 3 choices! Delete one or more to spin again.";
-    }
-  }
+      const startAngle = angle;
+      const totalSpinAngle = minRotations * 2 * Math.PI;
+      const targetAngle = finalAngle + totalSpinAngle;
 
-  function displayWinner(winner) {
-    const winnerDiv = document.createElement("div");
-    winnerDiv.className = "winner-item";
-    winnerDiv.innerHTML = `
-      <span><strong>${winner.book}</strong> (suggested by ${winner.name})</span>
-      <button onclick="deleteWinner('${winner.book}')">Delete</button>
-    `;
-    winnersContainer.appendChild(winnerDiv);
-  }
+      // Calculate phase boundaries
+      const accelEndAngle = startAngle + (targetAngle - startAngle) * accelPhase;
+      const constantEndAngle = startAngle + (targetAngle - startAngle) * (accelPhase + constantPhase);
 
-  function deleteWinner(book) {
-    winners = winners.filter(winner => winner.book !== book); // Remove the winner from the array
-    localStorage.setItem("winners", JSON.stringify(winners)); // Update winners in localStorage
-    localStorage.setItem("pollChoices", JSON.stringify(winners)); // Update poll choices in localStorage
-    winnersContainer.innerHTML = ""; // Clear the container
-    loadWinners(); // Reload the winners
-    spinBtn.disabled = false; // Enable the spin button
-    resultDiv.innerHTML = ""; // Clear the result message
-  }
+      const start = performance.now();
 
-  function loadWinners() {
-    winnersContainer.innerHTML = ""; // Clear the container
-    winners.forEach(winner => displayWinner(winner));
-    if (winners.length >= 3) {
-      spinBtn.disabled = true;
-      resultDiv.innerHTML = "You already have 3 choices! Delete one or more to spin again.";
-    }
-  }
+      function animate(now) {
+        let elapsed = now - start;
+        let progress = Math.min(elapsed / duration, 1);
 
-  function eraseChoices() {
-    winners = [];
-    localStorage.removeItem("winners"); // Clear winners from localStorage
-    localStorage.removeItem("pollChoices"); // Clear poll choices from localStorage
-    winnersContainer.innerHTML = ""; // Clear the winners section
-    spinBtn.disabled = false; // Enable the spin button
-    resultDiv.innerHTML = ""; // Clear the result message
-  }
-
-  spinBtn.addEventListener('click', spinWheel);
-  eraseBtn.addEventListener('click', eraseChoices);
-
-  fetch(SHEET_CSV_URL)
-    .then(r => r.text())
-    .then(csv => {
-      const rows = csv.split('\n').slice(1); // Skip the header row
-      books = [];
-      names = [];
-
-      rows.forEach(row => {
-        const columns = row.split(',');
-        const book = columns[1]?.trim(); // The cell containing the book
-        const name = columns[2]?.trim(); // The name associated with the book
-
-        if (book && name) {
-          books.push(book); // Add the book to the books array
-          names.push(name); // Add the name to the names array
+        if (progress < accelPhase) {
+          // Acceleration phase (gradual speed up)
+          let accelProgress = progress / accelPhase;
+          let easeIn = Math.pow(accelProgress, 2); // quadratic ease in
+          angle = startAngle + (accelEndAngle - startAngle) * easeIn;
+        } else if (progress < accelPhase + constantPhase) {
+          // Constant speed phase
+          let constantProgress = (progress - accelPhase) / constantPhase;
+          angle = accelEndAngle + (constantEndAngle - accelEndAngle) * constantProgress;
+        } else {
+          // Ease-out phase (gradual slow down)
+          let easeProgress = (progress - accelPhase - constantPhase) / easePhase;
+          let easeOut = 1 - Math.pow(1 - easeProgress, 6); // cubic ease out
+          angle = constantEndAngle + (targetAngle - constantEndAngle) * easeOut;
         }
-      });
 
-      // Clear winners if they no longer exist in the spreadsheet
-      winners = winners.filter(winner => books.includes(winner.book));
+        drawWheel();
+        if (progress < 1) {
+          requestAnimationFrame(animate);
+        } else {
+          angle = finalAngle; // Snap to final angle
+          drawWheel();
+          pickWinner(winnerIdx);
+          spinning = false;
+        }
+      }
+
+      requestAnimationFrame(animate);
+    }
+
+    // Update pickWinner to accept winnerIdx
+    function pickWinner(winnerIdx) {
+      if (books.length === 0) {
+        resultDiv.innerHTML = "No more books to choose from!";
+        return;
+      }
+      const winner = books[winnerIdx];
+      const suggestedBy = names[winnerIdx];
+      winners.push({ book: winner, name: suggestedBy });
+
+      // Do NOT remove the winner from books/names arrays
+      // books.splice(winnerIdx, 1);
+      // names.splice(winnerIdx, 1);
+
+      resultDiv.innerHTML = `<strong>Winner:</strong> ${winner} (suggested by ${suggestedBy})`;
+
+      displayWinner({ book: winner, name: suggestedBy });
+
+      localStorage.setItem("winners", JSON.stringify(winners)); // Save winners to localStorage
+      localStorage.setItem("pollChoices", JSON.stringify(winners)); // Update poll choices
+
+      drawWheel();
+      if (winners.length === 3) {
+        spinBtn.disabled = true;
+        resultDiv.innerHTML += `<br><span style="color:#c00;">You can only have 3 choices at once, please delete one below before spinning again.</span>`;
+      }
+    }
+
+    function displayWinner(winner) {
+      const winnerDiv = document.createElement("div");
+      winnerDiv.className = "winner-item";
+      winnerDiv.innerHTML = `
+        <span><strong>${winner.book}</strong> (suggested by ${winner.name})</span>
+        <button onclick="deleteWinner('${winner.book}')">Delete</button>
+      `;
+      winnersContainer.appendChild(winnerDiv);
+    }
+
+    function deleteWinner(book) {
+      winners = winners.filter(winner => winner.book !== book); // Remove the winner from the array
       localStorage.setItem("winners", JSON.stringify(winners)); // Update winners in localStorage
       localStorage.setItem("pollChoices", JSON.stringify(winners)); // Update poll choices in localStorage
+      winnersContainer.innerHTML = ""; // Clear the container
+      loadWinners(); // Reload the winners
+      spinBtn.disabled = false; // Enable the spin button
+    }
 
-      // Update the UI
+    function loadWinners() {
+      winnersContainer.innerHTML = ""; // Clear the container
+      winners.forEach(winner => displayWinner(winner));
+    }
+
+    function eraseChoices() {
+      winners = [];
+      localStorage.removeItem("winners"); // Clear winners from localStorage
+      localStorage.removeItem("pollChoices"); // Clear poll choices from localStorage
       winnersContainer.innerHTML = ""; // Clear the winners section
-      loadWinners(); // Reload winners
-      loadingDiv.style.display = 'none';
+      spinBtn.disabled = false; // Enable the spin button
+    }
 
-      if (books.length === 0) {
-        resultDiv.innerHTML = "No books available in the sheet!";
+    spinBtn.addEventListener('click', spinWheel);
+    eraseBtn.addEventListener('click', eraseChoices);
+
+    fetch(SHEET_CSV_URL)
+      .then(r => r.text())
+      .then(csv => {
+        const rows = csv.split('\n').slice(1);
+        books = [];
+        names = [];
+        rows.forEach(row => {
+          const cols = row.split(',');
+          const book = cols[1]?.trim();
+          const name = cols[2]?.trim();
+          if (book) { // Only add if book name is not empty
+            books.push(book);
+            names.push(name);
+          }
+        });
+        loadingDiv.style.display = 'none';
+        if (books.length === 0) {
+          resultDiv.innerHTML = "No books available in the sheet!";
+          spinBtn.disabled = true;
+        } else {
+          drawWheel();
+          spinBtn.disabled = false;
+        }
+      })
+      .catch(() => {
+        loadingDiv.textContent = "Failed to load book list.";
         spinBtn.disabled = true;
-      } else {
-        drawWheel();
-        spinBtn.disabled = winners.length >= 3; // Disable spin button if there are already 3 winners
-      }
-    })
-    .catch(() => {
-      loadingDiv.textContent = "Failed to load book list.";
-      spinBtn.disabled = true;
-    });
+      });
 
-  loadWinners(); // Load winners from localStorage on page load
+    loadWinners(); // Load winners from localStorage on page load
+
+    // Pre-render the wheel to warm up the canvas and browser
+    setTimeout(() => { drawWheel(); }, 100);
+    setTimeout(() => { drawWheel(); }, 200);
   </script>
 </body>
 </html>
