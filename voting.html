@@ -5,14 +5,105 @@
   <title>Book Club Voting</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
-    body { font-family: sans-serif; max-width: 500px; margin: 2em auto; text-align: center; }
-    button { font-size: 1.1em; padding: 0.6em 1em; margin: 1em 0 0.5em 0; cursor: pointer; }
-    .section { background: #fafafa; border-radius: 12px; border: 1px solid #ddd; margin: 1.5em 0; padding: 1em 0.5em; }
-    .winner-item { margin-top: 10px; display: flex; justify-content: space-between; align-items: center; }
-    .winner-item button { font-size: 0.9em; padding: 0.3em 0.6em; cursor: pointer; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      font-family: sans-serif;
+      background: #fafafa;
+      text-align: center;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    body {
+      max-width: 100vw;
+      overflow-x: hidden;
+    }
+    .section {
+      background: #fafafa;
+      border-radius: 12px;
+      border: 1px solid #ddd;
+      margin: 1.2em auto;
+      padding: 1em 0.5em;
+      max-width: 98vw;
+      box-sizing: border-box;
+    }
+    h1, h2 {
+      font-size: 1.3em;
+      margin: 0.7em 0 0.5em 0;
+    }
+    button {
+      font-size: 1em;
+      padding: 0.5em 1em;
+      margin: 1em 0 0.5em 0;
+      cursor: pointer;
+      border-radius: 8px;
+      border: 1px solid #bbb;
+      background: #fff;
+      transition: background 0.2s;
+    }
+    button:active {
+      background: #eee;
+    }
+    #wheel-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      max-width: 340px;
+      margin: 0 auto;
+    }
+    canvas#wheel {
+      width: 100%;
+      max-width: 320px;
+      height: auto;
+      display: block;
+      margin: 0 auto;
+      background: #fff;
+      border-radius: 50%;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+      touch-action: manipulation;
+    }
+    .winner-item {
+      margin-top: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.95em;
+      flex-wrap: wrap;
+    }
+    .winner-item button {
+      font-size: 0.9em;
+      padding: 0.3em 0.6em;
+      margin-left: 0.5em;
+    }
+    .qr {
+      width: 90px;
+      height: 90px;
+      margin: 0.5em auto;
+      display: block;
+    }
+    @media (max-width: 500px) {
+      .section {
+        padding: 0.7em 0.2em;
+        margin: 1em 0.2em;
+      }
+      h1, h2 {
+        font-size: 1.1em;
+      }
+      #wheel-container {
+        max-width: 98vw;
+      }
+      canvas#wheel {
+        max-width: 98vw;
+      }
+      .qr {
+        width: 70px;
+        height: 70px;
+      }
+    }
   </style>
 </head>
-
 <body>
   <header>
     <a href="index.html" class="home">🏠 Main Page</a>
@@ -27,11 +118,9 @@
        target="_blank" class="button-link">
       <button>Suggest a Book (Google Form)</button>
     </a>
-    <div>
-      <img class="qr"
-           src="https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=https://docs.google.com/forms/d/e/1FAIpQLSeD3-geAx7_nxHsgw1xWYR_gDncmhAlswwrsX4gIJdgKj9tQw/viewform?usp=dialog"
-           alt="QR code for suggestion form">
-    </div>
+    <img class="qr"
+         src="https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=https://docs.google.com/forms/d/e/1FAIpQLSeD3-geAx7_nxHsgw1xWYR_gDncmhAlswwrsX4gIJdgKj9tQw/viewform?usp=dialog"
+         alt="QR code for suggestion form">
     <div style="font-size:0.93em;color:#666;margin-top:0.5em;">
       (Scan QR or click to open suggestion form)
     </div>
@@ -43,11 +132,9 @@
        target="_blank" class="button-link">
       <button>Open Submissions Sheet</button>
     </a>
-    <div>
-      <img class="qr"
-           src="https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=https://docs.google.com/spreadsheets/d/1VCHJO67_pYjNWEceSRwb4jotF7GO3L8uFaLo3HUJmnk/edit"
-           alt="QR code for submissions sheet">
-    </div>
+    <img class="qr"
+         src="https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=https://docs.google.com/spreadsheets/d/1VCHJO67_pYjNWEceSRwb4jotF7GO3L8uFaLo3HUJmnk/edit"
+         alt="QR code for submissions sheet">
     <div style="font-size:0.93em;color:#666;margin-top:0.5em;">
       (Click or scan to view all book suggestions)
     </div>
@@ -56,7 +143,7 @@
   <div class="section">
     <h2>🎡 Spin for 3 Books</h2>
     <div id="wheel-container" style="margin: 30px 0;">
-      <canvas id="wheel" width="492" height="492"></canvas><br>
+      <canvas id="wheel" width="320" height="320"></canvas><br>
       <button id="spinBtn" disabled>Spin!</button>
       <div id="result" style="margin-top:18px; font-size:1.1em;"></div>
       <div id="loading" style="color:#888; margin-top:10px;">Loading book list...</div>
@@ -77,11 +164,9 @@
     <a href="voting_poll.html" target="_blank" class="button-link">
       <button>Go to Voting Poll</button>
     </a>
-    <div>
-      <img class="qr"
-           src="https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=voting_poll.html"
-           alt="QR code for voting poll">
-    </div>
+    <img class="qr"
+         src="https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=voting_poll.html"
+         alt="QR code for voting poll">
     <div style="font-size:0.93em;color:#666;margin-top:0.5em;">
       (Click or scan to open the voting poll)
     </div>
@@ -92,7 +177,7 @@
 
     let books = [];
     let names = [];
-    let winners = JSON.parse(localStorage.getItem("winners")) || []; // Load winners from localStorage
+    let winners = JSON.parse(localStorage.getItem("winners")) || [];
     const wheel = document.getElementById('wheel');
     const ctx = wheel.getContext('2d');
     const spinBtn = document.getElementById('spinBtn');
@@ -108,9 +193,9 @@
       if (books.length === 0) return;
       const numBooks = books.length;
       const arc = Math.PI * 2 / numBooks;
-      const centerX = 246;
-      const centerY = 246;
-      const radius = 220; // matches your arc radius
+      const centerX = wheel.width / 2;
+      const centerY = wheel.height / 2;
+      const radius = Math.min(centerX, centerY) - 26;
 
       for (let i = 0; i < numBooks; i++) {
         ctx.beginPath();
@@ -122,41 +207,25 @@
         ctx.save();
         ctx.translate(centerX, centerY);
         ctx.rotate(angle + arc * (i + 0.5));
-        ctx.textAlign = "right"; // Align text to the edge
-        ctx.textBaseline = "middle"; // Vertically center in the wedge
+        ctx.textAlign = "right";
+        ctx.textBaseline = "middle";
         ctx.fillStyle = "#222";
-
-        // Truncate to just the book name (before the " - ")
         let text = books[i];
         if (text.includes(' - ')) {
           text = text.split(' - ')[0].trim();
         }
-
-        // Make font size 20% smaller than before
         const fontSize = text.length > 20 ? "7.7px Arial" : "9.6px Arial";
         ctx.font = fontSize;
-
-        // Vertically center, horizontally just inside the edge of the wheel (move 5% closer to edge)
         ctx.fillText(text, radius - 15 + radius * 0.05, 0);
-
         ctx.restore();
       }
-      // Remove the old arrow code (inside the wheel)
-      // ctx.beginPath();
-      // ctx.moveTo(centerX, 20);
-      // ctx.lineTo(centerX - 10, 50);
-      // ctx.lineTo(centerX + 10, 50);
-      // ctx.closePath();
-      // ctx.fillStyle = "#222";
-      // ctx.fill();
-
       // Draw arrow on the outside of the wheel pointing inward
       ctx.save();
       ctx.translate(centerX, centerY);
       ctx.beginPath();
-      ctx.moveTo(-18, -radius - 35); // Left base
-      ctx.lineTo(18, -radius - 35);  // Right base
-      ctx.lineTo(0, -radius - 5);    // Tip closer to center
+      ctx.moveTo(-18, -radius - 35);
+      ctx.lineTo(18, -radius - 35);
+      ctx.lineTo(0, -radius - 5);
       ctx.closePath();
       ctx.fillStyle = "#222";
       ctx.fill();
@@ -225,7 +294,6 @@
       requestAnimationFrame(animate);
     }
 
-    // Update pickWinner to accept winnerIdx
     function pickWinner(winnerIdx) {
       if (books.length === 0) {
         resultDiv.innerHTML = "No more books to choose from!";
@@ -235,16 +303,12 @@
       const suggestedBy = names[winnerIdx];
       winners.push({ book: winner, name: suggestedBy });
 
-      // Do NOT remove the winner from books/names arrays
-      // books.splice(winnerIdx, 1);
-      // names.splice(winnerIdx, 1);
-
       resultDiv.innerHTML = `<strong>Winner:</strong> ${winner} (suggested by ${suggestedBy})`;
 
       displayWinner({ book: winner, name: suggestedBy });
 
-      localStorage.setItem("winners", JSON.stringify(winners)); // Save winners to localStorage
-      localStorage.setItem("pollChoices", JSON.stringify(winners)); // Update poll choices
+      localStorage.setItem("winners", JSON.stringify(winners));
+      localStorage.setItem("pollChoices", JSON.stringify(winners));
 
       drawWheel();
       if (winners.length === 3) {
@@ -264,25 +328,25 @@
     }
 
     function deleteWinner(book) {
-      winners = winners.filter(winner => winner.book !== book); // Remove the winner from the array
-      localStorage.setItem("winners", JSON.stringify(winners)); // Update winners in localStorage
-      localStorage.setItem("pollChoices", JSON.stringify(winners)); // Update poll choices in localStorage
-      winnersContainer.innerHTML = ""; // Clear the container
-      loadWinners(); // Reload the winners
-      spinBtn.disabled = false; // Enable the spin button
+      winners = winners.filter(winner => winner.book !== book);
+      localStorage.setItem("winners", JSON.stringify(winners));
+      localStorage.setItem("pollChoices", JSON.stringify(winners));
+      winnersContainer.innerHTML = "";
+      loadWinners();
+      spinBtn.disabled = false;
     }
 
     function loadWinners() {
-      winnersContainer.innerHTML = ""; // Clear the container
+      winnersContainer.innerHTML = "";
       winners.forEach(winner => displayWinner(winner));
     }
 
     function eraseChoices() {
       winners = [];
-      localStorage.removeItem("winners"); // Clear winners from localStorage
-      localStorage.removeItem("pollChoices"); // Clear poll choices from localStorage
-      winnersContainer.innerHTML = ""; // Clear the winners section
-      spinBtn.disabled = false; // Enable the spin button
+      localStorage.removeItem("winners");
+      localStorage.removeItem("pollChoices");
+      winnersContainer.innerHTML = "";
+      spinBtn.disabled = false;
     }
 
     spinBtn.addEventListener('click', spinWheel);
@@ -317,9 +381,8 @@
         spinBtn.disabled = true;
       });
 
-    loadWinners(); // Load winners from localStorage on page load
+    loadWinners();
 
-    // Pre-render the wheel to warm up the canvas and browser
     setTimeout(() => { drawWheel(); }, 100);
     setTimeout(() => { drawWheel(); }, 200);
   </script>
