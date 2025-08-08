@@ -6,6 +6,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <!-- Bootstrap CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Animate.css for slot spin effect -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
   <style>
     body {
       font-family: 'Segoe UI', 'Inter', Arial, sans-serif;
@@ -18,15 +20,6 @@
       align-items: center;
       gap: 0.5rem;
       margin-bottom: 0.5rem;
-    }
-    canvas#wheel {
-      background: #fff;
-      border-radius: 50%;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.07);
-      display: block;
-      margin: 0 auto;
-      max-width: 100%;
-      height: auto;
     }
     .qr {
       width: 70px;
@@ -41,6 +34,203 @@
       .qr {
         width: 50px;
         height: 50px;
+      }
+    }
+    /* Slot machine styles */
+    .slot-machine-frame {
+      background: #444;
+      border-radius: 24px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+      padding: 2rem 1rem 2.5rem 1rem;
+      max-width: 1100px; /* Make the machine wider */
+      margin: 2rem auto;
+      position: relative;
+      border: 8px solid #ffc107;
+    }
+    .slot-machine-title {
+      color: #ffc107;
+      font-size: 2rem;
+      font-weight: bold;
+      text-align: center;
+      margin-bottom: 1.5rem;
+      letter-spacing: 2px;
+      text-shadow: 0 2px 8px #000;
+    }
+    .slot-reels {
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      gap: 2rem;
+      margin-bottom: 2rem;
+      width: 100%;
+    }
+    .slot-reel {
+      background: linear-gradient(180deg, #fff 80%, #eee 100%);
+      border-radius: 16px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+      border: 4px solid #ffc107;
+      width: 100%;
+      min-width: 320px;
+      max-width: 500px;
+      height: 180px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      font-size: 1.25rem;
+      font-weight: bold;
+      color: #222;
+      text-align: center;
+      overflow: hidden;
+      position: relative;
+      transition: border-color 0.3s, background 0.3s;
+      word-break: break-word;
+      padding: 0.5rem 0.5rem 1rem 0.5rem;
+      flex: 1 1 0;
+    }
+    .slot-scroll {
+      flex: 1 1 auto;
+      width: 100%;
+      height: 120px;
+      overflow: hidden;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .slot-scroll-list {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      position: absolute;
+      left: 0;
+      top: 0;
+      height: 100%;
+      justify-content: center; /* <-- This centers content vertically */
+    }
+    .slot-scroll-item {
+      width: 100%;
+      padding: 0.4em 0;
+      border-bottom: 1px solid #ffc107;
+      font-size: 1.15em;
+      background: transparent;
+    }
+    .slot-reel.winner {
+      border-color: #28a745;
+      background: linear-gradient(180deg, #ffe066 80%, #ffc107 100%);
+      color: #28a745;
+      animation: winnerPop 0.7s;
+    }
+    @keyframes winnerPop {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.08); }
+      100% { transform: scale(1); }
+    }
+    .slot-lever {
+      position: absolute;
+      right: -40px;
+      top: 40px;
+      width: 32px;
+      height: 120px;
+      background: #ffc107;
+      border-radius: 16px;
+      box-shadow: 0 2px 8px #000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      cursor: pointer;
+      z-index: 2;
+      transition: transform 0.2s;
+    }
+    .slot-lever-ball {
+      width: 32px;
+      height: 32px;
+      background: #fff;
+      border: 4px solid #ffc107;
+      border-radius: 50%;
+      margin-bottom: 4px;
+      box-shadow: 0 2px 8px #000;
+    }
+    .slot-lever:active {
+      transform: translateY(20px);
+    }
+    .slot-spin-btn {
+      display: block;
+      width: 100%;
+      font-size: 1.2rem;
+      font-weight: bold;
+      background: linear-gradient(90deg, #ffc107 60%, #ffe066 100%);
+      color: #222;
+      border: none;
+      border-radius: 12px;
+      padding: 0.75rem 0;
+      margin-top: 1.5rem;
+      box-shadow: 0 2px 8px #0002;
+      transition: background 0.2s;
+    }
+    .slot-spin-btn:active {
+      background: linear-gradient(90deg, #ffe066 60%, #ffc107 100%);
+    }
+    .slot-result {
+      color: #fff;
+      font-size: 1.1rem;
+      text-align: center;
+      margin-top: 1.5rem;
+      min-height: 2.5em;
+    }
+    .slot-label {
+      color: #ffc107;
+      font-size: 1rem;
+      text-align: center;
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+      letter-spacing: 1px;
+    }
+    @media (max-width: 600px) {
+      .slot-machine-frame {
+        padding: 1rem 0.2rem 1.5rem 0.2rem;
+        max-width: 98vw;
+      }
+      .slot-reel {
+        width: 80px;
+        height: 80px;
+        font-size: 0.95rem;
+        padding: 0.3rem;
+      }
+      .slot-lever {
+        right: -28px;
+        top: 30px;
+        width: 22px;
+        height: 80px;
+      }
+      .slot-lever-ball {
+        width: 22px;
+        height: 22px;
+      }
+      .slot-spin-btn {
+        font-size: 1rem;
+        padding: 0.5rem 0;
+      }
+    }
+    @media (max-width: 1200px) {
+      .slot-machine-frame {
+        max-width: 98vw;
+        padding: 1rem 0.2rem 1.5rem 0.2rem;
+      }
+      .slot-reel {
+        min-width: 0;
+        max-width: none;
+        width: 98vw;
+        font-size: 1.05rem;
+      }
+      .slot-scroll {
+        height: 80px;
+      }
+      .slot-reels {
+        gap: 1rem;
       }
     }
   </style>
@@ -94,17 +284,283 @@
       </div>
     </div>
 
-    <div class="card shadow-sm my-4">
-      <div class="card-body">
-        <h2 class="card-title mb-2 fs-5">🎡 Spin for 3 Books</h2>
-        <div class="d-flex flex-column align-items-center">
-          <canvas id="wheel" width="492" height="492"></canvas>
-          <button id="spinBtn" class="btn btn-warning mt-3" disabled>Spin!</button>
-          <div id="result" class="mt-3 text-base fw-semibold"></div>
-          <div id="loading" class="text-muted mt-2 small">Loading book list...</div>
+    <!-- Slot Machine Section (replace previous slot machine markup) -->
+    <div class="slot-machine-frame">
+      <div class="slot-machine-title">BOOK SLOT MACHINE</div>
+      <div class="slot-label">Pull the lever, then stop each reel to pick 3 books!</div>
+      <div class="slot-reels">
+        <div class="slot-reel" id="slot1">
+          <div class="slot-scroll" id="slotScroll1"></div>
+          <button id="slotStopBtn1" class="btn btn-success mt-2 w-100" disabled>Stop</button>
+        </div>
+        <div class="slot-reel" id="slot2">
+          <div class="slot-scroll" id="slotScroll2"></div>
+          <button id="slotStopBtn2" class="btn btn-success mt-2 w-100" disabled>Stop</button>
+        </div>
+        <div class="slot-reel" id="slot3">
+          <div class="slot-scroll" id="slotScroll3"></div>
+          <button id="slotStopBtn3" class="btn btn-success mt-2 w-100" disabled>Stop</button>
         </div>
       </div>
+      <div class="slot-lever" id="slotLever" title="Pull to Spin!">
+        <div class="slot-lever-ball"></div>
+        <div style="flex:1"></div>
+      </div>
+      <div id="slotResult" class="slot-result"></div>
+      <div id="slotLoading" class="text-muted text-center mt-2 small">Loading book list...</div>
     </div>
+    <style>
+      .slot-reels {
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        gap: 2rem;
+        margin-bottom: 2rem;
+      }
+      .slot-reel {
+        background: linear-gradient(180deg, #fff 80%, #eee 100%);
+        border-radius: 16px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+        border: 4px solid #ffc107;
+        width: 100%;
+        min-width: 320px;
+        max-width: 500px;
+        height: 180px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start;
+        font-size: 1.25rem;
+        font-weight: bold;
+        color: #222;
+        text-align: center;
+        overflow: hidden;
+        position: relative;
+        transition: border-color 0.3s, background 0.3s;
+        word-break: break-word;
+        padding: 0.5rem 0.5rem 1rem 0.5rem;
+      }
+      .slot-scroll {
+        flex: 1 1 auto;
+        width: 100%;
+        height: 120px;
+        overflow: hidden;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+      }
+      .slot-scroll-list {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+        position: absolute;
+        left: 0;
+        top: 0;
+        height: 100%;
+        justify-content: center; /* <-- This centers content vertically */
+      }
+      .slot-scroll-item {
+        width: 100%;
+        padding: 0.4em 0;
+        border-bottom: 1px solid #ffc107;
+        font-size: 1.15em;
+        background: transparent;
+      }
+      .slot-reel.winner {
+        border-color: #28a745;
+        background: linear-gradient(180deg, #ffe066 80%, #ffc107 100%);
+        color: #28a745;
+        animation: winnerPop 0.7s;
+      }
+      @keyframes winnerPop {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.08); }
+        100% { transform: scale(1); }
+      }
+      @media (max-width: 900px) {
+        .slot-reels {
+          gap: 1rem;
+        }
+        .slot-reel {
+          width: 98vw;
+          min-width: 0;
+          max-width: none;
+          height: 140px;
+          font-size: 1.05rem;
+        }
+        .slot-scroll {
+          height: 80px;
+        }
+      }
+    </style>
+    <script>
+      let slotBooks = [];
+      let slotNames = [];
+      const slotScrolls = [
+        document.getElementById('slotScroll1'),
+        document.getElementById('slotScroll2'),
+        document.getElementById('slotScroll3')
+      ];
+      const slotReels = [
+        document.getElementById('slot1'),
+        document.getElementById('slot2'),
+        document.getElementById('slot3')
+      ];
+      const slotStopBtns = [
+        document.getElementById('slotStopBtn1'),
+        document.getElementById('slotStopBtn2'),
+        document.getElementById('slotStopBtn3')
+      ];
+      const slotLever = document.getElementById('slotLever');
+      const slotResultDiv = document.getElementById('slotResult');
+      const slotLoadingDiv = document.getElementById('slotLoading');
+
+      let spinning = [false, false, false];
+      let intervals = [null, null, null];
+      let chosenIdxs = [null, null, null];
+      let offsets = [0, 0, 0];
+
+      function renderScrollList(reelIdx, offset = 0, stopped = false) {
+        const books = slotBooks;
+        const scroll = slotScrolls[reelIdx];
+        scroll.innerHTML = '';
+        const list = document.createElement('div');
+        list.className = 'slot-scroll-list';
+
+        if (stopped) {
+          // Only show the chosen book in the center
+          const item = document.createElement('div');
+          item.className = 'slot-scroll-item';
+          item.style.borderBottom = 'none';
+          item.textContent = books[offset];
+          list.appendChild(item);
+        } else {
+          // Show 5 books for scrolling effect, center is the 3rd
+          for (let i = 0; i < 5; i++) {
+            let idx = (offset + i) % books.length;
+            const item = document.createElement('div');
+            item.className = 'slot-scroll-item';
+            item.textContent = books[idx];
+            list.appendChild(item);
+          }
+        }
+        scroll.appendChild(list);
+      }
+
+      function startSpin() {
+        if (slotBooks.length < 3) return;
+        slotResultDiv.textContent = '';
+        chosenIdxs = [null, null, null];
+        offsets = [
+          Math.floor(Math.random() * slotBooks.length),
+          Math.floor(Math.random() * slotBooks.length),
+          Math.floor(Math.random() * slotBooks.length)
+        ];
+        slotReels.forEach((reel, i) => {
+          reel.classList.remove('winner');
+          renderScrollList(i, offsets[i]);
+        });
+        slotStopBtns.forEach(btn => btn.disabled = false);
+        spinning = [true, true, true];
+        slotLever.style.pointerEvents = "none";
+
+        intervals[0] = startReelScroll(0);
+        intervals[1] = startReelScroll(1);
+        intervals[2] = startReelScroll(2);
+      }
+
+      function startReelScroll(reelIdx) {
+        return setInterval(() => {
+          offsets[reelIdx] = (offsets[reelIdx] + 1) % slotBooks.length;
+          renderScrollList(reelIdx, offsets[reelIdx]);
+        }, 180); // Slow speed for slot effect
+      }
+
+      function stopReel(reelIdx) {
+        if (!spinning[reelIdx]) return;
+        clearInterval(intervals[reelIdx]);
+        // Pick the book in the center (3rd item)
+        let offset = offsets[reelIdx];
+        let chosenIdx = (offset + 2) % slotBooks.length;
+        chosenIdxs[reelIdx] = chosenIdx;
+        spinning[reelIdx] = false;
+        slotReels[reelIdx].classList.add('winner');
+        slotStopBtns[reelIdx].disabled = true;
+        // Show only the chosen book in the box
+        renderScrollList(reelIdx, chosenIdx, true);
+
+        // If all stopped, show result
+        if (spinning.every(s => !s)) {
+          slotLever.style.pointerEvents = "auto";
+          // Ensure all chosen books are unique
+          let uniqueIdxs = [...new Set(chosenIdxs)];
+          if (uniqueIdxs.length < 3) {
+            slotResultDiv.innerHTML = `<span class="text-danger">Duplicate books chosen! Please spin again.</span>`;
+          } else {
+            slotResultDiv.innerHTML =
+              `<strong>Winners:</strong><br>` +
+              uniqueIdxs.map(i =>
+                `${slotBooks[i]} <span class="text-muted">(suggested by ${slotNames[i]})</span>`
+              ).join('<br>');
+          }
+        }
+      }
+
+      slotLever.addEventListener('click', function() {
+        slotLever.style.transform = 'translateY(20px)';
+        setTimeout(() => {
+          slotLever.style.transform = '';
+          startSpin();
+        }, 180);
+      });
+      slotStopBtns.forEach((btn, i) => btn.addEventListener('click', () => stopReel(i)));
+
+      // Load books from CSV
+      fetch("https://docs.google.com/spreadsheets/d/e/2PACX-1vSLdPdPu4pwIwsAjADiCQOXYUJ8ACgWXaJn0DUVgNEy8ZZfc06EUGz2G9imE4gQ9FRs_zoDamhYTHhQ/pub?output=csv")
+        .then(r => r.text())
+        .then(csv => {
+          const rows = csv.split('\n').slice(1);
+          slotBooks = [];
+          slotNames = [];
+          rows.forEach(row => {
+            const cols = row.split(',');
+            const book = cols[1]?.trim();
+            const name = cols[2]?.trim();
+            if (book) {
+              slotBooks.push(book);
+              slotNames.push(name);
+            }
+          });
+          slotLoadingDiv.style.display = 'none';
+          if (slotBooks.length < 3) {
+            slotReels.forEach((reel, i) => {
+              reel.classList.remove('winner');
+              slotScrolls[i].innerHTML = `<div class="slot-scroll-list"><div class="slot-scroll-item">No books!</div></div>`;
+            });
+            slotStopBtns.forEach(btn => btn.disabled = true);
+            slotLever.style.pointerEvents = "none";
+          } else {
+            slotReels.forEach((reel, i) => {
+              reel.classList.remove('winner');
+              renderScrollList(i, 0);
+            });
+            slotStopBtns.forEach(btn => btn.disabled = true);
+            slotLever.style.pointerEvents = "auto";
+          }
+        })
+        .catch(() => {
+          slotLoadingDiv.textContent = "Failed to load book list.";
+          slotReels.forEach((reel, i) => {
+            reel.classList.remove('winner');
+            slotScrolls[i].innerHTML = `<div class="slot-scroll-list"><div class="slot-scroll-item">Error</div></div>`;
+          });
+          slotStopBtns.forEach(btn => btn.disabled = true);
+          slotLever.style.pointerEvents = "none";
+        });
+    </script>
 
     <div class="card shadow-sm mb-4">
       <div class="card-body">
@@ -132,143 +588,13 @@
   <!-- Bootstrap JS (optional, for dropdowns/modals) -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script>
+    // Winners logic
     const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSLdPdPu4pwIwsAjADiCQOXYUJ8ACgWXaJn0DUVgNEy8ZZfc06EUGz2G9imE4gQ9FRs_zoDamhYTHhQ/pub?output=csv";
-
     let books = [];
     let names = [];
     let winners = JSON.parse(localStorage.getItem("winners")) || [];
-    const wheel = document.getElementById('wheel');
-    const ctx = wheel.getContext('2d');
-    const spinBtn = document.getElementById('spinBtn');
-    const resultDiv = document.getElementById('result');
-    const loadingDiv = document.getElementById('loading');
     const winnersContainer = document.getElementById("winners-container");
     const eraseBtn = document.getElementById("eraseBtn");
-    let angle = 0;
-    let spinning = false;
-
-    function drawWheel() {
-      ctx.clearRect(0, 0, wheel.width, wheel.height);
-      if (books.length === 0) return;
-      const numBooks = books.length;
-      const arc = Math.PI * 2 / numBooks;
-      const centerX = 246;
-      const centerY = 246;
-      const radius = 220;
-
-      for (let i = 0; i < numBooks; i++) {
-        ctx.beginPath();
-        ctx.fillStyle = ["#FFB347", "#B19CD9", "#77DD77", "#FF6961", "#FDFD96", "#AEC6CF", "#CFCFC4", "#836953"][i % 8];
-        ctx.moveTo(centerX, centerY);
-        ctx.arc(centerX, centerY, radius, angle + arc * i, angle + arc * (i + 1));
-        ctx.lineTo(centerX, centerY);
-        ctx.fill();
-        ctx.save();
-        ctx.translate(centerX, centerY);
-        ctx.rotate(angle + arc * (i + 0.5));
-        ctx.textAlign = "right";
-        ctx.textBaseline = "middle";
-        ctx.fillStyle = "#222";
-        let text = books[i];
-        if (text.includes(' - ')) {
-          text = text.split(' - ')[0].trim();
-        }
-        const fontSize = text.length > 20 ? "7.7px Arial" : "9.6px Arial";
-        ctx.font = fontSize;
-        ctx.fillText(text, radius - 15 + radius * 0.05, 0);
-        ctx.restore();
-      }
-      ctx.save();
-      ctx.translate(centerX, centerY);
-      ctx.beginPath();
-      ctx.moveTo(-18, -radius - 35);
-      ctx.lineTo(18, -radius - 35);
-      ctx.lineTo(0, -radius - 5);
-      ctx.closePath();
-      ctx.fillStyle = "#222";
-      ctx.fill();
-      ctx.restore();
-    }
-
-    function spinWheel() {
-      if (spinning || books.length === 0) return;
-      spinning = true;
-      resultDiv.textContent = '';
-
-      const numBooks = books.length;
-      const arc = Math.PI * 2 / numBooks;
-      const winnerIdx = Math.floor(Math.random() * numBooks);
-      const finalAngle = (3 * Math.PI / 2) - (winnerIdx * arc) - (arc / 2);
-
-      const minRotations = 2;
-      const duration = 5000;
-
-      const accelPhase = 0.2;
-      const constantPhase = 0.4;
-      const easePhase = 0.4;
-
-      const startAngle = angle;
-      const totalSpinAngle = minRotations * 2 * Math.PI;
-      const targetAngle = finalAngle + totalSpinAngle;
-
-      const accelEndAngle = startAngle + (targetAngle - startAngle) * accelPhase;
-      const constantEndAngle = startAngle + (targetAngle - startAngle) * (accelPhase + constantPhase);
-
-      const start = performance.now();
-
-      function animate(now) {
-        let elapsed = now - start;
-        let progress = Math.min(elapsed / duration, 1);
-
-        if (progress < accelPhase) {
-          let accelProgress = progress / accelPhase;
-          let easeIn = Math.pow(accelProgress, 2);
-          angle = startAngle + (accelEndAngle - startAngle) * easeIn;
-        } else if (progress < accelPhase + constantPhase) {
-          let constantProgress = (progress - accelPhase) / constantPhase;
-          angle = accelEndAngle + (constantEndAngle - accelEndAngle) * constantProgress;
-        } else {
-          let easeProgress = (progress - accelPhase - constantPhase) / easePhase;
-          let easeOut = 1 - Math.pow(1 - easeProgress, 6);
-          angle = constantEndAngle + (targetAngle - constantEndAngle) * easeOut;
-        }
-
-        drawWheel();
-        if (progress < 1) {
-          requestAnimationFrame(animate);
-        } else {
-          angle = finalAngle;
-          drawWheel();
-          pickWinner(winnerIdx);
-          spinning = false;
-        }
-      }
-
-      requestAnimationFrame(animate);
-    }
-
-    function pickWinner(winnerIdx) {
-      if (books.length === 0) {
-        resultDiv.innerHTML = "No more books to choose from!";
-        return;
-      }
-      const winner = books[winnerIdx];
-      const suggestedBy = names[winnerIdx];
-      winners.push({ book: winner, name: suggestedBy });
-
-      resultDiv.innerHTML = `<strong>Winner:</strong> ${winner} (suggested by ${suggestedBy})`;
-
-      displayWinner({ book: winner, name: suggestedBy });
-
-      localStorage.setItem("winners", JSON.stringify(winners));
-      localStorage.setItem("pollChoices", JSON.stringify(winners));
-
-      drawWheel();
-      if (winners.length === 3) {
-        spinBtn.disabled = true;
-        resultDiv.innerHTML += `<br><span class="text-danger">You can only have 3 choices at once, please delete one below before spinning again.</span>`;
-      }
-    }
 
     function displayWinner(winner) {
       const winnerDiv = document.createElement("div");
@@ -286,7 +612,6 @@
       localStorage.setItem("pollChoices", JSON.stringify(winners));
       winnersContainer.innerHTML = "";
       loadWinners();
-      spinBtn.disabled = false;
     }
 
     function loadWinners() {
@@ -299,10 +624,8 @@
       localStorage.removeItem("winners");
       localStorage.removeItem("pollChoices");
       winnersContainer.innerHTML = "";
-      spinBtn.disabled = false;
     }
 
-    spinBtn.addEventListener('click', spinWheel);
     eraseBtn.addEventListener('click', eraseChoices);
 
     fetch(SHEET_CSV_URL)
@@ -320,24 +643,13 @@
             names.push(name);
           }
         });
-        loadingDiv.style.display = 'none';
-        if (books.length === 0) {
-          resultDiv.innerHTML = "No books available in the sheet!";
-          spinBtn.disabled = true;
-        } else {
-          drawWheel();
-          spinBtn.disabled = false;
-        }
+        winners = winners.filter(winner => books.includes(winner.book));
+        localStorage.setItem("winners", JSON.stringify(winners));
+        loadWinners();
       })
       .catch(() => {
-        loadingDiv.textContent = "Failed to load book list.";
-        spinBtn.disabled = true;
+        winnersContainer.innerHTML = "Failed to load winners.";
       });
-
-    loadWinners();
-
-    setTimeout(() => { drawWheel(); }, 100);
-    setTimeout(() => { drawWheel(); }, 200);
   </script>
 </body>
 </html>
