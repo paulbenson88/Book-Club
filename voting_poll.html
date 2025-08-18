@@ -21,6 +21,15 @@
     #nameInput { margin-bottom: 15px; padding: 10px; font-size: 1em; width: 70%; border: 1px solid #ccc; border-radius: 5px; display: inline-block; transition: width 0.3s ease; }
     #submitNameBtn { margin-left: 10px; padding: 10px 15px; font-size: 1em; cursor: pointer; display: inline-block; }
     #editNameBtn { margin-top: 10px; padding: 10px 15px; font-size: 1em; cursor: pointer; }
+    /* Additional styles for winners section */
+    .card { border: 1px solid #ddd; border-radius: 8px; background: #fff; }
+    .card-title { font-size: 1.5em; margin: 0; }
+    .text-muted { color: #888; }
+    .small { font-size: 0.9em; }
+    .mb-2 { margin-bottom: 0.5em; }
+    .mt-2 { margin-top: 0.5em; }
+    .fs-5 { font-size: 1.25em; }
+    .shadow-sm { box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
   </style>
 </head>
 
@@ -33,6 +42,16 @@
     <button id="submitNameBtn">Submit Name</button>
     <button id="editNameBtn" style="display: none;">Edit Name</button>
     <div id="poll-options"></div>
+  </div>
+
+  <!-- Add a container for showing the three winners -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-body">
+      <h2 class="card-title mb-2 fs-5">🏆 Selected Books</h2>
+      <div id="winners-container" class="mt-2">
+        <div id="winners-loading" class="text-muted small">Loading winners...</div>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -148,6 +167,79 @@
 
     // Load poll choices on page load
     loadPollChoices();
+
+    <!-- Pull the three chosen indexes from slotMachineState and render titles/names -->
+    (async function(){
+      const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSLdPdPu4pwIwsAjADiCQOXYUJ8ACgWXaJn0DUVgNEy8ZZfc06EUGz2G9imE4gQ9FRs_zoDamhYTHhQ/pub?output=csv";
+      const container = document.getElementById('winners-container');
+      const loading = document.getElementById('winners-loading');
+
+      function showMessage(msg){
+        container.innerHTML = '<div class="text-muted small">'+msg+'</div>';
+      }
+
+      // Try slotMachineState first
+      const raw = localStorage.getItem('slotMachineState');
+      let chosenIdxs = null;
+      if (raw) {
+        try {
+          const st = JSON.parse(raw);
+          if (Array.isArray(st.chosenIdxs)) chosenIdxs = st.chosenIdxs.slice(0,3);
+        } catch(e){}
+      }
+
+      // fallbacks (older keys) — optional
+      if (!chosenIdxs) {
+        const fallback = JSON.parse(localStorage.getItem('winners') || 'null');
+        if (Array.isArray(fallback) && fallback.length) {
+          // If earlier format stored full objects, render those directly
+          container.innerHTML = '';
+          fallback.forEach(w=>{
+            const row = document.createElement('div');
+            row.className = 'mb-2';
+            const book = document.createElement('div'); book.textContent = w.book || '';
+            const by = document.createElement('div'); by.className = 'text-muted small'; by.textContent = w.name ? 'Suggested by: ' + w.name : '';
+            row.appendChild(book); row.appendChild(by);
+            container.appendChild(row);
+          });
+          return;
+        }
+      }
+
+      if (!chosenIdxs || chosenIdxs.every(v=>v===null || v===undefined)){
+        showMessage('No winners selected yet. Press SPIN and Stop in the slot machine to pick 3 books.');
+        return;
+      }
+
+      // fetch CSV and map indices -> book/name
+      try {
+        const res = await fetch(CSV_URL);
+        const csv = await res.text();
+        const rows = csv.split('\n').slice(1); // skip header
+        // render chosen entries in order
+        container.innerHTML = '';
+        chosenIdxs.forEach((origIdx, i) => {
+          if (origIdx === null || origIdx === undefined) return;
+          const row = rows[origIdx] || '';
+          const cols = row.split(',');
+          const book = (cols[1] || '').trim();
+          const name = (cols[2] || '').trim();
+          const item = document.createElement('div');
+          item.className = 'mb-2';
+          const title = document.createElement('div');
+          title.innerHTML = '<strong>' + (book || 'Unknown book') + '</strong>';
+          const by = document.createElement('div');
+          by.className = 'text-muted small';
+          by.textContent = name ? 'Suggested by: ' + name : 'Suggested by: (unknown)';
+          item.appendChild(title);
+          item.appendChild(by);
+          container.appendChild(item);
+        });
+      } catch (err) {
+        console.error(err);
+        showMessage('Failed to load book details.');
+      }
+    })();
   </script>
 </body>
 </html>

@@ -12,5 +12,7 @@
         "Polltab",
         "Skeevy",
         "Wyler"
-    ]
+    ],
+    "mobile-preview.url": "http://127.0.0.1:5500/voting.html",
+    "mobile-preview.device": "iPhone 15"
 }

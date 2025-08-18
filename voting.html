@@ -9,10 +9,20 @@
   <!-- Animate.css for slot spin effect -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
   <style>
+    /* -----------------------
+       Consolidated / cleaned styles
+       ----------------------- */
+
+    :root{
+      --slot-viewport-height: 64px;    /* default; adjusted by media queries */
+      --slot-reel-bottom-space: 64px;
+    }
+
     body {
       font-family: 'Segoe UI', 'Inter', Arial, sans-serif;
       background: #f8fafc;
     }
+
     .winner-item {
       font-size: 1rem;
       display: flex;
@@ -21,31 +31,20 @@
       gap: 0.5rem;
       margin-bottom: 0.5rem;
     }
-    .qr {
-      width: 70px;
-      height: 70px;
-      margin: 0.5em auto;
-      display: block;
-    }
-    @media (max-width: 500px) {
-      h1, h2 {
-        font-size: 1.1em;
-      }
-      .qr {
-        width: 50px;
-        height: 50px;
-      }
-    }
-    /* Slot machine styles */
+
+    .qr { width: 70px; height: 70px; margin: 0.5em auto; display: block; }
+
+    /* Slot machine frame */
     .slot-machine-frame {
       background: #444;
       border-radius: 24px;
       box-shadow: 0 8px 32px rgba(0,0,0,0.25);
       padding: 2rem 1rem 2.5rem 1rem;
-      max-width: 1100px; /* Make the machine wider */
+      max-width: 1100px;
       margin: 2rem auto;
       position: relative;
       border: 8px solid #ffc107;
+      color: #fff;
     }
     .slot-machine-title {
       color: #ffc107;
@@ -56,191 +55,176 @@
       letter-spacing: 2px;
       text-shadow: 0 2px 8px #000;
     }
-    .slot-reels {
-      display: flex;
-      justify-content: center;
-      align-items: flex-start;
-      gap: 2rem;
-      margin-bottom: 2rem;
-      width: 100%;
-    }
+
+    /* Reels layout */
+    .slot-reels { display: flex; flex-direction: column; gap: 1.5rem; align-items: center; }
+
     .slot-reel {
       background: linear-gradient(180deg, #fff 80%, #eee 100%);
       border-radius: 16px;
       box-shadow: 0 2px 12px rgba(0,0,0,0.15);
       border: 4px solid #ffc107;
-      width: 100%;
+      width: 88%;
+      max-width: 980px;
       min-width: 320px;
-      max-width: 500px;
-      height: 180px;
+      padding: 0.75rem 1rem;
       display: flex;
       flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      font-size: 1.25rem;
+      align-items: stretch;
+      justify-content: center;
+      font-size: 1.15rem;
       font-weight: bold;
       color: #222;
-      text-align: center;
-      overflow: hidden;
+      text-align: left;
+      overflow: visible;
       position: relative;
-      transition: border-color 0.3s, background 0.3s;
       word-break: break-word;
-      padding: 0.5rem 0.5rem 1rem 0.5rem;
-      flex: 1 1 0;
     }
+
+    /* viewport */
     .slot-scroll {
-      flex: 1 1 auto;
       width: 100%;
-      height: 120px;
+      height: calc(1.2em * 2 + 1.2rem); /* viewport for ~2 lines */
+      max-height: calc(1.2em * 2 + 1.2rem);
       overflow: hidden;
       position: relative;
       display: flex;
-      flex-direction: column;
       align-items: center;
       justify-content: center;
     }
+
     .slot-scroll-list {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      width: 100%;
       position: absolute;
       left: 0;
       top: 0;
-      height: 100%;
-      justify-content: center; /* <-- This centers content vertically */
-    }
-    .slot-scroll-item {
       width: 100%;
-      padding: 0.4em 0;
-      border-bottom: 1px solid #ffc107;
-      font-size: 1.15em;
-      background: transparent;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      will-change: transform;
     }
+
+    .slot-scroll-item {
+      box-sizing: border-box;
+      width: 100%;
+      padding: 0.45rem 0.75rem;
+      line-height: 1.2;
+      font-size: 1.05rem;
+      text-align: left;
+      white-space: normal;
+      word-break: break-word;
+      border-bottom: 1px solid #ffc107;
+      background: transparent;
+
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+      overflow: hidden;
+      max-height: calc(1.2em * 2 + 1.2rem);
+    }
+
     .slot-reel.winner {
       border-color: #28a745;
       background: linear-gradient(180deg, #ffe066 80%, #ffc107 100%);
       color: #28a745;
       animation: winnerPop 0.7s;
     }
-    @keyframes winnerPop {
-      0% { transform: scale(1); }
-      50% { transform: scale(1.08); }
-      100% { transform: scale(1); }
-    }
-    .slot-lever {
-      position: absolute;
-      right: -40px;
-      top: 40px;
-      width: 32px;
-      height: 120px;
-      background: #ffc107;
-      border-radius: 16px;
-      box-shadow: 0 2px 8px #000;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      cursor: pointer;
-      z-index: 2;
-      transition: transform 0.2s;
-    }
-    .slot-lever-ball {
-      width: 32px;
-      height: 32px;
-      background: #fff;
+    @keyframes winnerPop { 0%{transform:scale(1)}50%{transform:scale(1.08)}100%{transform:scale(1)} }
+
+    /* Spin button centered style */
+    .spin-center-btn {
+      font-weight: 700;
+      font-size: 1.05rem;
+      padding: 0.7rem 2.2rem;
+      border-radius: 999px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.25);
       border: 4px solid #ffc107;
-      border-radius: 50%;
-      margin-bottom: 4px;
-      box-shadow: 0 2px 8px #000;
-    }
-    .slot-lever:active {
-      transform: translateY(20px);
-    }
-    .slot-spin-btn {
-      display: block;
-      width: 100%;
-      font-size: 1.2rem;
-      font-weight: bold;
-      background: linear-gradient(90deg, #ffc107 60%, #ffe066 100%);
+      background: linear-gradient(180deg, #ffd54a, #ffc107);
       color: #222;
-      border: none;
-      border-radius: 12px;
-      padding: 0.75rem 0;
-      margin-top: 1.5rem;
-      box-shadow: 0 2px 8px #0002;
-      transition: background 0.2s;
+      transition: transform 120ms ease, box-shadow 120ms;
+      -webkit-tap-highlight-color: transparent;
     }
-    .slot-spin-btn:active {
-      background: linear-gradient(90deg, #ffe066 60%, #ffc107 100%);
-    }
-    .slot-result {
+    .spin-center-btn:active { transform: translateY(3px) scale(0.995); box-shadow: 0 3px 10px rgba(0,0,0,0.2); }
+
+    /* Reset button look (same sizing as SPIN) */
+    #slotSpinBtn.reset-btn {
+      font-weight: 700;
+      font-size: 1.05rem;
+      padding: 0.7rem 2.2rem;
+      border-radius: 999px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+      border: 4px solid #c82333;
+      background: linear-gradient(180deg, #ff7b7b, #c82333);
       color: #fff;
-      font-size: 1.1rem;
-      text-align: center;
-      margin-top: 1.5rem;
-      min-height: 2.5em;
+      transition: transform 120ms ease, box-shadow 120ms;
+      -webkit-tap-highlight-color: transparent;
+      display: inline-block;
     }
-    .slot-label {
-      color: #ffc107;
+    #slotSpinBtn.reset-btn[disabled] {
+      background: linear-gradient(180deg,#f0f0f0,#e0e0e0);
+      border-color: #cfcfcf;
+      color: #777;
+      box-shadow: none;
+      cursor: not-allowed;
+      opacity: 0.95;
+    }
+
+    /* Stop / Respin buttons */
+    .stop-btn,
+    .reel-respin {
+      width: 100%;
+      font-weight: 700;
       font-size: 1rem;
-      text-align: center;
-      margin-bottom: 0.5rem;
-      font-weight: 500;
-      letter-spacing: 1px;
+      padding: 0.55rem 0.75rem;
+      border-radius: 10px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+    .stop-btn { border: 4px solid #28a745; background: linear-gradient(180deg, #5cd27a, #28a745); color: #fff; box-shadow: 0 4px 10px rgba(0,0,0,0.12); }
+    .stop-btn[disabled] { background: linear-gradient(180deg,#e9f7ee,#dfecec); border-color: #cfe9d6; color: #6c757d; box-shadow:none; cursor:not-allowed; }
+    .reel-respin { border: 2px solid #6c757d; background:#fff; color:#333; }
+    .reel-respin.d-none { display: none !important; }
+    .reel-respin[disabled] { opacity: 0.6; pointer-events: none; }
+
+    /* small utility for hiding elements */
+    .d-none { display: none !important; }
+
+    /* ensure stopped single-item state is centered */
+    .slot-machine-frame .slot-reel.winner .slot-scroll,
+    .slot-machine-frame .slot-scroll.stopped {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .slot-machine-frame .slot-scroll.stopped .slot-scroll-list { position: relative; transform: translateY(0); }
+
+    /* Responsive tuning */
+    @media (max-width: 1200px) {
+      .slot-machine-frame { max-width: 98vw; padding: 1rem 0.2rem 1.5rem 0.2rem; }
+      .slot-reel { width: 98vw; font-size: 1.05rem; min-width: 0; max-width:none; }
+      .slot-scroll { height: calc(1.15em*2 + 1.1rem); max-height: calc(1.15em*2 + 1.1rem); }
+    }
+    @media (max-width: 900px) {
+      .slot-machine-frame .slot-reel { width: 96%; padding: 0.6rem; }
     }
     @media (max-width: 600px) {
-      .slot-machine-frame {
-        padding: 1rem 0.2rem 1.5rem 0.2rem;
-        max-width: 98vw;
-      }
-      .slot-reel {
-        width: 80px;
-        height: 80px;
-        font-size: 0.95rem;
-        padding: 0.3rem;
-      }
-      .slot-lever {
-        right: -28px;
-        top: 30px;
-        width: 22px;
-        height: 80px;
-      }
-      .slot-lever-ball {
-        width: 22px;
-        height: 22px;
-      }
-      .slot-spin-btn {
-        font-size: 1rem;
-        padding: 0.5rem 0;
-      }
+      :root { --slot-viewport-height: 68px; --slot-reel-bottom-space: 72px; }
+      .slot-machine-frame { max-width: 420px; margin: 12px auto; padding: 12px; }
+      .slot-machine-frame .slot-reel { min-height: calc(var(--slot-viewport-height) + var(--slot-reel-bottom-space)); padding:8px 12px; justify-content:flex-start; }
+      .slot-scroll { height: var(--slot-viewport-height); max-height: var(--slot-viewport-height); }
+      .slot-scroll-item { min-height: var(--slot-viewport-height); max-height: var(--slot-viewport-height); line-height:1.15; font-size:16px; }
     }
-    @media (max-width: 1200px) {
-      .slot-machine-frame {
-        max-width: 98vw;
-        padding: 1rem 0.2rem 1.5rem 0.2rem;
-      }
-      .slot-reel {
-        min-width: 0;
-        max-width: none;
-        width: 98vw;
-        font-size: 1.05rem;
-      }
-      .slot-scroll {
-        height: 80px;
-      }
-      .slot-reels {
-        gap: 1rem;
-      }
-    }
+
+    /* hide legacy lever if present */
+    .slot-lever { display: none !important; }
   </style>
 </head>
 <body>
   <nav class="navbar navbar-light bg-white shadow-sm mb-3">
     <div class="container">
-      <a class="navbar-brand d-flex align-items-center gap-2" href="index.html">
-        🏠 Main Page
-      </a>
+      <a class="navbar-brand d-flex align-items-center gap-2" href="index.html">🏠 Main Page</a>
     </div>
   </nav>
 
@@ -256,400 +240,346 @@
         <div class="card h-100 shadow-sm">
           <div class="card-body">
             <h2 class="card-title mb-2 fs-5">📖 Book Suggestion</h2>
-            <a href="https://docs.google.com/forms/d/e/1FAIpQLSeD3-geAx7_nxHsgw1xWYR_gDncmhAlswwrsX4gIJdgKj9tQw/viewform?usp=dialog"
-               target="_blank">
+            <a href="https://docs.google.com/forms/d/e/1FAIpQLSeD3-geAx7_nxHsgw1xWYR_gDncmhAlswwrsX4gIJdgKj9tQw/viewform?usp=dialog" target="_blank">
               <button class="btn btn-primary w-100 mb-2">Suggest a Book (Google Form)</button>
             </a>
-            <img class="qr"
-                 src="https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=https://docs.google.com/forms/d/e/1FAIpQLSeD3-geAx7_nxHsgw1xWYR_gDncmhAlswwrsX4gIJdgKj9tQw/viewform?usp=dialog"
-                 alt="QR code for suggestion form">
+            <img class="qr" src="https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=https://docs.google.com/forms/d/e/1FAIpQLSeD3-geAx7_nxHsgw1xWYR_gDncmhAlswwrsX4gIJdgKj9tQw/viewform?usp=dialog" alt="QR code for suggestion form">
             <div class="text-muted small">(Scan QR or click to open suggestion form)</div>
           </div>
         </div>
       </div>
+
       <div class="col-12 col-md-6">
         <div class="card h-100 shadow-sm">
           <div class="card-body">
             <h2 class="card-title mb-2 fs-5">📋 View All Submissions</h2>
-            <a href="https://docs.google.com/spreadsheets/d/1VCHJO67_pYjNWEceSRwb4jotF7GO3L8uFaLo3HUJmnk/edit"
-               target="_blank">
+            <a href="https://docs.google.com/spreadsheets/d/1VCHJO67_pYjNWEceSRwb4jotF7GO3L8uFaLo3HUJmnk/edit" target="_blank">
               <button class="btn btn-success w-100 mb-2">Open Submissions Sheet</button>
             </a>
-            <img class="qr"
-                 src="https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=https://docs.google.com/spreadsheets/d/1VCHJO67_pYjNWEceSRwb4jotF7GO3L8uFaLo3HUJmnk/edit"
-                 alt="QR code for submissions sheet">
+            <img class="qr" src="https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=https://docs.google.com/spreadsheets/d/1VCHJO67_pYjNWEceSRwb4jotF7GO3L8uFaLo3HUJmnk/edit" alt="QR code for submissions sheet">
             <div class="text-muted small">(Click or scan to view all book suggestions)</div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Slot Machine Section (replace previous slot machine markup) -->
+    <!-- Slot Machine -->
     <div class="slot-machine-frame">
       <div class="slot-machine-title">BOOK SLOT MACHINE</div>
-      <div class="slot-label">Pull the lever, then stop each reel to pick 3 books!</div>
+
+      <div class="d-flex justify-content-center my-3">
+        <button id="slotSpinBtn" class="btn spin-center-btn">SPIN</button>
+      </div>
+
       <div class="slot-reels">
         <div class="slot-reel" id="slot1">
-          <div class="slot-scroll" id="slotScroll1"></div>
-          <button id="slotStopBtn1" class="btn btn-success mt-2 w-100" disabled>Stop</button>
+          <div class="slot-scroll" id="slotScroll1"><div class="slot-scroll-list"></div></div>
+          <button id="slotStopBtn1" class="btn stop-btn mt-2" disabled>Stop</button>
+          <button class="btn reel-respin mt-2 d-none" data-reel="0" disabled>⟲ Respin</button>
+          <div class="suggested-by text-muted small mt-1 text-center">Suggested by: <span id="suggested1-name"></span></div>
         </div>
+
         <div class="slot-reel" id="slot2">
-          <div class="slot-scroll" id="slotScroll2"></div>
-          <button id="slotStopBtn2" class="btn btn-success mt-2 w-100" disabled>Stop</button>
+          <div class="slot-scroll" id="slotScroll2"><div class="slot-scroll-list"></div></div>
+          <button id="slotStopBtn2" class="btn stop-btn mt-2" disabled>Stop</button>
+          <button class="btn reel-respin mt-2 d-none" data-reel="1" disabled>⟲ Respin</button>
+          <div class="suggested-by text-muted small mt-1 text-center">Suggested by: <span id="suggested2-name"></span></div>
         </div>
+
         <div class="slot-reel" id="slot3">
-          <div class="slot-scroll" id="slotScroll3"></div>
-          <button id="slotStopBtn3" class="btn btn-success mt-2 w-100" disabled>Stop</button>
+          <div class="slot-scroll" id="slotScroll3"><div class="slot-scroll-list"></div></div>
+          <button id="slotStopBtn3" class="btn stop-btn mt-2" disabled>Stop</button>
+          <button class="btn reel-respin mt-2 d-none" data-reel="2" disabled>⟲ Respin</button>
+          <div class="suggested-by text-muted small mt-1 text-center">Suggested by: <span id="suggested3-name"></span></div>
         </div>
       </div>
-      <div class="slot-lever" id="slotLever" title="Pull to Spin!">
-        <div class="slot-lever-ball"></div>
-        <div style="flex:1"></div>
-      </div>
+
       <div id="slotResult" class="slot-result"></div>
       <div id="slotLoading" class="text-muted text-center mt-2 small">Loading book list...</div>
     </div>
-    <style>
-      .slot-reels {
-        display: flex;
-        justify-content: center;
-        align-items: flex-start;
-        gap: 2rem;
-        margin-bottom: 2rem;
-      }
-      .slot-reel {
-        background: linear-gradient(180deg, #fff 80%, #eee 100%);
-        border-radius: 16px;
-        box-shadow: 0 2px 12px rgba(0,0,0,0.15);
-        border: 4px solid #ffc107;
-        width: 100%;
-        min-width: 320px;
-        max-width: 500px;
-        height: 180px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: flex-start;
-        font-size: 1.25rem;
-        font-weight: bold;
-        color: #222;
-        text-align: center;
-        overflow: hidden;
-        position: relative;
-        transition: border-color 0.3s, background 0.3s;
-        word-break: break-word;
-        padding: 0.5rem 0.5rem 1rem 0.5rem;
-      }
-      .slot-scroll {
-        flex: 1 1 auto;
-        width: 100%;
-        height: 120px;
-        overflow: hidden;
-        position: relative;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-      }
-      .slot-scroll-list {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        width: 100%;
-        position: absolute;
-        left: 0;
-        top: 0;
-        height: 100%;
-        justify-content: center; /* <-- This centers content vertically */
-      }
-      .slot-scroll-item {
-        width: 100%;
-        padding: 0.4em 0;
-        border-bottom: 1px solid #ffc107;
-        font-size: 1.15em;
-        background: transparent;
-      }
-      .slot-reel.winner {
-        border-color: #28a745;
-        background: linear-gradient(180deg, #ffe066 80%, #ffc107 100%);
-        color: #28a745;
-        animation: winnerPop 0.7s;
-      }
-      @keyframes winnerPop {
-        0% { transform: scale(1); }
-        50% { transform: scale(1.08); }
-        100% { transform: scale(1); }
-      }
-      @media (max-width: 900px) {
-        .slot-reels {
-          gap: 1rem;
-        }
-        .slot-reel {
-          width: 98vw;
-          min-width: 0;
-          max-width: none;
-          height: 140px;
-          font-size: 1.05rem;
-        }
-        .slot-scroll {
-          height: 80px;
-        }
-      }
-    </style>
-    <script>
-      let slotBooks = [];
-      let slotNames = [];
-      const slotScrolls = [
-        document.getElementById('slotScroll1'),
-        document.getElementById('slotScroll2'),
-        document.getElementById('slotScroll3')
-      ];
-      const slotReels = [
-        document.getElementById('slot1'),
-        document.getElementById('slot2'),
-        document.getElementById('slot3')
-      ];
-      const slotStopBtns = [
-        document.getElementById('slotStopBtn1'),
-        document.getElementById('slotStopBtn2'),
-        document.getElementById('slotStopBtn3')
-      ];
-      const slotLever = document.getElementById('slotLever');
-      const slotResultDiv = document.getElementById('slotResult');
-      const slotLoadingDiv = document.getElementById('slotLoading');
 
-      let spinning = [false, false, false];
-      let intervals = [null, null, null];
-      let chosenIdxs = [null, null, null];
-      let offsets = [0, 0, 0];
+  </div>
 
-      function renderScrollList(reelIdx, offset = 0, stopped = false) {
-        const books = slotBooks;
-        const scroll = slotScrolls[reelIdx];
-        scroll.innerHTML = '';
-        const list = document.createElement('div');
-        list.className = 'slot-scroll-list';
+  <!-- Consolidated script (keeps dev reset and robust CSV parsing + respin) -->
+  <script>
+    // Dev-only: clear slot state when previewing locally (Five Server) or when ?resetSlot=1
+    (function() {
+      const host = location.hostname || '';
+      const isLocal = host === 'localhost' || host === '127.0.0.1' || host === '::1' || host === '0.0.0.0' || host.startsWith('192.168.');
+      const forceReset = location.search.includes('resetSlot=1') || location.search.includes('resetState=1');
+      if (isLocal || forceReset) {
+        try {
+          console.info('Dev preview detected — clearing slotMachineState/local winners for fresh testing.');
+          localStorage.removeItem('slotMachineState');
+          localStorage.removeItem('winners');
+          localStorage.removeItem('pollChoices');
+        } catch (e) {}
+        window.addEventListener('load', () => { if (typeof resetMachine === 'function') resetMachine(); });
+      }
+    })();
 
-        if (stopped) {
-          // Only show the chosen book in the center
-          const item = document.createElement('div');
-          item.className = 'slot-scroll-item';
-          item.style.borderBottom = 'none';
-          item.textContent = books[offset];
-          list.appendChild(item);
+    const STORAGE_KEY = 'slotMachineState';
+    let slotBooks = [], slotNames = [];
+    const slotScrolls = [document.getElementById('slotScroll1'), document.getElementById('slotScroll2'), document.getElementById('slotScroll3')];
+    const slotReels = [document.getElementById('slot1'), document.getElementById('slot2'), document.getElementById('slot3')];
+    const slotStopBtns = [document.getElementById('slotStopBtn1'), document.getElementById('slotStopBtn2'), document.getElementById('slotStopBtn3')];
+    const slotRespinBtns = Array.from(document.querySelectorAll('.reel-respin'));
+    const slotSpinBtn = document.getElementById('slotSpinBtn');
+    const slotResultDiv = document.getElementById('slotResult');
+    const slotLoadingDiv = document.getElementById('slotLoading');
+
+    if (slotSpinBtn) slotSpinBtn.disabled = true;
+
+    let spinning = [false,false,false];
+    let intervals = [null,null,null];
+    let chosenIdxs = [null,null,null];
+    let offsets = [0,0,0];
+    let chosenSet = new Set();
+    let localStateSpun = false;
+
+    function saveState(){ localStorage.setItem(STORAGE_KEY, JSON.stringify({spun:!!localStateSpun, chosenIdxs})); }
+    function loadState(){ try { return JSON.parse(localStorage.getItem(STORAGE_KEY)); } catch { return null; } }
+
+    function getAvailableIndices(){ const a=[]; for(let i=0;i<slotBooks.length;i++) if(!chosenSet.has(i)) a.push(i); return a; }
+
+    function renderScrollList(reelIdx, offset=0, stopped=false){
+      const scroll = slotScrolls[reelIdx]; if(!scroll) return;
+      scroll.innerHTML=''; const list=document.createElement('div'); list.className='slot-scroll-list';
+      if(stopped){
+        const item=document.createElement('div'); item.className='slot-scroll-item'; item.style.borderBottom='none'; item.textContent=slotBooks[offset]||''; list.appendChild(item);
+      } else {
+        const available = getAvailableIndices();
+        if(!available || available.length===0){
+          const item=document.createElement('div'); item.className='slot-scroll-item'; item.textContent='—'; list.appendChild(item);
         } else {
-          // Show 5 books for scrolling effect, center is the 3rd
-          for (let i = 0; i < 5; i++) {
-            let idx = (offset + i) % books.length;
-            const item = document.createElement('div');
-            item.className = 'slot-scroll-item';
-            item.textContent = books[idx];
-            list.appendChild(item);
+          for(let i=0;i<5;i++){
+            const idxInAvailable = (offset + i) % available.length;
+            const originalIdx = available[idxInAvailable];
+            const item=document.createElement('div'); item.className='slot-scroll-item'; item.textContent=slotBooks[originalIdx]||''; list.appendChild(item);
           }
         }
-        scroll.appendChild(list);
       }
+      scroll.appendChild(list);
+    }
 
-      function startSpin() {
-        if (slotBooks.length < 3) return;
-        slotResultDiv.textContent = '';
-        chosenIdxs = [null, null, null];
-        offsets = [
-          Math.floor(Math.random() * slotBooks.length),
-          Math.floor(Math.random() * slotBooks.length),
-          Math.floor(Math.random() * slotBooks.length)
-        ];
-        slotReels.forEach((reel, i) => {
-          reel.classList.remove('winner');
-          renderScrollList(i, offsets[i]);
-        });
-        slotStopBtns.forEach(btn => btn.disabled = false);
-        spinning = [true, true, true];
-        slotLever.style.pointerEvents = "none";
+    function renderIdle(reelIdx){
+      const scroll = slotScrolls[reelIdx]; if(!scroll) return;
+      scroll.innerHTML=''; const list=document.createElement('div'); list.className='slot-scroll-list';
+      const item=document.createElement('div'); item.className='slot-scroll-item'; item.style.borderBottom='none'; item.style.textAlign='center'; item.style.color='#666'; item.textContent='Waiting for spin...'; list.appendChild(item); scroll.appendChild(list);
+    }
 
-        intervals[0] = startReelScroll(0);
-        intervals[1] = startReelScroll(1);
-        intervals[2] = startReelScroll(2);
+    function updateResetState(){
+      if(!slotSpinBtn) return;
+      const anyChosen = chosenIdxs.some(v=>v!==null && v!==undefined);
+      if(!localStateSpun || !anyChosen){
+        slotSpinBtn.textContent='SPIN'; slotSpinBtn.classList.remove('reset-btn'); slotSpinBtn.classList.add('spin-center-btn');
+        slotSpinBtn.disabled = slotBooks.length < 3; slotSpinBtn.style.pointerEvents = slotSpinBtn.disabled ? 'none' : 'auto';
+        return;
       }
+      const allStopped = slotStopBtns.every(b => b && b.disabled);
+      slotSpinBtn.textContent='Reset'; slotSpinBtn.classList.remove('spin-center-btn'); slotSpinBtn.classList.add('reset-btn');
+      slotSpinBtn.disabled = !allStopped; slotSpinBtn.style.pointerEvents = slotSpinBtn.disabled ? 'none' : 'auto';
+    }
 
-      function startReelScroll(reelIdx) {
-        return setInterval(() => {
-          offsets[reelIdx] = (offsets[reelIdx] + 1) % slotBooks.length;
-          renderScrollList(reelIdx, offsets[reelIdx]);
-        }, 180); // Slow speed for slot effect
-      }
+    function startReelScroll(reelIdx){
+      if(intervals[reelIdx]) clearInterval(intervals[reelIdx]);
+      return setInterval(()=>{ const available=getAvailableIndices(); if(!available||available.length===0){ renderIdle(reelIdx); return; } offsets[reelIdx] = Number.isFinite(offsets[reelIdx]) ? Math.floor(offsets[reelIdx]) : 0; offsets[reelIdx] = ((offsets[reelIdx]+1)%available.length+available.length)%available.length; renderScrollList(reelIdx, offsets[reelIdx]); }, 180);
+    }
 
-      function stopReel(reelIdx) {
-        if (!spinning[reelIdx]) return;
-        clearInterval(intervals[reelIdx]);
-        // Pick the book in the center (3rd item)
-        let offset = offsets[reelIdx];
-        let chosenIdx = (offset + 2) % slotBooks.length;
-        chosenIdxs[reelIdx] = chosenIdx;
+    function startSpin(){
+      if(slotBooks.length < 3) return;
+      slotResultDiv.textContent=''; chosenIdxs=[null,null,null]; chosenSet.clear();
+      for(let i=1;i<=3;i++){ const el=document.getElementById(`suggested${i}-name`); if(el) el.textContent=''; }
+      const available = getAvailableIndices();
+      for(let i=0;i<3;i++) offsets[i] = Math.floor(Math.random() * Math.max(1, available.length));
+      slotReels.forEach((r,i)=>{ r.classList.remove('winner'); renderScrollList(i,offsets[i]); });
+      slotStopBtns.forEach(btn=>{ btn.classList.remove('d-none'); btn.disabled=false; btn.removeAttribute('disabled'); btn.classList.remove('disabled'); btn.style.pointerEvents='auto'; btn.tabIndex=0; });
+      slotRespinBtns.forEach(b=>{ b.classList.add('d-none'); b.disabled=true; });
+      spinning=[true,true,true];
+      if(slotSpinBtn){ slotSpinBtn.style.pointerEvents='none'; slotSpinBtn.disabled=true; }
+      localStateSpun=true; saveState(); updateResetState();
+      intervals[0]=startReelScroll(0); intervals[1]=startReelScroll(1); intervals[2]=startReelScroll(2);
+    }
+
+    function stopReel(reelIdx){
+      if(!spinning[reelIdx]) return;
+      if(intervals[reelIdx]){ clearInterval(intervals[reelIdx]); intervals[reelIdx] = null; }
+      const available = getAvailableIndices();
+      if(!available || available.length===0){
         spinning[reelIdx] = false;
-        slotReels[reelIdx].classList.add('winner');
-        slotStopBtns[reelIdx].disabled = true;
-        // Show only the chosen book in the box
-        renderScrollList(reelIdx, chosenIdx, true);
+        const btn = slotStopBtns[reelIdx]; if(btn){ btn.classList.add('d-none'); btn.disabled=true; btn.setAttribute('disabled',''); btn.classList.add('disabled'); btn.style.pointerEvents='none'; btn.tabIndex=-1; }
+        renderIdle(reelIdx); updateResetState(); saveState(); return;
+      }
+      let curOffset = Number.isFinite(offsets[reelIdx]) ? Math.floor(offsets[reelIdx]) : 0;
+      curOffset = ((curOffset % available.length) + available.length) % available.length;
+      let idxInAvailable = ((curOffset + 2) % available.length + available.length) % available.length;
+      let chosenOriginal = available[idxInAvailable];
+      if(chosenOriginal === undefined) chosenOriginal = available[Math.floor(Math.random()*available.length)];
+      chosenIdxs[reelIdx] = chosenOriginal;
+      const suggestedEl = document.getElementById(`suggested${reelIdx+1}-name`); if(suggestedEl) suggestedEl.textContent = slotNames[chosenOriginal] || '';
+      chosenSet.add(chosenOriginal);
+      spinning[reelIdx] = false;
+      slotReels[reelIdx].classList.add('winner');
+      const btn = slotStopBtns[reelIdx]; if(btn){ btn.classList.add('d-none'); btn.disabled=true; btn.setAttribute('disabled',''); btn.classList.add('disabled'); btn.style.pointerEvents='none'; btn.tabIndex=-1; }
+      renderScrollList(reelIdx, chosenOriginal, true);
 
-        // If all stopped, show result
-        if (spinning.every(s => !s)) {
-          slotLever.style.pointerEvents = "auto";
-          // Ensure all chosen books are unique
-          let uniqueIdxs = [...new Set(chosenIdxs)];
-          if (uniqueIdxs.length < 3) {
-            slotResultDiv.innerHTML = `<span class="text-danger">Duplicate books chosen! Please spin again.</span>`;
-          } else {
-            slotResultDiv.innerHTML =
-              `<strong>Winners:</strong><br>` +
-              uniqueIdxs.map(i =>
-                `${slotBooks[i]} <span class="text-muted">(suggested by ${slotNames[i]})</span>`
-              ).join('<br>');
-          }
+      const resp = document.querySelector(`.reel-respin[data-reel="${reelIdx}"]`);
+      if(resp){ resp.classList.remove('d-none'); resp.disabled = false; }
+
+      for(let j=0;j<3;j++){
+        if(j===reelIdx) continue;
+        if(spinning[j]){
+          const avail = getAvailableIndices();
+          if(!avail || avail.length===0){ renderIdle(j); offsets[j]=0; } else { offsets[j] = ((Number.isFinite(offsets[j])?Math.floor(offsets[j]):0) % avail.length + avail.length) % avail.length; renderScrollList(j, offsets[j]); }
         }
       }
 
-      slotLever.addEventListener('click', function() {
-        slotLever.style.transform = 'translateY(20px)';
-        setTimeout(() => {
-          slotLever.style.transform = '';
-          startSpin();
-        }, 180);
-      });
-      slotStopBtns.forEach((btn, i) => btn.addEventListener('click', () => stopReel(i)));
+      saveState();
+      if(spinning.every(s=>!s)){ if(slotSpinBtn){ slotSpinBtn.style.pointerEvents='auto'; slotSpinBtn.disabled=false; } slotResultDiv.innerHTML=''; saveState(); }
+      updateResetState();
+    }
 
-      // Load books from CSV
-      fetch("https://docs.google.com/spreadsheets/d/e/2PACX-1vSLdPdPu4pwIwsAjADiCQOXYUJ8ACgWXaJn0DUVgNEy8ZZfc06EUGz2G9imE4gQ9FRs_zoDamhYTHhQ/pub?output=csv")
-        .then(r => r.text())
-        .then(csv => {
-          const rows = csv.split('\n').slice(1);
-          slotBooks = [];
-          slotNames = [];
-          rows.forEach(row => {
-            const cols = row.split(',');
-            const book = cols[1]?.trim();
-            const name = cols[2]?.trim();
-            if (book) {
-              slotBooks.push(book);
-              slotNames.push(name);
+    function resetMachine(){
+      localStateSpun=false; chosenIdxs=[null,null,null]; offsets=[0,0,0]; spinning=[false,false,false];
+      intervals.forEach(i=>{ if(i) clearInterval(i); }); intervals=[null,null,null];
+      chosenSet.clear();
+      for(let i=1;i<=3;i++){ const el=document.getElementById(`suggested${i}-name`); if(el) el.textContent=''; }
+      slotResultDiv.textContent=''; localStorage.removeItem(STORAGE_KEY);
+      slotReels.forEach((r,i)=>{ r.classList.remove('winner'); renderIdle(i); });
+      slotStopBtns.forEach(btn=>{ if(btn){ btn.classList.remove('d-none'); btn.disabled=true; btn.setAttribute('disabled',''); btn.classList.add('disabled'); btn.style.pointerEvents='none'; btn.tabIndex=-1; } });
+      slotRespinBtns.forEach(b=>{ b.classList.add('d-none'); b.disabled = true; });
+      if(slotSpinBtn){ slotSpinBtn.disabled=false; slotSpinBtn.style.pointerEvents='auto'; }
+      updateResetState();
+    }
+
+    if(slotSpinBtn){
+      slotSpinBtn.addEventListener('click', function(){
+        if(localStateSpun){ if(!slotSpinBtn.disabled) resetMachine(); } else { slotSpinBtn.style.transform='translateY(3px)'; setTimeout(()=>{ slotSpinBtn.style.transform=''; startSpin(); },120); }
+      });
+    }
+
+    slotStopBtns.forEach((btn,i)=>{ if(btn) btn.addEventListener('click', ()=> stopReel(i)); });
+
+    // Re-spin single reel (replace Stop with Respin after stop)
+    function respinReel(reelIdx){
+      if(spinning[reelIdx] || slotBooks.length < 3) return;
+      if(chosenIdxs[reelIdx] != null){ chosenSet.delete(chosenIdxs[reelIdx]); chosenIdxs[reelIdx] = null; }
+      const sEl = document.getElementById(`suggested${reelIdx+1}-name`); if(sEl) sEl.textContent='';
+      slotReels[reelIdx].classList.remove('winner');
+
+      const respBtn = document.querySelector(`.reel-respin[data-reel="${reelIdx}"]`);
+      if(respBtn){ respBtn.classList.add('d-none'); respBtn.disabled = true; }
+
+      const available = getAvailableIndices();
+      offsets[reelIdx] = Math.floor(Math.random() * Math.max(1, available.length));
+      spinning[reelIdx] = true;
+
+      const stop = slotStopBtns[reelIdx];
+      if(stop){ stop.classList.remove('d-none'); stop.disabled=false; stop.removeAttribute('disabled'); stop.classList.remove('disabled'); stop.style.pointerEvents='auto'; stop.tabIndex=0; }
+
+      if(intervals[reelIdx]){ clearInterval(intervals[reelIdx]); intervals[reelIdx] = null; }
+      intervals[reelIdx] = startReelScroll(reelIdx);
+
+      for(let j=0;j<3;j++){
+        if(j===reelIdx) continue;
+        if(spinning[j]){
+          const avail = getAvailableIndices();
+          if(!avail || avail.length===0){ renderIdle(j); offsets[j]=0; } else { offsets[j] = ((Number.isFinite(offsets[j])?Math.floor(offsets[j]):0) % avail.length + avail.length) % avail.length; renderScrollList(j, offsets[j]); }
+        }
+      }
+
+      localStateSpun = true; saveState(); updateResetState();
+    }
+
+    slotRespinBtns.forEach(btn => {
+      const idx = Number(btn.getAttribute('data-reel'));
+      btn.addEventListener('click', () => respinReel(idx));
+    });
+
+    // CSV parse (handles quoted fields)
+    function parseCSV(text){
+      const lines = text.split(/\r?\n/);
+      const out = [];
+      for(let line of lines){
+        const cols=[]; let cur=''; let inQuotes=false;
+        for(let i=0;i<line.length;i++){
+          const ch=line[i];
+          if(ch==='"'){
+            if(inQuotes && line[i+1]==='"'){ cur+='"'; i++; }
+            else inQuotes=!inQuotes;
+          } else if(ch===',' && !inQuotes){ cols.push(cur); cur=''; }
+          else cur+=ch;
+        }
+        cols.push(cur); out.push(cols);
+      }
+      return out;
+    }
+
+    // Load books and restore state
+    fetch("https://docs.google.com/spreadsheets/d/e/2PACX-1vSLdPdPu4pwIwsAjADiCQOXYUJ8ACgWXaJn0DUVgNEy8ZZfc06EUGz2G9imE4gQ9FRs_zoDamhYTHhQ/pub?output=csv")
+      .then(r=>r.text()).then(csv=>{
+        const parsed = parseCSV(csv);
+        const data = parsed.length>0 ? parsed.slice(1) : [];
+        slotBooks = []; slotNames = [];
+        data.forEach(cols => {
+          const book = (cols[1] || '').trim();
+          const name = (cols[2] || '').trim();
+          if(book){ slotBooks.push(book); slotNames.push(name); }
+        });
+        slotLoadingDiv.style.display='none';
+        for(let i=1;i<=3;i++){ const el=document.getElementById(`suggested${i}-name`); if(el) el.textContent=''; }
+
+        const saved = loadState();
+        if(saved && Array.isArray(saved.chosenIdxs)){
+          chosenIdxs = saved.chosenIdxs.slice(0,3).map(v=> (v===null||typeof v==='number')?v:null );
+          chosenSet = new Set(chosenIdxs.filter(n=>n!==null));
+          const anyChosen = chosenIdxs.some(v=>v!==null);
+          if(saved.spun && (anyChosen || !chosenIdxs.every(v=>v===null))) localStateSpun = true; else localStateSpun = false;
+        }
+
+        if(slotBooks.length < 3){
+          slotReels.forEach((r,i)=>{ r.classList.remove('winner'); slotScrolls[i].innerHTML=`<div class="slot-scroll-list"><div class="slot-scroll-item">No books!</div></div>`; });
+          slotStopBtns.forEach(b=>b.disabled=true); if(slotSpinBtn) slotSpinBtn.disabled=true;
+        } else {
+          slotReels.forEach((r,i)=>{
+            r.classList.remove('winner');
+            if(chosenIdxs[i] != null && typeof chosenIdxs[i] === 'number' && slotBooks[chosenIdxs[i]]){
+              renderScrollList(i, chosenIdxs[i], true);
+              const suggestedEl = document.getElementById(`suggested${i+1}-name`); if(suggestedEl) suggestedEl.textContent = slotNames[chosenIdxs[i]] || '';
+              r.classList.add('winner');
+              const btn = slotStopBtns[i]; if(btn){ btn.classList.add('d-none'); btn.disabled=true; btn.setAttribute('disabled',''); btn.classList.add('disabled'); btn.style.pointerEvents='none'; btn.tabIndex=-1; }
+              const resp = document.querySelector(`.reel-respin[data-reel="${i}"]`); if(resp){ resp.classList.remove('d-none'); resp.disabled=false; }
+            } else {
+              if(localStateSpun){
+                const available = getAvailableIndices();
+                offsets[i] = Math.floor(Math.random() * Math.max(1, available.length));
+                renderScrollList(i, offsets[i]);
+                slotStopBtns[i].classList.remove('d-none'); slotStopBtns[i].disabled=false; slotStopBtns[i].removeAttribute('disabled'); slotStopBtns[i].classList.remove('disabled'); slotStopBtns[i].style.pointerEvents='auto'; slotStopBtns[i].tabIndex=0;
+                spinning[i]=true; if(!intervals[i]) intervals[i]=startReelScroll(i);
+              } else {
+                renderIdle(i);
+                slotStopBtns[i].classList.remove('d-none'); slotStopBtns[i].disabled=true;
+                const resp = document.querySelector(`.reel-respin[data-reel="${i}"]`); if(resp){ resp.classList.add('d-none'); resp.disabled=true; }
+              }
             }
           });
-          slotLoadingDiv.style.display = 'none';
-          if (slotBooks.length < 3) {
-            slotReels.forEach((reel, i) => {
-              reel.classList.remove('winner');
-              slotScrolls[i].innerHTML = `<div class="slot-scroll-list"><div class="slot-scroll-item">No books!</div></div>`;
-            });
-            slotStopBtns.forEach(btn => btn.disabled = true);
-            slotLever.style.pointerEvents = "none";
-          } else {
-            slotReels.forEach((reel, i) => {
-              reel.classList.remove('winner');
-              renderScrollList(i, 0);
-            });
-            slotStopBtns.forEach(btn => btn.disabled = true);
-            slotLever.style.pointerEvents = "auto";
-          }
-        })
-        .catch(() => {
-          slotLoadingDiv.textContent = "Failed to load book list.";
-          slotReels.forEach((reel, i) => {
-            reel.classList.remove('winner');
-            slotScrolls[i].innerHTML = `<div class="slot-scroll-list"><div class="slot-scroll-item">Error</div></div>`;
-          });
-          slotStopBtns.forEach(btn => btn.disabled = true);
-          slotLever.style.pointerEvents = "none";
-        });
-    </script>
+          updateResetState();
+        }
+      }).catch(()=>{ slotLoadingDiv.textContent="Failed to load book list."; slotReels.forEach((r,i)=>{ r.classList.remove('winner'); slotScrolls[i].innerHTML=`<div class="slot-scroll-list"><div class="slot-scroll-item">Error</div></div>`; }); slotStopBtns.forEach(b=>b.disabled=true); if(slotSpinBtn) slotSpinBtn.disabled=true; });
 
-    <div class="card shadow-sm mb-4">
-      <div class="card-body">
-        <h2 class="card-title mb-2 fs-5">🏆 Winners</h2>
-        <div id="winners-container" class="mt-3"></div>
-        <button id="eraseBtn" class="btn btn-danger mt-2">Erase All Choices</button>
-      </div>
-    </div>
+  </script>
 
-    <div class="card shadow-sm mb-4">
-      <div class="card-body">
-        <h2 class="card-title mb-2 fs-5">📚 Voting Poll</h2>
-        <p class="text-muted small mb-2">Once the three books are chosen, share this link with other members to vote:</p>
-        <a href="voting_poll.html" target="_blank">
-          <button class="btn btn-info w-100 mb-2">Go to Voting Poll</button>
-        </a>
-        <img class="qr"
-             src="https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=voting_poll.html"
-             alt="QR code for voting poll">
-        <div class="text-muted small">(Click or scan to open the voting poll)</div>
-      </div>
+  <div class="card shadow-sm mb-4">
+    <div class="card-body">
+      <h2 class="card-title mb-2 fs-5">📚 Voting Poll</h2>
+      <p class="text-muted small mb-2">Once the three books are chosen, share this link with other members to vote:</p>
+      <a href="voting_poll.html" target="_blank"><span class="btn btn-info w-100 mb-2" role="button">Go to Voting Poll</span></a>
+      <img class="qr" src="https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=voting_poll.html" alt="QR code for voting poll">
+      <div class="text-muted small">(Click or scan to open the voting poll)</div>
     </div>
   </div>
 
-  <!-- Bootstrap JS (optional, for dropdowns/modals) -->
+  <!-- Bootstrap JS -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-  <script>
-    // Winners logic
-    const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSLdPdPu4pwIwsAjADiCQOXYUJ8ACgWXaJn0DUVgNEy8ZZfc06EUGz2G9imE4gQ9FRs_zoDamhYTHhQ/pub?output=csv";
-    let books = [];
-    let names = [];
-    let winners = JSON.parse(localStorage.getItem("winners")) || [];
-    const winnersContainer = document.getElementById("winners-container");
-    const eraseBtn = document.getElementById("eraseBtn");
-
-    function displayWinner(winner) {
-      const winnerDiv = document.createElement("div");
-      winnerDiv.className = "winner-item";
-      winnerDiv.innerHTML = `
-        <span><strong>${winner.book}</strong> <span class="text-muted">(suggested by ${winner.name})</span></span>
-        <button onclick="deleteWinner('${winner.book}')" class="btn btn-sm btn-outline-danger">Delete</button>
-      `;
-      winnersContainer.appendChild(winnerDiv);
-    }
-
-    function deleteWinner(book) {
-      winners = winners.filter(winner => winner.book !== book);
-      localStorage.setItem("winners", JSON.stringify(winners));
-      localStorage.setItem("pollChoices", JSON.stringify(winners));
-      winnersContainer.innerHTML = "";
-      loadWinners();
-    }
-
-    function loadWinners() {
-      winnersContainer.innerHTML = "";
-      winners.forEach(winner => displayWinner(winner));
-    }
-
-    function eraseChoices() {
-      winners = [];
-      localStorage.removeItem("winners");
-      localStorage.removeItem("pollChoices");
-      winnersContainer.innerHTML = "";
-    }
-
-    eraseBtn.addEventListener('click', eraseChoices);
-
-    fetch(SHEET_CSV_URL)
-      .then(r => r.text())
-      .then(csv => {
-        const rows = csv.split('\n').slice(1);
-        books = [];
-        names = [];
-        rows.forEach(row => {
-          const cols = row.split(',');
-          const book = cols[1]?.trim();
-          const name = cols[2]?.trim();
-          if (book) {
-            books.push(book);
-            names.push(name);
-          }
-        });
-        winners = winners.filter(winner => books.includes(winner.book));
-        localStorage.setItem("winners", JSON.stringify(winners));
-        loadWinners();
-      })
-      .catch(() => {
-        winnersContainer.innerHTML = "Failed to load winners.";
-      });
-  </script>
 </body>
 </html>
