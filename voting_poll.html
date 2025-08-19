@@ -55,6 +55,199 @@
   </div>
 
   <script>
+  (function(){
+    const POLL_CHOICES_KEY = 'pollChoices';
+    const VOTES_KEY = 'votes';
+
+    const pollOptionsEl = document.getElementById('poll-options');
+    const nameInput = document.getElementById('nameInput');
+    const submitNameBtn = document.getElementById('submitNameBtn');
+    const editNameBtn = document.getElementById('editNameBtn');
+
+    if(!pollOptionsEl) return; // nothing to do
+
+    // helpers
+    function safeParse(key){ try{ return JSON.parse(localStorage.getItem(key)); }catch(e){ return null; } }
+    function saveVotes(){ localStorage.setItem(VOTES_KEY, JSON.stringify(votes)); }
+    function persistPollChoices(){ localStorage.setItem(POLL_CHOICES_KEY, JSON.stringify(pollChoices)); }
+    function escapeHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+    // state
+    let pollChoices = safeParse(POLL_CHOICES_KEY) || [];
+    let votes = safeParse(VOTES_KEY) || {};
+    let voterName = sessionStorage.getItem('voterName') || '';
+
+    // If no pollChoices, try to seed from the winners DOM (non-invasive)
+    function seedFromWinnersDomIfEmpty(){
+      if(pollChoices && pollChoices.length) return;
+      const winnersContainer = document.getElementById('winners-container');
+      if(!winnersContainer) return;
+      const rows = Array.from(winnersContainer.children).filter(n => n.textContent.trim().length);
+      if(!rows.length) return;
+      const choices = rows.map(r=>{
+        const strong = r.querySelector('strong');
+        const title = strong ? strong.textContent.replace(/^\s*\d+\.\s*/, '').trim() : r.textContent.trim();
+        const suggMatch = r.textContent.match(/Suggested by:\s*([^\n\r]+)/);
+        const sugg = suggMatch ? suggMatch[1].trim() : '';
+        return { book: title || '(Unknown)', name: sugg || '' };
+      }).filter(c => c.book && c.book !== '(Unknown)');
+      if(choices.length){
+        pollChoices = choices;
+        persistPollChoices();
+      }
+    }
+
+    // Render function (exposed)
+    window.renderPollOptions = function renderPollOptions(){
+      pollOptionsEl.innerHTML = '';
+      if(!pollChoices || pollChoices.length === 0){
+        pollOptionsEl.innerHTML = '<div class="muted">No poll choices available.</div>';
+        return;
+      }
+      pollChoices.forEach((choice, idx) => {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'poll-item';
+        wrapper.style.display = 'flex';
+        wrapper.style.gap = '12px';
+        wrapper.style.alignItems = 'flex-start';
+        wrapper.style.padding = '8px';
+
+        const voteContainer = document.createElement('div');
+        voteContainer.className = 'vote-container';
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.id = 'choice-' + idx;
+        checkbox.dataset.idx = idx;
+        checkbox.dataset.book = choice.book;
+        checkbox.disabled = !voterName;
+        checkbox.checked = voterName && Array.isArray(votes[choice.book]) && votes[choice.book].includes(voterName);
+        voteContainer.appendChild(checkbox);
+
+        const content = document.createElement('div');
+        content.className = 'poll-content';
+        content.innerHTML = '<div style="font-weight:700">' + escapeHtml(choice.book) + '</div>'
+                          + '<div class="suggested-by" style="font-style:italic;color:#555;margin-top:4px;">Suggested by: ' + escapeHtml(choice.name || '—') + '</div>'
+                          + '<div class="voters small" id="voters-' + idx + '" style="margin-top:6px;color:#444;font-size:0.9rem;">Voted by: ' + (Array.isArray(votes[choice.book]) && votes[choice.book].length ? votes[choice.book].join(', ') : 'No votes yet') + '</div>';
+
+        wrapper.appendChild(voteContainer);
+        wrapper.appendChild(content);
+        pollOptionsEl.appendChild(wrapper);
+
+        checkbox.addEventListener('change', () => toggleVoteByIndex(idx, checkbox.checked));
+      });
+    };
+
+    function updateVotersUIForIndex(idx){
+      const el = document.getElementById('voters-'+idx);
+      if(!el) return;
+      const choice = pollChoices[idx];
+      el.textContent = 'Voted by: ' + (Array.isArray(votes[choice.book]) && votes[choice.book].length ? votes[choice.book].join(', ') : 'No votes yet');
+    }
+    function updateAllVotersUI(){ pollChoices.forEach((_,i)=> updateVotersUIForIndex(i)); }
+
+    function toggleVoteByIndex(idx, checked){
+      if(!voterName){
+        alert('Please submit your name before voting.');
+        const cb = document.getElementById('choice-'+idx);
+        if(cb) cb.checked = !checked;
+        return;
+      }
+      const choice = pollChoices[idx];
+      if(!choice) return;
+      const book = choice.book;
+      if(!votes[book]) votes[book] = [];
+      if(checked){
+        if(!votes[book].includes(voterName)) votes[book].push(voterName);
+      } else {
+        votes[book] = votes[book].filter(n => n !== voterName);
+      }
+      saveVotes();
+      updateVotersUIForIndex(idx);
+    }
+
+    function submitName(){
+      const name = (nameInput && nameInput.value || '').trim();
+      if(!name){ alert('Please enter your name'); return; }
+      voterName = name;
+      sessionStorage.setItem('voterName', voterName);
+      if(nameInput) nameInput.disabled = true;
+      if(submitNameBtn) submitNameBtn.style.display = 'none';
+      if(editNameBtn) editNameBtn.style.display = 'inline-block';
+      document.querySelectorAll('#poll-options input[type="checkbox"]').forEach(cb=>{
+        cb.disabled = false;
+        const idx = Number(cb.dataset.idx);
+        const choice = pollChoices[idx];
+        cb.checked = !!(choice && Array.isArray(votes[choice.book]) && votes[choice.book].includes(voterName));
+      });
+    }
+
+    function editName(){
+      voterName = '';
+      sessionStorage.removeItem('voterName');
+      if(nameInput) { nameInput.disabled = false; }
+      if(submitNameBtn) submitNameBtn.style.display = 'inline-block';
+      if(editNameBtn) editNameBtn.style.display = 'none';
+      document.querySelectorAll('#poll-options input[type="checkbox"]').forEach(cb=>{ cb.disabled = true; cb.checked = false; });
+    }
+
+    // storage sync
+    window.addEventListener('storage', (e) => {
+      if(e.key === VOTES_KEY){
+        votes = safeParse(VOTES_KEY) || {};
+        updateAllVotersUI();
+      }
+      if(e.key === POLL_CHOICES_KEY){
+        pollChoices = safeParse(POLL_CHOICES_KEY) || [];
+        renderPollOptions();
+      }
+    });
+
+    // expose submit/edit if not already present
+    if(!window.submitName) window.submitName = submitName;
+    if(!window.editName) window.editName = editName;
+
+    // init
+    (function init(){
+      // seed from winners DOM if pollChoices empty (non-invasive)
+      seedFromWinnersDomIfEmpty();
+      votes = safeParse(VOTES_KEY) || {};
+      // render poll options
+      renderPollOptions();
+      updateAllVotersUI();
+
+      // restore name if present
+      const saved = sessionStorage.getItem('voterName');
+      if(saved){
+        if(nameInput) nameInput.value = saved;
+        submitName();
+      }
+
+      // wire buttons if present
+      if(submitNameBtn) submitNameBtn.addEventListener('click', submitName);
+      if(editNameBtn) editNameBtn.addEventListener('click', editName);
+    })();
+
+    // NEW: watch winners container for async rendering and seed pollChoices when it appears
+    (function watchWinnersAndSeed(){
+      const winnersDom = document.getElementById('winners-container');
+      if(!winnersDom) return;
+      const mo = new MutationObserver((mutations, obs) => {
+        // don't overwrite existing pollChoices
+        if (Array.isArray(pollChoices) && pollChoices.length) { obs.disconnect(); return; }
+        if (winnersDom.children.length) {
+          // seed from winners now that they exist, render poll UI and stop observing
+          seedFromWinnersDomIfEmpty();
+          renderPollOptions();
+          updateAllVotersUI();
+          obs.disconnect();
+        }
+      });
+      mo.observe(winnersDom, { childList: true, subtree: false });
+    })();
+
+  })();
+  </script>
+  <script>
     const pollChoices = JSON.parse(localStorage.getItem("pollChoices")) || []; // Load poll choices
     const votes = JSON.parse(localStorage.getItem("votes")) || {}; // Load votes
     const pollOptions = document.getElementById("poll-options");

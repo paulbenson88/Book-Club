@@ -1,0 +1,72 @@
+/* Consolidated mobile-friendly styles used across pages */
+:root{
+  --slot-viewport-height: 64px;
+  --slot-reel-bottom-space: 64px;
+  --slot-item-h: 44px;
+}
+
+body {
+  font-family: "Segoe UI", system-ui, Arial, sans-serif;
+  background:#f8fafc;
+  color:#222;
+  margin:0;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Page container */
+.container { max-width:980px; margin:1rem auto; padding:0 12px; }
+
+/* Simple card look */
+.card { border: 1px solid #e6e6e6; border-radius: 12px; background:#fff; }
+.card-body { padding: 1rem; }
+.card-title { margin:0 0 .5rem 0; font-weight:700; }
+
+/* Poll layout */
+.section { background: #fafafa; border-radius: 12px; border: 1px solid #ddd; padding: 1rem; margin-bottom: 1rem; }
+.poll-item { margin: 12px 0; padding: 12px; border: 1px solid #e5e5e5; border-radius: 8px; background: #fff; display:flex; align-items:center; gap:12px; }
+.vote-container { min-width:72px; display:flex; align-items:center; justify-content:center; padding: 8px; border-radius:8px; background:#f6f6f6; border:1px solid #e6e6e6; }
+.vote-container input[type="checkbox"] { transform: scale(1.25); margin-right:8px; }
+.vote-container input[type="checkbox"]:disabled { opacity:0.5; cursor:not-allowed; }
+.vote-label { font-size: 1rem; }
+.poll-content { flex:1; text-align:left; }
+.poll-content label { font-size:1.05rem; font-weight:700; display:block; margin-bottom:6px; }
+.suggested-by { color:#666; font-style:italic; font-size:.95rem; }
+.voters { color:#666; font-size:.9rem; margin-top:8px; }
+
+/* Controls */
+#nameInput { padding:8px 10px; border-radius:6px; border:1px solid #ccc; width:60%; max-width:320px; }
+.btn { cursor:pointer; }
+
+/* Winners card styling */
+.winners-list .mb-2 { margin-bottom: .5rem; }
+
+/* Small utilities */
+.text-muted { color:#888; }
+.small { font-size:.9rem; }
+.shadow-sm { box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+
+/* slot visuals */
+.slot-reel { width: 32%; min-height: 110px; display:flex; align-items:center; justify-content:center; }
+.slot-scroll { width:100%; }
+.slot-scroll-list { display:flex; flex-direction:column; gap:6px; }
+.slot-scroll-item { padding:8px 10px; border-radius:6px; background:#fff; border:1px solid #e6e6e6; height:var(--slot-item-h); display:flex; align-items:center; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+/* buttons */
+.spin-center-btn { min-width:96px; }
+.reset-btn { background:#6c757d; color:#fff; }
+
+/* helper hide */
+.d-none { display:none !important; }
+
+/* winner highlight */
+.winner .slot-scroll-item { border-color:#c7f0c9; background:#f2fff4; }
+
+/* Responsive tweaks */
+@media (max-width:600px){
+  :root { --slot-viewport-height: 68px; --slot-reel-bottom-space: 72px; }
+  .poll-item { flex-direction: column; align-items: stretch; gap:8px; }
+  .vote-container { min-width: auto; justify-content:flex-start; }
+  #nameInput { width: 100%; }
+  .slot-reel { width:100%; }
+  .slot-row { flex-direction:column; }
+}
