@@ -4,32 +4,24 @@
   <meta charset="UTF-8">
   <title>Book Club Hub</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="css/styles.css" rel="stylesheet">
   <style>
     body { font-family: sans-serif; max-width: 600px; margin: 2em auto; text-align: center;}
     nav { margin: 2em 0; }
-    nav a {
-      display: inline-block;
-      margin: 1em 1.2em;
-      padding: 1em 2em;
-      background: #f6f6f6;
-      color: #333;
-      border-radius: 10px;
-      text-decoration: none;
-      border: 1px solid #ddd;
-      font-size: 1.1em;
-      transition: background 0.2s, color 0.2s;
-    }
-    nav a:hover { background: #aee; color: #105; }
+  /* page container nav replaced by centralized .site-nav in css/styles.css */
+  .site-nav { margin: 2em 0; }
+  .site-nav a { padding: 1em 2em; font-size: 1.1em; }
     h1 { margin-top: 0.5em; }
   </style>
 </head>
 <body>
   <h1>📚 Welcome to Our Book Club!</h1>
   <p>Find all your club activities below.</p>
-  <nav>
-    <a href="voting.html">Vote for Next Book</a>
-    <a href="books-read.html">Books Read So Far</a>
-    <a href="character-lists.html">Character Lists</a>
+  <nav class="site-nav">
+    <a href="voting.html" class="cta-primary">Submit Books/Vote</a>
+  <a href="admin.html" class="main-page-btn">Host / Run the Vote (Admin)<br><small style="display:block; color:#555; font-weight:400; margin-top:6px; font-size:0.85em;">For meeting hosts &amp; administrators only — not the member submission page</small></a>
+    <a href="books-read.html" class="cta-primary">Books Read So Far</a>
+    <a href="character-lists.html" class="cta-primary">Character Lists (Spoiler Free)</a>
   </nav>
   <footer style="margin-top:3em;font-size:0.95em;color:#999;">
     &copy; Book Club – <span id="year"></span>

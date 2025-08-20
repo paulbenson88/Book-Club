@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Admin - Book Slot Machine</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="css/styles.css" rel="stylesheet">
+  <style>
+    /* Site-wide nav styles copied from index.html for consistent header */
+    .site-nav { text-align:center; margin: 1rem 0; }
+    .site-nav a {
+      display: inline-block;
+      margin: 0.6rem 1rem;
+      padding: 0.6rem 1.2rem;
+      background: #f6f6f6;
+      color: #333;
+      border-radius: 10px;
+      text-decoration: none;
+      border: 1px solid #ddd;
+      font-size: 1rem;
+      transition: background 0.2s, color 0.2s;
+    }
+    .site-nav a:hover { background: #aee; color: #105; }
+    .site-nav a.active { background:#ffc107; color:#111; border-color:#e0a800; }
+  </style>
+</head>
+<body>
+  <header style="text-align:center; margin:1rem 0;">
+    <a href="index.html" class="btn btn-secondary">🏠 Main Page</a>
+  </header>
+  <div class="container">
+    <div class="card shadow-sm mb-3">
+      <div class="card-body">
+        <h1 class="h4">Admin: Book Slot Machine</h1>
+        <p class="small text-muted">This page is for the club lead to control the SPIN / RESET actions for choosing next month's book. Only one person should be in control at a time.</p>
+  <div id="admin-msg" class="mt-2"><small id="qr-status" class="text-muted"></small></div>
+        <div class="mt-3">
+          <a href="voting.html" class="btn btn-secondary me-2">Member View</a>
+          <a href="voting_poll.html" class="btn btn-info">Open Voting Poll</a>
+        </div>
+        <!-- Member View share panel (lead can share this with members) -->
+        <div id="member-share" class="mt-3 d-none">
+          <div class="card shadow-sm">
+            <div class="card-body">
+              <h2 class="h6">Share: Member View</h2>
+              <p class="small text-muted">Share this link or QR code with group members so they can open the Member View.</p>
+              <div class="d-flex gap-3 align-items-center">
+                <div class="qr-wrap-member" style="width:120px;flex:0 0 120px;">
+                  <img id="member-qr" src="" alt="Member View QR" style="width:120px;height:120px;border:1px solid #e6e6e6;border-radius:8px;background:#fff;padding:6px;" />
+                </div>
+                <div class="flex-grow-1">
+                  <p class="mb-2"><strong>Member view URL</strong></p>
+                  <div class="d-flex gap-2 align-items-center">
+                    <input id="memberLink" type="text" class="form-control" value="https://paulbenson88.github.io/Book-Club/voting.html" />
+                    <button id="copyMemberLink" class="btn btn-outline-primary">Copy link</button>
+                    <a id="openMember" href="voting.html" class="btn btn-secondary">Open Member View</a>
+                  </div>
+                  <div id="copyMemberFeedback" class="small text-success mt-2" style="display:none;">Link copied to clipboard</div>
+                  <div id="member-hint" class="small text-muted mt-2" style="display:none;">Use an https:// URL for QR scanners to open the page directly.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="slot-area">
+      <div class="alert alert-info small">Click "Become lead" to take control of the slot machine for this session.</div>
+      <div class="d-flex gap-2">
+        <button id="become-lead" class="btn btn-primary">Become lead</button>
+        <button id="end-lead" class="btn btn-outline-danger">End lead session</button>
+      </div>
+      <div id="slot-host" class="mt-3">
+          <div id="slot-container" class="d-none">
+            <div class="slot-machine-frame">
+          <div class="slot-machine-title">BOOK SLOT MACHINE</div>
+          <div class="d-flex justify-content-center my-3"><button id="slotSpinBtn" class="btn spin-center-btn">SPIN</button></div>
+          <div class="slot-reels">
+            <div class="slot-reel" id="slot1">
+              <div class="slot-scroll" id="slotScroll1"><div class="slot-scroll-list"></div></div>
+              <button id="slotStopBtn1" class="btn stop-btn mt-2" disabled>Stop</button>
+              <button class="btn reel-respin mt-2 d-none" data-reel="0" disabled>⟲ Respin</button>
+              <div class="suggested-by text-muted small mt-1 text-center">Suggested by: <span id="suggested1-name"></span></div>
+            </div>
+            <div class="slot-reel" id="slot2">
+              <div class="slot-scroll" id="slotScroll2"><div class="slot-scroll-list"></div></div>
+              <button id="slotStopBtn2" class="btn stop-btn mt-2" disabled>Stop</button>
+              <button class="btn reel-respin mt-2 d-none" data-reel="1" disabled>⟲ Respin</button>
+              <div class="suggested-by text-muted small mt-1 text-center">Suggested by: <span id="suggested2-name"></span></div>
+            </div>
+            <div class="slot-reel" id="slot3">
+              <div class="slot-scroll" id="slotScroll3"><div class="slot-scroll-list"></div></div>
+              <button id="slotStopBtn3" class="btn stop-btn mt-2" disabled>Stop</button>
+              <button class="btn reel-respin mt-2 d-none" data-reel="2" disabled>⟲ Respin</button>
+              <div class="suggested-by text-muted small mt-1 text-center">Suggested by: <span id="suggested3-name"></span></div>
+            </div>
+          </div>
+          <div id="slotResult" class="slot-result"></div>
+          <div id="slotLoading" class="text-muted text-center mt-2 small">Loading book list...</div>
+        </div>
+            <!-- Voting poll share panel (hidden until winners present) -->
+            <div id="poll-share" class="mt-4 d-none">
+              <div class="card shadow-sm">
+                <div class="card-body">
+                  <h2 class="h5">Go to Voting Poll</h2>
+                  <p class="small text-muted">Once all three books have been chosen, click the button below to open the voting poll. Share the QR code or copy the poll link to invite members to vote.</p>
+                  <div class="d-flex gap-3 align-items-center">
+                    <div class="qr-wrap" style="width:120px;flex:0 0 120px;">
+                      <img id="poll-qr" src="" alt="Voting Poll QR" style="width:120px;height:120px;border:1px solid #e6e6e6;border-radius:8px;background:#fff;padding:6px;" />
+                    </div>
+                    <div class="flex-grow-1">
+                      <p class="mb-2"><strong>Voting poll URL</strong></p>
+                      <div class="d-flex gap-2 align-items-center">
+                        <input id="pollLink" type="text" class="form-control" value="https://paulbenson88.github.io/Book-Club/voting_poll.html" />
+                        <button id="copyPollLink" class="btn btn-outline-primary">Copy link</button>
+                        <a id="openPoll" href="voting_poll.html" class="btn btn-primary">Open Poll</a>
+                      </div>
+                      <div id="copyFeedback" class="small text-success mt-2" style="display:none;">Link copied to clipboard</div>
+                      <div id="poll-hint" class="small text-muted mt-2" style="display:none;">Scanners often cannot open file:// or plain filenames—paste a public https:// URL above for a working QR.</div>
+                      <p class="small text-muted mt-2 mb-0">Share this QR code or the link via text or social channels.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+              <!-- Manual winners fallback (lead can paste titles/authors) -->
+              <div id="manual-winners" class="mt-3 d-none">
+                <div class="card shadow-sm">
+                  <div class="card-body">
+                    <h2 class="h6">Manual: Final choices</h2>
+                    <p class="small text-muted">If the slot machine fails, enter up to three final choices below and click Save.</p>
+                    <div class="row g-2">
+                      <div class="col-12 col-md-6"><input id="mw-title-1" class="form-control" placeholder="Title - Author (optional)" /></div>
+                      <div class="col-12 col-md-6"><input id="mw-title-2" class="form-control" placeholder="Title - Author (optional)" /></div>
+                      <div class="col-12 col-md-6 mt-2"><input id="mw-title-3" class="form-control" placeholder="Title - Author (optional)" /></div>
+                    </div>
+                    <div class="mt-3 d-flex gap-2">
+                      <button id="mw-save" class="btn btn-primary">Save choices</button>
+                      <button id="mw-clear" class="btn btn-outline-danger">Clear manual choices</button>
+                    </div>
+                    <div id="mw-feedback" class="small text-success mt-2" style="display:none;">Manual choices saved</div>
+                  </div>
+                </div>
+              </div>
+                <!-- Admin poll controls (fail-safe) -->
+                <div id="admin-poll-controls" class="mt-3 d-none">
+                  <div class="card shadow-sm">
+                    <div class="card-body">
+                      <h2 class="h6">Admin: Poll controls (fail-safe)</h2>
+                      <p class="small text-muted">If the poll UI or syncing breaks, you can clear all votes here or add votes manually on behalf of a member. Use these sparingly — they're intended as emergency tools.</p>
+                      <div class="mb-2">
+                        <button id="clear-all-votes" class="btn btn-outline-danger">Clear all votes from poll</button>
+                        <span id="clear-votes-feedback" class="small text-success ms-2" style="display:none;">Votes cleared</span>
+                      </div>
+                      <hr />
+                      <div class="row g-2 align-items-center">
+                        <div class="col-12 col-md-6">
+                          <input id="admin-voter-name" class="form-control" placeholder="Name to add votes for (e.g. Merc)" />
+                        </div>
+                        <div class="col-12 col-md-6">
+                          <div id="admin-poll-books" class="d-flex gap-2 flex-wrap"></div>
+                        </div>
+                        <div class="col-12">
+                          <div class="d-flex gap-2 mt-2">
+                            <button id="admin-add-votes" class="btn btn-primary">Add votes for selected books</button>
+                            <button id="admin-remove-votes" class="btn btn-warning">Remove votes for selected books</button>
+                            <button id="admin-refresh-books" class="btn btn-outline-secondary">Refresh book list</button>
+                          </div>
+                          <div id="admin-add-feedback" class="small text-success mt-2" style="display:none;">Votes added</div>
+                          <div id="admin-add-warning" class="small text-muted mt-1">Tip: this only updates the poll's local votes storage; open poll tab will reflect changes automatically.</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/qrcode.min.js"></script>
+  <script>
+    (function(){
+      const msg = document.getElementById('admin-msg');
+      const host = document.getElementById('slot-host');
+
+      // Lead persistence helpers
+      let _leadHeartbeat = null;
+      const LEAD_TIMEOUT = 10 * 60 * 1000; // 10 minutes
+      function _randId(){ return Math.random().toString(36).slice(2,10); }
+
+      function isLeadStale(obj){
+        try{ if(!obj || !obj.lastSeen) return true; return (Date.now() - obj.lastSeen) > LEAD_TIMEOUT; }catch(e){ return true; }
+      }
+
+      function reclaimStaleLead(){
+        try{
+          const cur = JSON.parse(localStorage.getItem('leadSession')||'null');
+          if(cur && isLeadStale(cur)){
+            // remove stale session so someone else can claim lead
+            localStorage.removeItem('leadSession');
+          }
+        }catch(e){}
+      }
+
+      function startLeadHeartbeat(){
+        stopLeadHeartbeat();
+        _leadHeartbeat = setInterval(()=>{
+          try{
+            const cur = JSON.parse(localStorage.getItem('leadSession')||'null');
+            // Only update lastSeen if this tab actually owns the session
+            if(cur && cur.id === sessionStorage.getItem('leadId')){
+              cur.lastSeen = Date.now();
+              localStorage.setItem('leadSession', JSON.stringify(cur));
+            }
+          }catch(e){}
+        }, 5000);
+      }
+      function stopLeadHeartbeat(){ if(_leadHeartbeat){ clearInterval(_leadHeartbeat); _leadHeartbeat = null; } }
+
+      function setLead(){
+        try{
+          const id = sessionStorage.getItem('leadId') || _randId();
+          sessionStorage.setItem('leadId', id);
+          sessionStorage.setItem('isLead','1');
+          const obj = { id: id, when: Date.now(), lastSeen: Date.now() };
+          localStorage.setItem('leadSession', JSON.stringify(obj));
+          startLeadHeartbeat();
+        }catch(e){}
+        if(msg) msg.innerHTML = '<div class="alert alert-success small mb-2">You are now the lead for this session.</div>';
+        // reveal the slot UI and load the voting script once
+        const cont = document.getElementById('slot-container'); if(cont) cont.classList.remove('d-none');
+        loadVotingScript();
+        try{ if(window.showAdminPollShare) window.showAdminPollShare(); }catch(e){}
+        try{ document.getElementById('slot-container').scrollIntoView({behavior:'smooth'}); }catch(e){}
+        try{ renderAdminBookList(); showAdminPollControls(); }catch(e){}
+      }
+
+      function clearLead(){
+        try{ sessionStorage.removeItem('isLead'); }catch(e){}
+        try{ const myId = sessionStorage.getItem('leadId'); sessionStorage.removeItem('leadId');
+          const cur = JSON.parse(localStorage.getItem('leadSession')||'null');
+          // Only remove the shared leadSession if this tab is the owner
+          if(cur && myId && cur.id === myId){ localStorage.removeItem('leadSession'); }
+        }catch(e){}
+        stopLeadHeartbeat();
+        const cont = document.getElementById('slot-container'); if(cont) cont.classList.add('d-none');
+        if(msg) msg.innerHTML = '<div class="alert alert-warning small mb-2">Lead session ended.</div>';
+      }
+
+      // On load, reclaim any stale session so a new lead can claim it
+      try{ reclaimStaleLead(); }catch(e){}
+
+      // Restore lead on load if a leadSession exists and matches this device (best-effort)
+      try{
+        const ls = JSON.parse(localStorage.getItem('leadSession')||'null');
+        if(ls){
+          // if this tab previously owned the session (leadId) restore it
+          const myId = sessionStorage.getItem('leadId');
+          if(myId && ls.id === myId){ setLead(); }
+        }
+      }catch(e){}
+
+      // Periodically check and reclaim stale lead sessions (runs in all tabs)
+      try{ setInterval(reclaimStaleLead, 30000); }catch(e){}
+
+      // When another tab clears or sets leadSession, react accordingly
+      window.addEventListener('storage', (ev)=>{
+        if(ev.key==='leadSession'){
+          try{
+            const val = JSON.parse(ev.newValue||'null');
+            // If the incoming value looks stale, remove it immediately so others can claim
+            if(val && isLeadStale(val)){
+              try{ localStorage.removeItem('leadSession'); }catch(e){}
+              return;
+            }
+            const myId = sessionStorage.getItem('leadId');
+            if(!val){ // cleared
+              if(sessionStorage.getItem('isLead')){ /* keep local ended state */ clearLead(); }
+            } else {
+              // if someone else became lead, and it's not me, hide controls
+              if(!myId || val.id !== myId){
+                const cont = document.getElementById('slot-container'); if(cont) cont.classList.add('d-none');
+              }
+            }
+          }catch(e){}
+        }
+      });
+
+      function loadVotingScript(){
+        if(document.querySelector('script[data-voting-loaded]')) return;
+        const s = document.createElement('script'); s.src = 'js/voting.js'; s.setAttribute('data-voting-loaded','1'); document.body.appendChild(s);
+      }
+
+      document.getElementById('become-lead').addEventListener('click', ()=>{ setLead(); });
+      // show manual winners UI for leads (also revealed by setLead)
+      document.getElementById('become-lead').addEventListener('click', ()=>{
+        try{ const mw = document.getElementById('manual-winners'); if(mw) mw.classList.remove('d-none'); }catch(e){}
+      });
+
+      // manual winners save/clear handlers
+      try{
+  const saveBtn = document.getElementById('mw-save');
+  const clearBtn = document.getElementById('mw-clear');
+  const fb = document.getElementById('mw-feedback');
+  const inputs = [document.getElementById('mw-title-1'), document.getElementById('mw-title-2'), document.getElementById('mw-title-3')];
+  let saveTimer = null;
+  function showSavedFeedback(){ if(fb){ fb.style.display='block'; clearTimeout(fb._timer); fb._timer = setTimeout(()=>fb.style.display='none',2500); } }
+  function publishManual(arr){ try{ localStorage.setItem('winners', JSON.stringify(arr)); try{ window.dispatchEvent(new CustomEvent('winnersSaved', { detail: arr })); }catch(e){} }catch(e){} }
+  function readAndPublish(){ const arr = readManual(); if(arr.length){ publishManual(arr); showSavedFeedback(); try{ if(window.showAdminPollShare) window.showAdminPollShare(); }catch(e){} } else { try{ localStorage.removeItem('winners'); try{ window.dispatchEvent(new Event('winnersCleared')); }catch(e){} }catch(e){} } }
+
+  // Debounced autosave on input, immediate save on blur or Enter
+  function scheduleSave(){ clearTimeout(saveTimer); saveTimer = setTimeout(()=>{ try{ readAndPublish(); }catch(e){} }, 700); }
+  inputs.forEach(inp=>{ if(!inp) return; inp.addEventListener('input', scheduleSave); inp.addEventListener('blur', ()=>{ try{ readAndPublish(); }catch(e){} }); inp.addEventListener('keydown', (ev)=>{ if(ev.key==='Enter'){ ev.preventDefault(); try{ readAndPublish(); }catch(e){} } }); });
+        function readManual(){
+          const t1 = (document.getElementById('mw-title-1')||{}).value||'';
+          const t2 = (document.getElementById('mw-title-2')||{}).value||'';
+          const t3 = (document.getElementById('mw-title-3')||{}).value||'';
+          const arr = [t1,t2,t3].map(s=>s.trim()).filter(s=>s.length>0).map(s=>{
+            // Prefer explicit " by " for suggester; otherwise capture ' - ' author but do not treat it as suggestedBy
+            let title = s, suggestedBy = '', author = '';
+            if(/\sby\s/i.test(s)){
+              const parts = s.split(/\sby\s/i); title = parts[0].trim(); suggestedBy = parts.slice(1).join(' by ').trim();
+            } else if(/\s-\s/.test(s)){
+              const parts = s.split(/\s-\s/); title = parts[0].trim(); author = parts.slice(1).join(' - ').trim();
+            }
+            const book = author ? (title + ' - ' + author) : title;
+            return { book, suggestedBy };
+          });
+          return arr;
+        }
+  saveBtn && saveBtn.addEventListener('click', ()=>{ try{ readAndPublish(); }catch(err){ console.warn(err); } });
+        clearBtn && clearBtn.addEventListener('click', ()=>{
+          try{ localStorage.removeItem('winners'); try{ window.dispatchEvent(new Event('winnersCleared')); }catch(e){}; }catch(e){}
+        });
+      }catch(e){}
+    })();
+    // QR + copy-link handling for voting poll (use local QR lib, show panel only when winners present)
+    (function(){
+  const pollUrl = 'https://paulbenson88.github.io/Book-Club/voting_poll.html';
+      // expose canonical poll url for other scripts
+      try{ window.adminPollUrl = pollUrl; }catch(e){}
+      const linkInput = document.getElementById('pollLink');
+      const copyBtn = document.getElementById('copyPollLink');
+      const openBtn = document.getElementById('openPoll');
+      const feedback = document.getElementById('copyFeedback');
+      const pollShare = document.getElementById('poll-share');
+
+      function showSharePanel(){
+        // ensure poll-share is visible
+        try{ if(pollShare){ pollShare.classList.remove('d-none'); pollShare.style.display='block'; } }catch(e){}
+  renderQR();
+  // schedule a follow-up render in case QR lib wasn't ready yet
+  setTimeout(()=>{ try{ renderQR(); }catch(e){ } },300);
+      }
+
+      function renderQR(url){
+        try{
+          const u = url || (linkInput && linkInput.value) || pollUrl;
+          console.log('[admin] renderQR called, url=', u);
+          // Render as a simple <img> pointing to the qrserver API (matches old voting.html)
+          const wrap = document.querySelector('.qr-wrap');
+          const statusEl = document.getElementById('qr-status');
+          let img = document.getElementById('poll-qr');
+          if(!img){ if(wrap){ img = document.createElement('img'); img.className = 'qr'; img.id='poll-qr'; img.alt='QR code for voting poll'; img.style.width='120px'; img.style.height='120px'; img.style.border='1px solid #e6e6e6'; img.style.borderRadius='8px'; img.style.background='#fff'; img.style.padding='6px'; wrap.innerHTML=''; wrap.appendChild(img); } }
+          if(img){
+            // encode the absolute URL so phones open the page instead of searching for a filename
+            const qrData = encodeURIComponent(u);
+            img.src = 'https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=' + qrData;
+          }
+          if(linkInput) linkInput.value = u;
+          if(openBtn) openBtn.href = u;
+          console.log('[admin] renderQR finished');
+          const hint = document.getElementById('poll-hint');
+          if(hint) hint.style.display = (/^https?:\/\//i.test(u) ? 'none' : 'block');
+        }catch(e){ console.warn('QR render failed',e); }
+      }
+
+      // expose helpers so other handlers can trigger showing/re-rendering
+  window.showAdminPollShare = showSharePanel;
+  window.renderAdminPollQR = renderQR;
+
+      if(copyBtn){ copyBtn.addEventListener('click', async ()=>{
+        try{
+          const toCopy = (linkInput && linkInput.value) || pollUrl;
+          await navigator.clipboard.writeText(toCopy);
+          if(feedback){ feedback.style.display='block'; setTimeout(()=>feedback.style.display='none',2000); }
+        }catch(err){ try{ linkInput.select(); }catch(e){} }
+      }); }
+
+  // Re-render when admin edits the poll link input
+  if(linkInput){ linkInput.addEventListener('change', ()=>{ try{ renderQR(linkInput.value); }catch(e){} }); }
+
+      // Show share panel only if there are winners saved
+      try{
+        const winners = JSON.parse(localStorage.getItem('winners') || 'null');
+        if(Array.isArray(winners) && winners.length>=3){ showSharePanel(); }
+      }catch(e){ /* ignore */ }
+
+      // Listen for storage events so panel appears when winners are saved in another tab
+      window.addEventListener('storage', (ev)=>{
+        if(ev.key==='winners' && ev.newValue){
+          try{ const w = JSON.parse(ev.newValue); if(Array.isArray(w) && w.length>=3) showSharePanel(); }catch(e){}
+        }
+      });
+  // Also listen for same-window custom events from the slot script
+  window.addEventListener('winnersSaved',(ev)=>{ try{ const w = ev.detail; if(Array.isArray(w) && w.length>=3) showSharePanel(); }catch(e){} });
+  window.addEventListener('winnersCleared', ()=>{ try{ if(pollShare) pollShare.classList.add('d-none'); }catch(e){} });
+      // ensure QR image has a src on load so the img doesn't show alt text
+      try{ renderQR(); }catch(e){}
+    })();
+
+    // Member view share handling (top panel)
+    (function(){
+      const memberUrl = 'https://paulbenson88.github.io/Book-Club/voting.html';
+      const memberInput = document.getElementById('memberLink');
+      const copyMemberBtn = document.getElementById('copyMemberLink');
+      const openMemberBtn = document.getElementById('openMember');
+      const memberShare = document.getElementById('member-share');
+      const memberFeedback = document.getElementById('copyMemberFeedback');
+
+      function showMemberPanel(){ try{ if(memberShare){ memberShare.classList.remove('d-none'); memberShare.style.display='block'; } }catch(e){}
+      }
+
+      function renderMemberQR(url){
+        try{
+          const u = url || (memberInput && memberInput.value) || memberUrl;
+          const wrap = document.querySelector('.qr-wrap-member');
+          let img = document.getElementById('member-qr');
+          if(img){
+            const qrData = encodeURIComponent(u);
+            img.src = 'https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=' + qrData;
+          }
+          if(memberInput) memberInput.value = u;
+          if(openMemberBtn) openMemberBtn.href = u;
+          const hint = document.getElementById('member-hint'); if(hint) hint.style.display = (/^https?:\/\//i.test(u) ? 'none' : 'block');
+        }catch(e){ console.warn('renderMemberQR failed', e); }
+      }
+
+      window.showAdminMemberShare = showMemberPanel;
+
+      if(copyMemberBtn){ copyMemberBtn.addEventListener('click', async ()=>{
+        try{ const toCopy = (memberInput && memberInput.value) || memberUrl; await navigator.clipboard.writeText(toCopy); if(memberFeedback){ memberFeedback.style.display='block'; setTimeout(()=>memberFeedback.style.display='none',2000); } }catch(err){ try{ memberInput.select(); }catch(e){} }
+      }); }
+
+      if(memberInput){ memberInput.addEventListener('change', ()=>{ try{ renderMemberQR(memberInput.value); }catch(e){} }); }
+
+      // Show member panel if leader or always render small QR on load
+      try{ const winners = JSON.parse(localStorage.getItem('winners') || 'null'); if(sessionStorage.getItem('isLead')) showMemberPanel(); }catch(e){}
+      try{ renderMemberQR(); }catch(e){}
+    })();
+
+    // End lead session button handler
+    (function(){
+      const endBtn = document.getElementById('end-lead');
+      endBtn && endBtn.addEventListener('click', ()=>{
+        try{ if(typeof clearLead === 'function') clearLead(); }catch(e){}
+        // notify other tabs
+        try{ window.dispatchEvent(new StorageEvent('storage', { key:'leadSession', newValue: null })); }catch(e){}
+      });
+    })();
+
+    // Admin poll controls (clear votes, manual add)
+    (function(){
+      const ctrls = document.getElementById('admin-poll-controls');
+      const clearBtn = document.getElementById('clear-all-votes');
+      const clearFb = document.getElementById('clear-votes-feedback');
+  const adminName = document.getElementById('admin-voter-name');
+  const adminBooks = document.getElementById('admin-poll-books');
+  const adminAdd = document.getElementById('admin-add-votes');
+  const adminRefresh = document.getElementById('admin-refresh-books');
+  const adminRemoveBtnInit = document.getElementById('admin-remove-votes');
+  if(adminAdd) adminAdd.disabled = true;
+  if(adminRemoveBtnInit) adminRemoveBtnInit.disabled = true;
+      const adminFb = document.getElementById('admin-add-feedback');
+
+      function showAdminPollControls(){ try{ if(ctrls) ctrls.classList.remove('d-none'); }catch(e){} }
+
+      // Expose when leader becomes lead
+      window.showAdminPollControls = showAdminPollControls;
+
+      // Populate book list from localStorage.pollChoices — only when the 3 choices are published
+      function renderAdminBookList(){
+        try{
+          adminBooks.innerHTML = '';
+          const pcs = JSON.parse(localStorage.getItem('pollChoices')||'[]');
+          // Require at least 3 published choices before enabling manual vote tools
+          if(!Array.isArray(pcs) || pcs.length < 3){
+            adminBooks.innerHTML = '<div class="small text-muted">Poll choices are not ready yet — waiting for 3 published choices. Refresh this list after the lead publishes the final choices.</div>';
+            if(adminAdd) adminAdd.disabled = true;
+            const adminRemoveBtn = document.getElementById('admin-remove-votes'); if(adminRemoveBtn) adminRemoveBtn.disabled = true;
+            return;
+          }
+          // Render only the first three published choices (in order)
+          pcs.slice(0,3).forEach((c, idx)=>{
+            const id = 'admin-poll-book-'+idx;
+            const wrapper = document.createElement('div'); wrapper.className = 'form-check';
+            wrapper.style.minWidth='140px'; wrapper.style.marginRight='8px'; wrapper.style.marginBottom='6px';
+            wrapper.innerHTML = `<input class="form-check-input" type="checkbox" value="${c.book}" id="${id}"><label class="form-check-label" for="${id}">${c.book}</label>`;
+            adminBooks.appendChild(wrapper);
+          });
+          // Enable buttons now that choices are available
+          if(adminAdd) adminAdd.disabled = false;
+          const adminRemoveBtn2 = document.getElementById('admin-remove-votes'); if(adminRemoveBtn2) adminRemoveBtn2.disabled = false;
+        }catch(e){ adminBooks.innerHTML = '<div class="small text-muted">Failed to load choices</div>'; }
+      }
+
+      // Clear all votes handler
+      clearBtn && clearBtn.addEventListener('click', ()=>{
+        try{
+          localStorage.removeItem('votes');
+          // Dispatch a storage-like event for same-window listeners
+          try{ window.dispatchEvent(new StorageEvent('storage', { key:'votes', newValue: null })); }catch(e){}
+          if(clearFb){ clearFb.style.display='inline'; clearTimeout(clearFb._t); clearFb._t = setTimeout(()=>clearFb.style.display='none',2500); }
+        }catch(e){ console.warn(e); }
+      });
+
+      // Add votes for selected books for a given name
+      adminAdd && adminAdd.addEventListener('click', ()=>{
+        try{
+          const name = (adminName && adminName.value || '').trim();
+          if(!name) { alert('Enter a name to add votes for'); return; }
+          const checked = Array.from(adminBooks.querySelectorAll('input[type=checkbox]:checked')).map(i=>i.value);
+          if(!checked.length){ alert('Select at least one book to add votes for'); return; }
+          const current = JSON.parse(localStorage.getItem('votes')||'{}');
+          checked.forEach(book => {
+            if(!current[book]) current[book] = [];
+            if(!current[book].includes(name)) current[book].push(name);
+          });
+          localStorage.setItem('votes', JSON.stringify(current));
+          // Notify other tabs
+          try{ window.dispatchEvent(new StorageEvent('storage', { key:'votes', newValue: JSON.stringify(current) })); }catch(e){}
+          if(adminFb){ adminFb.style.display='block'; clearTimeout(adminFb._t); adminFb._t = setTimeout(()=>adminFb.style.display='none',2500); }
+        }catch(e){ console.warn(e); }
+      });
+
+      adminRefresh && adminRefresh.addEventListener('click', ()=>{ renderAdminBookList(); });
+
+      // Show panel automatically if leader and poll choices exist
+      try{ if(sessionStorage.getItem('isLead')){ renderAdminBookList(); showAdminPollControls(); } }catch(e){}
+
+      // Also show when winners/pollChoices become available
+      window.addEventListener('storage', (ev)=>{ if(ev.key==='pollChoices' || ev.key==='winners'){ try{ renderAdminBookList(); showAdminPollControls(); }catch(e){} } });
+      window.addEventListener('winnersSaved',(ev)=>{ try{ renderAdminBookList(); showAdminPollControls(); }catch(e){} });
+      // Remove votes handler
+      const adminRemove = document.getElementById('admin-remove-votes');
+      adminRemove && adminRemove.addEventListener('click', ()=>{
+        try{
+          const name = (adminName && adminName.value || '').trim();
+          if(!name) { alert('Enter a name to remove votes for'); return; }
+          const checked = Array.from(adminBooks.querySelectorAll('input[type=checkbox]:checked')).map(i=>i.value);
+          if(!checked.length){ alert('Select at least one book to remove votes for'); return; }
+          const current = JSON.parse(localStorage.getItem('votes')||'{}');
+          let changed = false;
+          checked.forEach(book => {
+            if(current[book]){
+              const before = current[book].length;
+              current[book] = current[book].filter(n=>n!==name);
+              if(current[book].length !== before) changed = true;
+              if(current[book].length===0) delete current[book];
+            }
+          });
+          if(changed){
+            localStorage.setItem('votes', JSON.stringify(current));
+            try{ window.dispatchEvent(new StorageEvent('storage', { key:'votes', newValue: JSON.stringify(current) })); }catch(e){}
+            if(adminFb){ adminFb.style.display='block'; clearTimeout(adminFb._t); adminFb._t = setTimeout(()=>adminFb.style.display='none',2500); }
+          } else { alert('No votes were removed (the name may not have had votes for the selected books).'); }
+        }catch(e){ console.warn(e); }
+      });
+    })();
+
+    // Finalize chosen book (mark final locally and offer CSV removal helper)
+    (function(){
+      const section = document.getElementById('finalize-section');
+      const select = document.getElementById('final-book-select');
+      const finalizeBtn = document.getElementById('finalize-btn');
+      const undoBtn = document.getElementById('undo-finalize');
+      const csvInput = document.getElementById('csvUrlInput');
+      const downloadCsvBtn = document.getElementById('download-updated-csv');
+      const fb = document.getElementById('finalize-feedback');
+      const err = document.getElementById('finalize-error');
+
+      function showFinalize(){ try{ section.classList.remove('d-none'); }catch(e){} }
+      function populateSelect(){
+        try{
+          select.innerHTML = '<option value="">(select a book)</option>';
+          const pcs = JSON.parse(localStorage.getItem('pollChoices')||'[]');
+          if(Array.isArray(pcs)) pcs.slice(0,5).forEach(c=>{
+            const opt = document.createElement('option'); opt.value = c.book; opt.textContent = c.book; select.appendChild(opt);
+          });
+        }catch(e){ }
+      }
+
+      // Expose helper to show the finalize area when lead
+      window.showFinalizeSection = showFinalize;
+
+      // Initialize when leader
+      try{ if(sessionStorage.getItem('isLead')){ populateSelect(); showFinalize(); } }catch(e){}
+
+      window.addEventListener('storage', (ev)=>{ if(ev.key==='pollChoices' || ev.key==='winners'){ try{ populateSelect(); showFinalize(); }catch(e){} } });
+      window.addEventListener('winnersSaved',(ev)=>{ try{ populateSelect(); showFinalize(); }catch(e){} });
+
+          // Finalize action: store finalized book in localStorage.finalized and remove from local pollChoices (local only)
+      finalizeBtn && finalizeBtn.addEventListener('click', ()=>{
+        try{
+          const book = (select && select.value) || '';
+          if(!book){ alert('Select a book to finalize'); return; }
+          // Save previous state for undo
+          const prev = { pollChoices: JSON.parse(localStorage.getItem('pollChoices')||'[]'), finalized: localStorage.getItem('finalized') };
+          localStorage.setItem('_finalize_backup', JSON.stringify(prev));
+          // Mark finalized
+          const now = { book, when: (new Date()).toISOString() };
+          localStorage.setItem('finalized', JSON.stringify(now));
+          // Remove the finalized book from pollChoices locally
+          const pcs = JSON.parse(localStorage.getItem('pollChoices')||'[]').filter(p=>p.book !== book);
+          localStorage.setItem('pollChoices', JSON.stringify(pcs));
+          // Dispatch storage-like events for same-window listeners
+          try{ window.dispatchEvent(new StorageEvent('storage', { key:'finalized', newValue: JSON.stringify(now) })); }catch(e){}
+          try{ window.dispatchEvent(new StorageEvent('storage', { key:'pollChoices', newValue: JSON.stringify(pcs) })); }catch(e){}
+          if(fb){ fb.style.display='inline'; clearTimeout(fb._t); fb._t = setTimeout(()=>fb.style.display='none',2500); }
+          // If an Apps Script endpoint is provided, POST the finalized book so Apps Script can remove the row server-side
+          try{
+            const endpoint = (document.getElementById('scriptEndpointInput')||{}).value||'';
+            if(endpoint){
+              (async ()=>{
+                try{
+                  const resp = await fetch(endpoint, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ action: 'removeRow', book: book }) });
+                  const data = await resp.json();
+                  if(!resp.ok) throw new Error(data && data.message ? data.message : 'Script error');
+                  // show a small note that remote removal succeeded
+                  if(fb){ fb.textContent = 'Finalized (remote removal requested)'; fb.style.display='inline'; clearTimeout(fb._t); fb._t = setTimeout(()=>{ fb.style.display='none'; fb.textContent='Finalized'; },3000); }
+                }catch(e){ if(err){ err.style.display='inline'; err.textContent = 'Remote removal failed'; setTimeout(()=>err.style.display='none',3000); } }
+              })();
+            }
+          }catch(e){}
+          undoBtn.disabled = false;
+          // enable download csv button only if csv url present
+          if(csvInput && csvInput.value) downloadCsvBtn.disabled = false;
+        }catch(e){ if(err){ err.style.display='inline'; err.textContent = 'Failed to finalize'; setTimeout(()=>err.style.display='none',2500); } }
+      });
+
+      // Undo finalize
+      undoBtn && undoBtn.addEventListener('click', ()=>{
+        try{
+          const bak = JSON.parse(localStorage.getItem('_finalize_backup')||'null');
+          if(!bak){ alert('No finalize backup found to undo'); return; }
+          if(bak.pollChoices) localStorage.setItem('pollChoices', JSON.stringify(bak.pollChoices));
+          if(bak.finalized) localStorage.setItem('finalized', bak.finalized); else localStorage.removeItem('finalized');
+          localStorage.removeItem('_finalize_backup');
+          try{ window.dispatchEvent(new StorageEvent('storage', { key:'pollChoices', newValue: JSON.stringify(bak.pollChoices||[]) })); }catch(e){}
+          if(fb){ fb.style.display='inline'; fb.textContent='Undo successful'; clearTimeout(fb._t); fb._t = setTimeout(()=>fb.style.display='none',2500); }
+          undoBtn.disabled = true;
+        }catch(e){ if(err){ err.style.display='inline'; err.textContent='Undo failed'; setTimeout(()=>err.style.display='none',2500); } }
+      });
+
+      // Download updated CSV helper: fetch CSV, remove row matching finalized book (best-effort match by title portion)
+      downloadCsvBtn && downloadCsvBtn.addEventListener('click', async ()=>{
+        try{
+          const url = (csvInput && csvInput.value||'').trim();
+          if(!url){ alert('Enter the published CSV URL'); return; }
+          const fin = JSON.parse(localStorage.getItem('finalized')||'null');
+          if(!fin){ alert('No finalized book recorded'); return; }
+          downloadCsvBtn.disabled = true; downloadCsvBtn.textContent='Preparing...';
+          const resp = await fetch(url); if(!resp.ok) throw new Error('Failed to fetch CSV');
+          const text = await resp.text();
+          // Simple CSV parse by lines — preserve header
+          const lines = text.split(/\r?\n/);
+          if(lines.length<=1) throw new Error('CSV appears empty');
+          const header = lines[0];
+          const rows = lines.slice(1).filter(Boolean);
+          // Try to remove any row where the second column contains the finalized book title (case-insensitive)
+          const normalizedTarget = fin.book.toLowerCase().replace(/\s*-\s*.*/,'').trim();
+          const kept = rows.filter(r=>{
+            const cols = r.split(',');
+            const bookcol = (cols[1]||'').toLowerCase();
+            // Normalize the left side of ' - '
+            const left = bookcol.replace(/\s*-\s*.*/,'').trim();
+            return left !== normalizedTarget;
+          });
+          const out = [header].concat(kept).join('\n');
+          // Create a blob and download via temporary link
+          const blob = new Blob([out], { type: 'text/csv;charset=utf-8;' });
+          const urlObj = URL.createObjectURL(blob);
+          const a = document.createElement('a'); a.href = urlObj; a.download = 'updated.csv'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(urlObj);
+          downloadCsvBtn.textContent='Download updated CSV (remove finalized)';
+          downloadCsvBtn.disabled = false;
+        }catch(e){ console.warn(e); downloadCsvBtn.disabled=false; downloadCsvBtn.textContent='Download updated CSV (remove finalized)'; if(err){ err.style.display='inline'; err.textContent='CSV prep failed'; setTimeout(()=>err.style.display='none',2500);} }
+      });
+
+      // Enable download button when URL entered
+      csvInput && csvInput.addEventListener('input', ()=>{ downloadCsvBtn.disabled = !(csvInput.value && localStorage.getItem('finalized')); });
+    })();
+  </script>
+</body>
+</html>

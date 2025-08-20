@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <!-- Bootstrap CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="css/styles.css" rel="stylesheet">
   <!-- Animate.css for slot spin effect -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
   <style>
@@ -32,7 +33,6 @@
       margin-bottom: 0.5rem;
     }
 
-    .qr { width: 70px; height: 70px; margin: 0.5em auto; display: block; }
 
     /* Slot machine frame */
     .slot-machine-frame {
@@ -222,11 +222,9 @@
   </style>
 </head>
 <body>
-  <nav class="navbar navbar-light bg-white shadow-sm mb-3">
-    <div class="container">
-      <a class="navbar-brand d-flex align-items-center gap-2" href="index.html">🏠 Main Page</a>
-    </div>
-  </nav>
+  <header style="text-align:center; margin:1rem 0;">
+    <a href="index.html" class="btn btn-secondary">🏠 Main Page</a>
+  </header>
 
   <div class="container my-4">
     <div class="card shadow-sm mb-4">
@@ -240,11 +238,12 @@
         <div class="card h-100 shadow-sm">
           <div class="card-body">
             <h2 class="card-title mb-2 fs-5">📖 Book Suggestion</h2>
+            <p class="text-muted small mb-2">Please use this form to submit your book suggestions. Remember to only suggest one book per form submission. Make a new submission for each additional book.</p>
             <a href="https://docs.google.com/forms/d/e/1FAIpQLSeD3-geAx7_nxHsgw1xWYR_gDncmhAlswwrsX4gIJdgKj9tQw/viewform?usp=dialog" target="_blank">
               <button class="btn btn-primary w-100 mb-2">Suggest a Book (Google Form)</button>
             </a>
             <img class="qr" src="https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=https://docs.google.com/forms/d/e/1FAIpQLSeD3-geAx7_nxHsgw1xWYR_gDncmhAlswwrsX4gIJdgKj9tQw/viewform?usp=dialog" alt="QR code for suggestion form">
-            <div class="text-muted small">(Scan QR or click to open suggestion form)</div>
+            <div class="text-muted small qr-caption">(Scan QR or click to open)</div>
           </div>
         </div>
       </div>
@@ -253,333 +252,29 @@
         <div class="card h-100 shadow-sm">
           <div class="card-body">
             <h2 class="card-title mb-2 fs-5">📋 View All Submissions</h2>
+            <p class="text-muted small mb-2">You can view all book suggestions and their details in the submissions sheet, as well as delete any unwanted entries.</p>
             <a href="https://docs.google.com/spreadsheets/d/1VCHJO67_pYjNWEceSRwb4jotF7GO3L8uFaLo3HUJmnk/edit" target="_blank">
-              <button class="btn btn-success w-100 mb-2">Open Submissions Sheet</button>
+              <button class="btn btn-success w-100 mb-2">Open Submissions Sheet (Google Sheets)</button>
             </a>
             <img class="qr" src="https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=https://docs.google.com/spreadsheets/d/1VCHJO67_pYjNWEceSRwb4jotF7GO3L8uFaLo3HUJmnk/edit" alt="QR code for submissions sheet">
-            <div class="text-muted small">(Click or scan to view all book suggestions)</div>
+            <div class="text-muted small qr-caption">(Scan QR or click to open)</div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Slot Machine -->
-    <div class="slot-machine-frame">
-      <div class="slot-machine-title">BOOK SLOT MACHINE</div>
-
-      <div class="d-flex justify-content-center my-3">
-        <button id="slotSpinBtn" class="btn spin-center-btn">SPIN</button>
+    <!-- Voting Poll card (added) -->
+    <div class="card shadow-sm mb-4">
+      <div class="card-body">
+        <h2 class="card-title mb-2 fs-5">Voting Poll</h2>
+        <p class="text-muted small mb-2">Once you are done submitting books, go to this link. Please wait for the vote to start after the lead spins the slot machine and three choices have been randomly chosen.</p>
+        <a href="voting_poll.html" target="_blank"><span class="btn btn-info w-100 mb-2" role="button">Go to Voting Poll</span></a>
+  <img class="qr" src="https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=voting_poll.html" alt="QR code for voting poll">
+  <div class="text-muted small qr-caption">(Scan QR or click to open)</div>
       </div>
-
-      <div class="slot-reels">
-        <div class="slot-reel" id="slot1">
-          <div class="slot-scroll" id="slotScroll1"><div class="slot-scroll-list"></div></div>
-          <button id="slotStopBtn1" class="btn stop-btn mt-2" disabled>Stop</button>
-          <button class="btn reel-respin mt-2 d-none" data-reel="0" disabled>⟲ Respin</button>
-          <div class="suggested-by text-muted small mt-1 text-center">Suggested by: <span id="suggested1-name"></span></div>
-        </div>
-
-        <div class="slot-reel" id="slot2">
-          <div class="slot-scroll" id="slotScroll2"><div class="slot-scroll-list"></div></div>
-          <button id="slotStopBtn2" class="btn stop-btn mt-2" disabled>Stop</button>
-          <button class="btn reel-respin mt-2 d-none" data-reel="1" disabled>⟲ Respin</button>
-          <div class="suggested-by text-muted small mt-1 text-center">Suggested by: <span id="suggested2-name"></span></div>
-        </div>
-
-        <div class="slot-reel" id="slot3">
-          <div class="slot-scroll" id="slotScroll3"><div class="slot-scroll-list"></div></div>
-          <button id="slotStopBtn3" class="btn stop-btn mt-2" disabled>Stop</button>
-          <button class="btn reel-respin mt-2 d-none" data-reel="2" disabled>⟲ Respin</button>
-          <div class="suggested-by text-muted small mt-1 text-center">Suggested by: <span id="suggested3-name"></span></div>
-        </div>
-      </div>
-
-      <div id="slotResult" class="slot-result"></div>
-      <div id="slotLoading" class="text-muted text-center mt-2 small">Loading book list...</div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   </div>
-
-  <!-- Consolidated script (keeps dev reset and robust CSV parsing + respin) -->
-  <script>
-    // Dev-only: clear slot state when previewing locally (Five Server) or when ?resetSlot=1
-    (function() {
-      const host = location.hostname || '';
-      const isLocal = host === 'localhost' || host === '127.0.0.1' || host === '::1' || host === '0.0.0.0' || host.startsWith('192.168.');
-      const forceReset = location.search.includes('resetSlot=1') || location.search.includes('resetState=1');
-      if (isLocal || forceReset) {
-        try {
-          console.info('Dev preview detected — clearing slotMachineState/local winners for fresh testing.');
-          localStorage.removeItem('slotMachineState');
-          localStorage.removeItem('winners');
-          localStorage.removeItem('pollChoices');
-        } catch (e) {}
-        window.addEventListener('load', () => { if (typeof resetMachine === 'function') resetMachine(); });
-      }
-    })();
-
-    const STORAGE_KEY = 'slotMachineState';
-    let slotBooks = [], slotNames = [];
-    const slotScrolls = [document.getElementById('slotScroll1'), document.getElementById('slotScroll2'), document.getElementById('slotScroll3')];
-    const slotReels = [document.getElementById('slot1'), document.getElementById('slot2'), document.getElementById('slot3')];
-    const slotStopBtns = [document.getElementById('slotStopBtn1'), document.getElementById('slotStopBtn2'), document.getElementById('slotStopBtn3')];
-    const slotRespinBtns = Array.from(document.querySelectorAll('.reel-respin'));
-    const slotSpinBtn = document.getElementById('slotSpinBtn');
-    const slotResultDiv = document.getElementById('slotResult');
-    const slotLoadingDiv = document.getElementById('slotLoading');
-
-    if (slotSpinBtn) slotSpinBtn.disabled = true;
-
-    let spinning = [false,false,false];
-    let intervals = [null,null,null];
-    let chosenIdxs = [null,null,null];
-    let offsets = [0,0,0];
-    let chosenSet = new Set();
-    let localStateSpun = false;
-
-    function saveState(){ localStorage.setItem(STORAGE_KEY, JSON.stringify({spun:!!localStateSpun, chosenIdxs})); }
-    function loadState(){ try { return JSON.parse(localStorage.getItem(STORAGE_KEY)); } catch { return null; } }
-
-    function getAvailableIndices(){ const a=[]; for(let i=0;i<slotBooks.length;i++) if(!chosenSet.has(i)) a.push(i); return a; }
-
-    function renderScrollList(reelIdx, offset=0, stopped=false){
-      const scroll = slotScrolls[reelIdx]; if(!scroll) return;
-      scroll.innerHTML=''; const list=document.createElement('div'); list.className='slot-scroll-list';
-      if(stopped){
-        const item=document.createElement('div'); item.className='slot-scroll-item'; item.style.borderBottom='none'; item.textContent=slotBooks[offset]||''; list.appendChild(item);
-      } else {
-        const available = getAvailableIndices();
-        if(!available || available.length===0){
-          const item=document.createElement('div'); item.className='slot-scroll-item'; item.textContent='—'; list.appendChild(item);
-        } else {
-          for(let i=0;i<5;i++){
-            const idxInAvailable = (offset + i) % available.length;
-            const originalIdx = available[idxInAvailable];
-            const item=document.createElement('div'); item.className='slot-scroll-item'; item.textContent=slotBooks[originalIdx]||''; list.appendChild(item);
-          }
-        }
-      }
-      scroll.appendChild(list);
-    }
-
-    function renderIdle(reelIdx){
-      const scroll = slotScrolls[reelIdx]; if(!scroll) return;
-      scroll.innerHTML=''; const list=document.createElement('div'); list.className='slot-scroll-list';
-      const item=document.createElement('div'); item.className='slot-scroll-item'; item.style.borderBottom='none'; item.style.textAlign='center'; item.style.color='#666'; item.textContent='Waiting for spin...'; list.appendChild(item); scroll.appendChild(list);
-    }
-
-    function updateResetState(){
-      if(!slotSpinBtn) return;
-      const anyChosen = chosenIdxs.some(v=>v!==null && v!==undefined);
-      if(!localStateSpun || !anyChosen){
-        slotSpinBtn.textContent='SPIN'; slotSpinBtn.classList.remove('reset-btn'); slotSpinBtn.classList.add('spin-center-btn');
-        slotSpinBtn.disabled = slotBooks.length < 3; slotSpinBtn.style.pointerEvents = slotSpinBtn.disabled ? 'none' : 'auto';
-        return;
-      }
-      const allStopped = slotStopBtns.every(b => b && b.disabled);
-      slotSpinBtn.textContent='Reset'; slotSpinBtn.classList.remove('spin-center-btn'); slotSpinBtn.classList.add('reset-btn');
-      slotSpinBtn.disabled = !allStopped; slotSpinBtn.style.pointerEvents = slotSpinBtn.disabled ? 'none' : 'auto';
-    }
-
-    function startReelScroll(reelIdx){
-      if(intervals[reelIdx]) clearInterval(intervals[reelIdx]);
-      return setInterval(()=>{ const available=getAvailableIndices(); if(!available||available.length===0){ renderIdle(reelIdx); return; } offsets[reelIdx] = Number.isFinite(offsets[reelIdx]) ? Math.floor(offsets[reelIdx]) : 0; offsets[reelIdx] = ((offsets[reelIdx]+1)%available.length+available.length)%available.length; renderScrollList(reelIdx, offsets[reelIdx]); }, 180);
-    }
-
-    function startSpin(){
-      if(slotBooks.length < 3) return;
-      slotResultDiv.textContent=''; chosenIdxs=[null,null,null]; chosenSet.clear();
-      for(let i=1;i<=3;i++){ const el=document.getElementById(`suggested${i}-name`); if(el) el.textContent=''; }
-      const available = getAvailableIndices();
-      for(let i=0;i<3;i++) offsets[i] = Math.floor(Math.random() * Math.max(1, available.length));
-      slotReels.forEach((r,i)=>{ r.classList.remove('winner'); renderScrollList(i,offsets[i]); });
-      slotStopBtns.forEach(btn=>{ btn.classList.remove('d-none'); btn.disabled=false; btn.removeAttribute('disabled'); btn.classList.remove('disabled'); btn.style.pointerEvents='auto'; btn.tabIndex=0; });
-      slotRespinBtns.forEach(b=>{ b.classList.add('d-none'); b.disabled=true; });
-      spinning=[true,true,true];
-      if(slotSpinBtn){ slotSpinBtn.style.pointerEvents='none'; slotSpinBtn.disabled=true; }
-      localStateSpun=true; saveState(); updateResetState();
-      intervals[0]=startReelScroll(0); intervals[1]=startReelScroll(1); intervals[2]=startReelScroll(2);
-    }
-
-    function stopReel(reelIdx){
-      if(!spinning[reelIdx]) return;
-      if(intervals[reelIdx]){ clearInterval(intervals[reelIdx]); intervals[reelIdx] = null; }
-      const available = getAvailableIndices();
-      if(!available || available.length===0){
-        spinning[reelIdx] = false;
-        const btn = slotStopBtns[reelIdx]; if(btn){ btn.classList.add('d-none'); btn.disabled=true; btn.setAttribute('disabled',''); btn.classList.add('disabled'); btn.style.pointerEvents='none'; btn.tabIndex=-1; }
-        renderIdle(reelIdx); updateResetState(); saveState(); return;
-      }
-      let curOffset = Number.isFinite(offsets[reelIdx]) ? Math.floor(offsets[reelIdx]) : 0;
-      curOffset = ((curOffset % available.length) + available.length) % available.length;
-      let idxInAvailable = ((curOffset + 2) % available.length + available.length) % available.length;
-      let chosenOriginal = available[idxInAvailable];
-      if(chosenOriginal === undefined) chosenOriginal = available[Math.floor(Math.random()*available.length)];
-      chosenIdxs[reelIdx] = chosenOriginal;
-      const suggestedEl = document.getElementById(`suggested${reelIdx+1}-name`); if(suggestedEl) suggestedEl.textContent = slotNames[chosenOriginal] || '';
-      chosenSet.add(chosenOriginal);
-      spinning[reelIdx] = false;
-      slotReels[reelIdx].classList.add('winner');
-      const btn = slotStopBtns[reelIdx]; if(btn){ btn.classList.add('d-none'); btn.disabled=true; btn.setAttribute('disabled',''); btn.classList.add('disabled'); btn.style.pointerEvents='none'; btn.tabIndex=-1; }
-      renderScrollList(reelIdx, chosenOriginal, true);
-
-      const resp = document.querySelector(`.reel-respin[data-reel="${reelIdx}"]`);
-      if(resp){ resp.classList.remove('d-none'); resp.disabled = false; }
-
-      for(let j=0;j<3;j++){
-        if(j===reelIdx) continue;
-        if(spinning[j]){
-          const avail = getAvailableIndices();
-          if(!avail || avail.length===0){ renderIdle(j); offsets[j]=0; } else { offsets[j] = ((Number.isFinite(offsets[j])?Math.floor(offsets[j]):0) % avail.length + avail.length) % avail.length; renderScrollList(j, offsets[j]); }
-        }
-      }
-
-      saveState();
-      if(spinning.every(s=>!s)){ if(slotSpinBtn){ slotSpinBtn.style.pointerEvents='auto'; slotSpinBtn.disabled=false; } slotResultDiv.innerHTML=''; saveState(); }
-      updateResetState();
-    }
-
-    function resetMachine(){
-      localStateSpun=false; chosenIdxs=[null,null,null]; offsets=[0,0,0]; spinning=[false,false,false];
-      intervals.forEach(i=>{ if(i) clearInterval(i); }); intervals=[null,null,null];
-      chosenSet.clear();
-      for(let i=1;i<=3;i++){ const el=document.getElementById(`suggested${i}-name`); if(el) el.textContent=''; }
-      slotResultDiv.textContent=''; localStorage.removeItem(STORAGE_KEY);
-      slotReels.forEach((r,i)=>{ r.classList.remove('winner'); renderIdle(i); });
-      slotStopBtns.forEach(btn=>{ if(btn){ btn.classList.remove('d-none'); btn.disabled=true; btn.setAttribute('disabled',''); btn.classList.add('disabled'); btn.style.pointerEvents='none'; btn.tabIndex=-1; } });
-      slotRespinBtns.forEach(b=>{ b.classList.add('d-none'); b.disabled = true; });
-      if(slotSpinBtn){ slotSpinBtn.disabled=false; slotSpinBtn.style.pointerEvents='auto'; }
-      updateResetState();
-    }
-
-    if(slotSpinBtn){
-      slotSpinBtn.addEventListener('click', function(){
-        if(localStateSpun){ if(!slotSpinBtn.disabled) resetMachine(); } else { slotSpinBtn.style.transform='translateY(3px)'; setTimeout(()=>{ slotSpinBtn.style.transform=''; startSpin(); },120); }
-      });
-    }
-
-    slotStopBtns.forEach((btn,i)=>{ if(btn) btn.addEventListener('click', ()=> stopReel(i)); });
-
-    // Re-spin single reel (replace Stop with Respin after stop)
-    function respinReel(reelIdx){
-      if(spinning[reelIdx] || slotBooks.length < 3) return;
-      if(chosenIdxs[reelIdx] != null){ chosenSet.delete(chosenIdxs[reelIdx]); chosenIdxs[reelIdx] = null; }
-      const sEl = document.getElementById(`suggested${reelIdx+1}-name`); if(sEl) sEl.textContent='';
-      slotReels[reelIdx].classList.remove('winner');
-
-      const respBtn = document.querySelector(`.reel-respin[data-reel="${reelIdx}"]`);
-      if(respBtn){ respBtn.classList.add('d-none'); respBtn.disabled = true; }
-
-      const available = getAvailableIndices();
-      offsets[reelIdx] = Math.floor(Math.random() * Math.max(1, available.length));
-      spinning[reelIdx] = true;
-
-      const stop = slotStopBtns[reelIdx];
-      if(stop){ stop.classList.remove('d-none'); stop.disabled=false; stop.removeAttribute('disabled'); stop.classList.remove('disabled'); stop.style.pointerEvents='auto'; stop.tabIndex=0; }
-
-      if(intervals[reelIdx]){ clearInterval(intervals[reelIdx]); intervals[reelIdx] = null; }
-      intervals[reelIdx] = startReelScroll(reelIdx);
-
-      for(let j=0;j<3;j++){
-        if(j===reelIdx) continue;
-        if(spinning[j]){
-          const avail = getAvailableIndices();
-          if(!avail || avail.length===0){ renderIdle(j); offsets[j]=0; } else { offsets[j] = ((Number.isFinite(offsets[j])?Math.floor(offsets[j]):0) % avail.length + avail.length) % avail.length; renderScrollList(j, offsets[j]); }
-        }
-      }
-
-      localStateSpun = true; saveState(); updateResetState();
-    }
-
-    slotRespinBtns.forEach(btn => {
-      const idx = Number(btn.getAttribute('data-reel'));
-      btn.addEventListener('click', () => respinReel(idx));
-    });
-
-    // CSV parse (handles quoted fields)
-    function parseCSV(text){
-      const lines = text.split(/\r?\n/);
-      const out = [];
-      for(let line of lines){
-        const cols=[]; let cur=''; let inQuotes=false;
-        for(let i=0;i<line.length;i++){
-          const ch=line[i];
-          if(ch==='"'){
-            if(inQuotes && line[i+1]==='"'){ cur+='"'; i++; }
-            else inQuotes=!inQuotes;
-          } else if(ch===',' && !inQuotes){ cols.push(cur); cur=''; }
-          else cur+=ch;
-        }
-        cols.push(cur); out.push(cols);
-      }
-      return out;
-    }
-
-    // Load books and restore state
-    fetch("https://docs.google.com/spreadsheets/d/e/2PACX-1vSLdPdPu4pwIwsAjADiCQOXYUJ8ACgWXaJn0DUVgNEy8ZZfc06EUGz2G9imE4gQ9FRs_zoDamhYTHhQ/pub?output=csv")
-      .then(r=>r.text()).then(csv=>{
-        const parsed = parseCSV(csv);
-        const data = parsed.length>0 ? parsed.slice(1) : [];
-        slotBooks = []; slotNames = [];
-        data.forEach(cols => {
-          const book = (cols[1] || '').trim();
-          const name = (cols[2] || '').trim();
-          if(book){ slotBooks.push(book); slotNames.push(name); }
-        });
-        slotLoadingDiv.style.display='none';
-        for(let i=1;i<=3;i++){ const el=document.getElementById(`suggested${i}-name`); if(el) el.textContent=''; }
-
-        const saved = loadState();
-        if(saved && Array.isArray(saved.chosenIdxs)){
-          chosenIdxs = saved.chosenIdxs.slice(0,3).map(v=> (v===null||typeof v==='number')?v:null );
-          chosenSet = new Set(chosenIdxs.filter(n=>n!==null));
-          const anyChosen = chosenIdxs.some(v=>v!==null);
-          if(saved.spun && (anyChosen || !chosenIdxs.every(v=>v===null))) localStateSpun = true; else localStateSpun = false;
-        }
-
-        if(slotBooks.length < 3){
-          slotReels.forEach((r,i)=>{ r.classList.remove('winner'); slotScrolls[i].innerHTML=`<div class="slot-scroll-list"><div class="slot-scroll-item">No books!</div></div>`; });
-          slotStopBtns.forEach(b=>b.disabled=true); if(slotSpinBtn) slotSpinBtn.disabled=true;
-        } else {
-          slotReels.forEach((r,i)=>{
-            r.classList.remove('winner');
-            if(chosenIdxs[i] != null && typeof chosenIdxs[i] === 'number' && slotBooks[chosenIdxs[i]]){
-              renderScrollList(i, chosenIdxs[i], true);
-              const suggestedEl = document.getElementById(`suggested${i+1}-name`); if(suggestedEl) suggestedEl.textContent = slotNames[chosenIdxs[i]] || '';
-              r.classList.add('winner');
-              const btn = slotStopBtns[i]; if(btn){ btn.classList.add('d-none'); btn.disabled=true; btn.setAttribute('disabled',''); btn.classList.add('disabled'); btn.style.pointerEvents='none'; btn.tabIndex=-1; }
-              const resp = document.querySelector(`.reel-respin[data-reel="${i}"]`); if(resp){ resp.classList.remove('d-none'); resp.disabled=false; }
-            } else {
-              if(localStateSpun){
-                const available = getAvailableIndices();
-                offsets[i] = Math.floor(Math.random() * Math.max(1, available.length));
-                renderScrollList(i, offsets[i]);
-                slotStopBtns[i].classList.remove('d-none'); slotStopBtns[i].disabled=false; slotStopBtns[i].removeAttribute('disabled'); slotStopBtns[i].classList.remove('disabled'); slotStopBtns[i].style.pointerEvents='auto'; slotStopBtns[i].tabIndex=0;
-                spinning[i]=true; if(!intervals[i]) intervals[i]=startReelScroll(i);
-              } else {
-                renderIdle(i);
-                slotStopBtns[i].classList.remove('d-none'); slotStopBtns[i].disabled=true;
-                const resp = document.querySelector(`.reel-respin[data-reel="${i}"]`); if(resp){ resp.classList.add('d-none'); resp.disabled=true; }
-              }
-            }
-          });
-          updateResetState();
-        }
-      }).catch(()=>{ slotLoadingDiv.textContent="Failed to load book list."; slotReels.forEach((r,i)=>{ r.classList.remove('winner'); slotScrolls[i].innerHTML=`<div class="slot-scroll-list"><div class="slot-scroll-item">Error</div></div>`; }); slotStopBtns.forEach(b=>b.disabled=true); if(slotSpinBtn) slotSpinBtn.disabled=true; });
-
-  </script>
-
-  <div class="card shadow-sm mb-4">
-    <div class="card-body">
-      <h2 class="card-title mb-2 fs-5">📚 Voting Poll</h2>
-      <p class="text-muted small mb-2">Once the three books are chosen, share this link with other members to vote:</p>
-      <a href="voting_poll.html" target="_blank"><span class="btn btn-info w-100 mb-2" role="button">Go to Voting Poll</span></a>
-      <img class="qr" src="https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=voting_poll.html" alt="QR code for voting poll">
-      <div class="text-muted small">(Click or scan to open the voting poll)</div>
-    </div>
-  </div>
-
-  <!-- Bootstrap JS -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

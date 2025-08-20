@@ -5,6 +5,11 @@
   <title>Voting Poll</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
+    /* keep minimal header button style for Main Page */
+    .main-btn-header { text-align:center; margin:1rem 0; }
+    .main-btn-header .btn { padding:0.6rem 1rem; }
+  </style>
+  <style>
     body { font-family: sans-serif; max-width: 500px; margin: 2em auto; text-align: center; }
     .section { background: #fafafa; border-radius: 12px; border: 1px solid #ddd; margin: 1.5em 0; padding: 1em 0.5em; }
     .poll-item { margin: 15px 0; padding: 15px; border: 1px solid #ccc; border-radius: 8px; background: #f9f9f9; display: flex; align-items: center; }
@@ -30,227 +35,79 @@
     .mt-2 { margin-top: 0.5em; }
     .fs-5 { font-size: 1.25em; }
     .shadow-sm { box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+    /* transition helpers */
+    .fade-in { animation: fadeIn 420ms cubic-bezier(.2,.8,.2,1) both; }
+    .fade-out { animation: fadeOut 300ms cubic-bezier(.2,.8,.2,1) both; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+    @keyframes fadeOut { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(-8px); } }
+  /* Waiting view styles */
+  .wait-box { display:flex; flex-direction:column; align-items:center; gap:12px; padding:12px; }
+  .wait-dog { width:220px; max-width:90%; border-radius:12px; box-shadow:0 6px 18px rgba(0,0,0,0.12); }
+  .wait-text { font-size:1.05em; color:#333; max-width:380px; text-align:center; }
+  .wait-sub { color:#666; font-size:0.95em; }
+  .spinner { width:48px; height:48px; border:5px solid #eee; border-top-color:#007bff; border-radius:50%; animation:spin 1s linear infinite; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .dog-bob { animation: bob 2s ease-in-out infinite; }
+  @keyframes bob { 0%{transform:translateY(0)}50%{transform:translateY(-6px)}100%{transform:translateY(0)} }
   </style>
 </head>
 
 <body>
+  <header class="main-btn-header">
+    <a href="index.html" class="btn btn-secondary">🏠 Main Page</a>
+  </header>
   <h1>📊 Voting Poll</h1>
 
   <div class="section">
-    <h2>Vote for the next book - toggle your votes</h2>
-    <input type="text" id="nameInput" placeholder="Enter your name" />
-    <button id="submitNameBtn">Submit Name</button>
-    <button id="editNameBtn" style="display: none;">Edit Name</button>
-    <div id="poll-options"></div>
+  <h2>Vote for the next book - toggle your votes</h2>
+  <input type="text" id="nameInput" placeholder="Enter your name" />
+  <button id="submitNameBtn">Submit Name</button>
+  <button id="editNameBtn" style="display: none;">Edit Name</button>
+  <p class="text-muted small mb-2 mt-2">Please vote for which book(s) you'd like to read next month — you may vote for more than one option.</p>
+  <div id="poll-reset-banner" style="display:none; margin-top:12px; padding:8px; border-radius:6px; background:#fff3cd; color:#856404; border:1px solid #ffeeba; font-size:0.95em;"></div>
+  <!-- Poll UI (legacy) -->
+  <div id="poll-options"></div>
   </div>
 
-  <!-- Add a container for showing the three winners -->
-  <div class="card shadow-sm mb-4">
-    <div class="card-body">
-      <h2 class="card-title mb-2 fs-5">🏆 Selected Books</h2>
-      <div id="winners-container" class="mt-2">
-        <div id="winners-loading" class="text-muted small">Loading winners...</div>
-      </div>
-    </div>
-  </div>
+  <!-- Selected Books section removed -->
 
   <script>
-  (function(){
-    const POLL_CHOICES_KEY = 'pollChoices';
-    const VOTES_KEY = 'votes';
-
-    const pollOptionsEl = document.getElementById('poll-options');
-    const nameInput = document.getElementById('nameInput');
-    const submitNameBtn = document.getElementById('submitNameBtn');
-    const editNameBtn = document.getElementById('editNameBtn');
-
-    if(!pollOptionsEl) return; // nothing to do
-
-    // helpers
-    function safeParse(key){ try{ return JSON.parse(localStorage.getItem(key)); }catch(e){ return null; } }
-    function saveVotes(){ localStorage.setItem(VOTES_KEY, JSON.stringify(votes)); }
-    function persistPollChoices(){ localStorage.setItem(POLL_CHOICES_KEY, JSON.stringify(pollChoices)); }
-    function escapeHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-
-    // state
-    let pollChoices = safeParse(POLL_CHOICES_KEY) || [];
-    let votes = safeParse(VOTES_KEY) || {};
-    let voterName = sessionStorage.getItem('voterName') || '';
-
-    // If no pollChoices, try to seed from the winners DOM (non-invasive)
-    function seedFromWinnersDomIfEmpty(){
-      if(pollChoices && pollChoices.length) return;
-      const winnersContainer = document.getElementById('winners-container');
-      if(!winnersContainer) return;
-      const rows = Array.from(winnersContainer.children).filter(n => n.textContent.trim().length);
-      if(!rows.length) return;
-      const choices = rows.map(r=>{
-        const strong = r.querySelector('strong');
-        const title = strong ? strong.textContent.replace(/^\s*\d+\.\s*/, '').trim() : r.textContent.trim();
-        const suggMatch = r.textContent.match(/Suggested by:\s*([^\n\r]+)/);
-        const sugg = suggMatch ? suggMatch[1].trim() : '';
-        return { book: title || '(Unknown)', name: sugg || '' };
-      }).filter(c => c.book && c.book !== '(Unknown)');
-      if(choices.length){
-        pollChoices = choices;
-        persistPollChoices();
-      }
-    }
-
-    // Render function (exposed)
-    window.renderPollOptions = function renderPollOptions(){
-      pollOptionsEl.innerHTML = '';
-      if(!pollChoices || pollChoices.length === 0){
-        pollOptionsEl.innerHTML = '<div class="muted">No poll choices available.</div>';
-        return;
-      }
-      pollChoices.forEach((choice, idx) => {
-        const wrapper = document.createElement('div');
-        wrapper.className = 'poll-item';
-        wrapper.style.display = 'flex';
-        wrapper.style.gap = '12px';
-        wrapper.style.alignItems = 'flex-start';
-        wrapper.style.padding = '8px';
-
-        const voteContainer = document.createElement('div');
-        voteContainer.className = 'vote-container';
-        const checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-        checkbox.id = 'choice-' + idx;
-        checkbox.dataset.idx = idx;
-        checkbox.dataset.book = choice.book;
-        checkbox.disabled = !voterName;
-        checkbox.checked = voterName && Array.isArray(votes[choice.book]) && votes[choice.book].includes(voterName);
-        voteContainer.appendChild(checkbox);
-
-        const content = document.createElement('div');
-        content.className = 'poll-content';
-        content.innerHTML = '<div style="font-weight:700">' + escapeHtml(choice.book) + '</div>'
-                          + '<div class="suggested-by" style="font-style:italic;color:#555;margin-top:4px;">Suggested by: ' + escapeHtml(choice.name || '—') + '</div>'
-                          + '<div class="voters small" id="voters-' + idx + '" style="margin-top:6px;color:#444;font-size:0.9rem;">Voted by: ' + (Array.isArray(votes[choice.book]) && votes[choice.book].length ? votes[choice.book].join(', ') : 'No votes yet') + '</div>';
-
-        wrapper.appendChild(voteContainer);
-        wrapper.appendChild(content);
-        pollOptionsEl.appendChild(wrapper);
-
-        checkbox.addEventListener('change', () => toggleVoteByIndex(idx, checkbox.checked));
-      });
-    };
-
-    function updateVotersUIForIndex(idx){
-      const el = document.getElementById('voters-'+idx);
-      if(!el) return;
-      const choice = pollChoices[idx];
-      el.textContent = 'Voted by: ' + (Array.isArray(votes[choice.book]) && votes[choice.book].length ? votes[choice.book].join(', ') : 'No votes yet');
-    }
-    function updateAllVotersUI(){ pollChoices.forEach((_,i)=> updateVotersUIForIndex(i)); }
-
-    function toggleVoteByIndex(idx, checked){
-      if(!voterName){
-        alert('Please submit your name before voting.');
-        const cb = document.getElementById('choice-'+idx);
-        if(cb) cb.checked = !checked;
-        return;
-      }
-      const choice = pollChoices[idx];
-      if(!choice) return;
-      const book = choice.book;
-      if(!votes[book]) votes[book] = [];
-      if(checked){
-        if(!votes[book].includes(voterName)) votes[book].push(voterName);
-      } else {
-        votes[book] = votes[book].filter(n => n !== voterName);
-      }
-      saveVotes();
-      updateVotersUIForIndex(idx);
-    }
-
-    function submitName(){
-      const name = (nameInput && nameInput.value || '').trim();
-      if(!name){ alert('Please enter your name'); return; }
-      voterName = name;
-      sessionStorage.setItem('voterName', voterName);
-      if(nameInput) nameInput.disabled = true;
-      if(submitNameBtn) submitNameBtn.style.display = 'none';
-      if(editNameBtn) editNameBtn.style.display = 'inline-block';
-      document.querySelectorAll('#poll-options input[type="checkbox"]').forEach(cb=>{
-        cb.disabled = false;
-        const idx = Number(cb.dataset.idx);
-        const choice = pollChoices[idx];
-        cb.checked = !!(choice && Array.isArray(votes[choice.book]) && votes[choice.book].includes(voterName));
-      });
-    }
-
-    function editName(){
-      voterName = '';
-      sessionStorage.removeItem('voterName');
-      if(nameInput) { nameInput.disabled = false; }
-      if(submitNameBtn) submitNameBtn.style.display = 'inline-block';
-      if(editNameBtn) editNameBtn.style.display = 'none';
-      document.querySelectorAll('#poll-options input[type="checkbox"]').forEach(cb=>{ cb.disabled = true; cb.checked = false; });
-    }
-
-    // storage sync
-    window.addEventListener('storage', (e) => {
-      if(e.key === VOTES_KEY){
-        votes = safeParse(VOTES_KEY) || {};
-        updateAllVotersUI();
-      }
-      if(e.key === POLL_CHOICES_KEY){
-        pollChoices = safeParse(POLL_CHOICES_KEY) || [];
-        renderPollOptions();
-      }
-    });
-
-    // expose submit/edit if not already present
-    if(!window.submitName) window.submitName = submitName;
-    if(!window.editName) window.editName = editName;
-
-    // init
-    (function init(){
-      // seed from winners DOM if pollChoices empty (non-invasive)
-      seedFromWinnersDomIfEmpty();
-      votes = safeParse(VOTES_KEY) || {};
-      // render poll options
-      renderPollOptions();
-      updateAllVotersUI();
-
-      // restore name if present
-      const saved = sessionStorage.getItem('voterName');
-      if(saved){
-        if(nameInput) nameInput.value = saved;
-        submitName();
-      }
-
-      // wire buttons if present
-      if(submitNameBtn) submitNameBtn.addEventListener('click', submitName);
-      if(editNameBtn) editNameBtn.addEventListener('click', editName);
-    })();
-
-    // NEW: watch winners container for async rendering and seed pollChoices when it appears
-    (function watchWinnersAndSeed(){
-      const winnersDom = document.getElementById('winners-container');
-      if(!winnersDom) return;
-      const mo = new MutationObserver((mutations, obs) => {
-        // don't overwrite existing pollChoices
-        if (Array.isArray(pollChoices) && pollChoices.length) { obs.disconnect(); return; }
-        if (winnersDom.children.length) {
-          // seed from winners now that they exist, render poll UI and stop observing
-          seedFromWinnersDomIfEmpty();
-          renderPollOptions();
-          updateAllVotersUI();
-          obs.disconnect();
-        }
-      });
-      mo.observe(winnersDom, { childList: true, subtree: false });
-    })();
-
-  })();
+  // Legacy poll UI only. Helper functions and rendering live in the older script below.
+  // No-op here - legacy script will handle rendering into #poll-options and respond to pollChoices changes.
   </script>
   <script>
-    const pollChoices = JSON.parse(localStorage.getItem("pollChoices")) || []; // Load poll choices
-    const votes = JSON.parse(localStorage.getItem("votes")) || {}; // Load votes
-    const pollOptions = document.getElementById("poll-options");
+  let pollChoices = JSON.parse(localStorage.getItem("pollChoices")) || []; // Load poll choices
+  // Normalize any legacy or internal shapes into {book,name}
+  if (Array.isArray(pollChoices) && pollChoices.length){
+    pollChoices = pollChoices.map(item => {
+      if (!item) return item;
+      // accept shapes: {book,name} or {book,title,name} or {title,book,name}
+      const book = item.book || item.display || item.title || item[0] || '';
+      const name = item.name || item.suggestedBy || item[1] || '';
+      return { book: String(book), name: String(name) };
+    });
+  }
+    // persist and render as {book,name} array
+    const persisted = pollChoices.map(i => ({ book: i.book, name: i.name || '' }));
+    // helper to persist pollChoices and clear votes if the poll changed
+    function persistPollChoices(arr){
+      try{
+        const newStr = JSON.stringify(arr || []);
+        const oldStr = localStorage.getItem('pollChoices') || null;
+        // If the poll choices changed, clear votes (new poll)
+        if(oldStr !== newStr){
+          try{ localStorage.removeItem('votes'); }catch(e){}
+          // notify other tabs (storage event will fire there)
+          try{ window.dispatchEvent(new StorageEvent('storage', { key:'votes', newValue: null })); }catch(e){}
+        }
+        localStorage.setItem('pollChoices', newStr);
+        pollChoices = JSON.parse(newStr);
+      }catch(e){ console.warn('persistPollChoices failed', e); }
+    }
+    persistPollChoices(persisted);
+  let votes = JSON.parse(localStorage.getItem("votes")) || {}; // Load votes
+  const pollOptions = document.getElementById("poll-options");
+  let pollVisible = false; // true when poll UI is currently shown (prevents re-triggering animation)
     const nameInput = document.getElementById("nameInput");
     const submitNameBtn = document.getElementById("submitNameBtn");
     const editNameBtn = document.getElementById("editNameBtn");
@@ -264,19 +121,26 @@
         option.className = "poll-item";
         option.innerHTML = `
           <div class="vote-container">
-            <input type="checkbox" id="choice${index}" name="poll" value="${choice.book}" disabled>
+            <input type="checkbox" id="choice${index}" name="poll" value="${choice.book}">
             <label for="choice${index}" class="vote-label">Vote</label>
           </div>
           <div class="poll-content">
             <label for="choice${index}">${choice.book}</label>
             <div class="suggested-by">Suggested by ${choice.name}</div>
-            <div class="voters" id="voters-${choice.book}">Voted by: ${getVoters(choice.book)}</div>
+            <div class="voters" id="voters-old-${choice.book}">Voted by: ${getVoters(choice.book)}</div>
           </div>
         `;
         pollOptions.appendChild(option);
 
-        // Add event listener for toggling votes
+        // Wire up checkbox state according to current voterName and votes
         const checkbox = option.querySelector("input[type='checkbox']");
+        const voteLabel = option.querySelector('.vote-label');
+        // Disabled if no confirmed voter name
+        checkbox.disabled = !voterName;
+        // Checked if the current voter has voted for this book
+        try{ checkbox.checked = isUserVoted(choice.book); }catch(e){}
+        if(voterName){ voteLabel.classList.add('bold'); } else { voteLabel.classList.remove('bold'); }
+        // Add event listener for toggling votes
         checkbox.addEventListener("change", () => toggleVote(choice.book));
       });
     }
@@ -314,8 +178,15 @@
 
     // Update the voters list for a book
     function updateVoters(book) {
-      const votersDiv = document.getElementById(`voters-${book}`);
-      votersDiv.innerHTML = `Voted by: ${getVoters(book)}`;
+  const votersDiv = document.getElementById(`voters-old-${book}`);
+  if (votersDiv) votersDiv.innerHTML = `Voted by: ${getVoters(book)}`;
+  // Update checkbox checked state and label bolding so re-renders keep correct enable state
+  try{
+    const checkbox = document.querySelector(`input[type='checkbox'][value="${book}"]`);
+    const voteLabel = checkbox ? checkbox.parentElement.querySelector('.vote-label') : null;
+    if(checkbox){ checkbox.checked = isUserVoted(book); checkbox.disabled = !voterName; }
+    if(voteLabel){ if(voterName) voteLabel.classList.add('bold'); else voteLabel.classList.remove('bold'); }
+  }catch(e){}
     }
 
     // Handle name submission
@@ -361,14 +232,48 @@
     // Load poll choices on page load
     loadPollChoices();
 
-    <!-- Pull the three chosen indexes from slotMachineState and render titles/names -->
-    (async function(){
+    // helper to animate showing the poll choices
+    function showPollChoicesAnimated(){
+      const target = pollOptions || document.getElementById('poll-options');
+      if(!target) return;
+      // fade out current content (waiting UI) then render poll and fade in
+      target.classList.remove('fade-in');
+      target.classList.add('fade-out');
+      setTimeout(()=>{
+        try{ loadPollChoices(); }catch(e){}
+        target.classList.remove('fade-out');
+        target.classList.add('fade-in');
+      }, 350);
+    }
+
+  // Banner control (shows when votes are reset via Slot Machine reset)
+  const pollResetBanner = document.getElementById('poll-reset-banner');
+  function showResetBanner(text){ if(pollResetBanner){ pollResetBanner.textContent = text; pollResetBanner.style.display = 'block'; setTimeout(()=>{ if(pollResetBanner) pollResetBanner.style.display='none'; }, 8000); } }
+
+  <!-- Pull the three chosen indexes from slotMachineState and render titles/names -->
+  async function loadWinnersAndChoices(){
       const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSLdPdPu4pwIwsAjADiCQOXYUJ8ACgWXaJn0DUVgNEy8ZZfc06EUGz2G9imE4gQ9FRs_zoDamhYTHhQ/pub?output=csv";
       const container = document.getElementById('winners-container');
       const loading = document.getElementById('winners-loading');
 
       function showMessage(msg){
-        container.innerHTML = '<div class="text-muted small">'+msg+'</div>';
+        // If this is the waiting message, render a friendlier UI with dog and spinner
+        const waitingText = 'Wait until the lead has randomly chosen all three books with the slot machine.';
+        if(msg && msg.indexOf('Wait until')===0){
+          const dogHtml = `
+            <div class="wait-box">
+              <img class="wait-dog dog-bob" src="https://cdn.discordapp.com/attachments/737108335978872904/1407440695492612106/IMG_0875.jpg?ex=68a61cca&is=68a4cb4a&hm=4e7a7a17723d3e1309b25fe9030a3020a450aff960780721f6778abbcac22b1f&" alt="Merc the dog" />
+              <div class="wait-text">Please wait patiently with Merc — the lead will randomly choose all three books with the slot machine.</div>
+              <div class="wait-sub">We'll let you know when voting starts.</div>
+              <div class="spinner" aria-hidden="true"></div>
+            </div>`;
+          if (container) container.innerHTML = dogHtml;
+          else if(pollOptions) pollOptions.innerHTML = dogHtml;
+          return;
+        }
+        const html = '<div class="text-muted small">'+msg+'<\/div>';
+        if (container) container.innerHTML = html;
+        else if(pollOptions) pollOptions.innerHTML = html;
       }
 
       // Try slotMachineState first
@@ -381,27 +286,34 @@
         } catch(e){}
       }
 
-      // fallbacks (older keys) — optional
-      if (!chosenIdxs) {
-        const fallback = JSON.parse(localStorage.getItem('winners') || 'null');
-        if (Array.isArray(fallback) && fallback.length) {
-          // If earlier format stored full objects, render those directly
-          container.innerHTML = '';
-          fallback.forEach(w=>{
-            const row = document.createElement('div');
-            row.className = 'mb-2';
-            const book = document.createElement('div'); book.textContent = w.book || '';
-            const by = document.createElement('div'); by.className = 'text-muted small'; by.textContent = w.name ? 'Suggested by: ' + w.name : '';
-            row.appendChild(book); row.appendChild(by);
-            container.appendChild(row);
-          });
-          return;
-        }
+      // Read manual winners from localStorage (if present) and normalize to {book,name}
+      const rawManual = JSON.parse(localStorage.getItem('winners') || 'null');
+      let manualChoices = Array.isArray(rawManual) ? rawManual.map(w => {
+        // accept different shapes: {title,suggestedBy} or {book,name}
+        const book = (w && (w.title || w.book || w[0])) || '';
+        const name = (w && (w.suggestedBy || w.name || w[1])) || '';
+        return { book: String(book).trim() || '(Unknown)', name: String(name).trim() || '' };
+      }).filter(x=>x && x.book) : [];
+
+      // If there are no slot choices AND no manual choices, show waiting message
+      if ((!chosenIdxs || chosenIdxs.every(v=>v===null || v===undefined)) && manualChoices.length === 0){
+        showMessage('Wait until the lead has randomly chosen all three books with the slot machine.');
+        return;
       }
 
-      if (!chosenIdxs || chosenIdxs.every(v=>v===null || v===undefined)){
-        showMessage('No winners selected yet. Press SPIN and Stop in the slot machine to pick 3 books.');
-        return;
+      // If manual choices alone satisfy the poll and all have 'name', use them immediately
+      const needsName = (arr) => arr.some(x=>!x.name || !String(x.name).trim());
+      if (manualChoices.length >= 3 && (!chosenIdxs || chosenIdxs.every(v=>v===null || v===undefined))) {
+        const finalManual = manualChoices.slice(0,3);
+        // If none are missing names, render fast-path
+        if(!needsName(finalManual)){
+          pollChoices = finalManual.map(i=>({ book: i.book, name: i.name||'' }));
+          try{ persistPollChoices(pollChoices); }catch(e){}
+          if(!pollVisible){ try{ showPollChoicesAnimated(); }catch(e){ if (typeof loadPollChoices === 'function') loadPollChoices(); } pollVisible = true; }
+          if (typeof window.renderPollOptions === 'function') window.renderPollOptions();
+          return;
+        }
+        // Otherwise fall through to fetch CSV so we can fill missing 'Suggested by' from submissions
       }
 
       // fetch CSV and map indices -> book/name
@@ -409,30 +321,139 @@
         const res = await fetch(CSV_URL);
         const csv = await res.text();
         const rows = csv.split('\n').slice(1); // skip header
-        // render chosen entries in order
-        container.innerHTML = '';
-        chosenIdxs.forEach((origIdx, i) => {
+        // helper to normalize book titles for matching
+        const norm = s => String(s || '').toLowerCase()
+          .replace(/["'’“”\(\)\[\]\.\,;:\-—\/]/g,'') // remove punctuation incl. hyphen and em-dash and slashes
+          .replace(/\s+/g,' ').trim();
+        // parse any CSV line into {display,title,name}
+        function parseLineToPair(line){
+          const cols = (function(line){
+            const out = []; let cur=''; let inQ=false;
+            for(let i=0;i<line.length;i++){
+              const ch=line[i];
+              if(ch==='"'){
+                if(inQ && line[i+1]==='"'){ cur+='"'; i++; }
+                else inQ = !inQ;
+              } else if(ch===',' && !inQ){ out.push(cur); cur=''; }
+              else cur+=ch;
+            }
+            out.push(cur);
+            return out;
+          })(line);
+          // Column heuristic: title is usually in cols[1]; suggester (who suggested the book) in cols[2]
+          const rawTitle = (cols[1] || '').trim();
+          const suggestedBy = (cols[2] || '').trim();
+          // title-only (strip author) for matching
+          let titleOnly = rawTitle;
+          const dashRe = /\s*-\s*/;
+          if(dashRe.test(rawTitle)){
+            const parts = rawTitle.split(dashRe);
+            titleOnly = parts.slice(0,1).join('-').trim();
+          } else {
+            const byMatch = rawTitle.match(/\s+by\s+/i);
+            if(byMatch){
+              const parts = rawTitle.split(/\s+by\s+/i);
+              titleOnly = parts[0].trim();
+            }
+          }
+          return { display: rawTitle || '', title: titleOnly || '', name: suggestedBy || '' };
+        }
+        // Build a lookup from normalized book -> suggestedBy (first match wins)
+        const bookToName = {};
+        for(let i=0;i<rows.length;i++){
+          const raw = rows[i]||'';
+          if(!raw.trim()) continue;
+          const p = parseLineToPair(raw);
+          const k = norm(p.title);
+          if(k && !bookToName[k]) bookToName[k] = p.name || '';
+        }
+        // Build poll choices from chosen indices (slot-derived) using parseLineToPair for consistency
+        const slotChoices = [];
+        if (Array.isArray(chosenIdxs)) chosenIdxs.forEach((origIdx) => {
           if (origIdx === null || origIdx === undefined) return;
-          const row = rows[origIdx] || '';
-          const cols = row.split(',');
-          const book = (cols[1] || '').trim();
-          const name = (cols[2] || '').trim();
-          const item = document.createElement('div');
-          item.className = 'mb-2';
-          const title = document.createElement('div');
-          title.innerHTML = '<strong>' + (book || 'Unknown book') + '</strong>';
-          const by = document.createElement('div');
-          by.className = 'text-muted small';
-          by.textContent = name ? 'Suggested by: ' + name : 'Suggested by: (unknown)';
-          item.appendChild(title);
-          item.appendChild(by);
-          container.appendChild(item);
+            const row = rows[origIdx] || '';
+            const p = parseLineToPair(row);
+            slotChoices.push({ book: p.display || p.title || 'Unknown book', title: p.title || '', name: p.name || '' });
         });
+
+        // Merge manualChoices (preferred) with slotChoices to form finalChoices
+  const final = [];
+  const seen = new Set();
+  // Add manual first (if any) using normalized title-only keys
+  for(const m of manualChoices){ if(final.length>=3) break; const titleOnly = (function(b){ const parts = String(b||'').split(/\s-\s/); return parts[0]||b||''; })(m.book); const key = norm(titleOnly); if(!seen.has(key)){ final.push({ book: m.book, title: titleOnly, name: m.suggestedBy||m.name||'' }); seen.add(key); } }
+  // Fill from slot choices keeping order and avoiding duplicates
+  for(const s of slotChoices){ if(final.length>=3) break; const key = norm(s.title||s.book||''); if(!seen.has(key)){ final.push({ book: s.book, title: s.title||s.book, name: s.name||'' }); seen.add(key); } }
+
+        // Fill missing suggestedBy from the CSV lookup using title-only keys
+        final.forEach(item => {
+          if(!item.name || !String(item.name).trim()){
+            const k = norm(item.title || item.book);
+            if(k && bookToName[k]) item.name = bookToName[k];
+          }
+        });
+
+        if (final.length === 3) {
+          // Ensure pollChoices are {book, name} (display book and suggestedBy)
+          pollChoices = final.map(i=>({ book: i.book, name: i.name||'' }));
+          try{ persistPollChoices(pollChoices); }catch(e){}
+          // Only reset votes if the slot machine was explicitly Reset
+          try{
+            if(localStorage.getItem('slotMachineReset')){
+              localStorage.removeItem('votes'); votes = {};
+              localStorage.removeItem('slotMachineReset'); // consume the flag
+            }
+          }catch(e){}
+          // animate render only once we have all three choices
+          if(!pollVisible){
+            try{ showPollChoicesAnimated(); }catch(e){ if (typeof loadPollChoices === 'function') loadPollChoices(); }
+            pollVisible = true;
+          } else {
+            // already visible; just ensure UI is up-to-date
+            if (typeof loadPollChoices === 'function') loadPollChoices();
+          }
+          // and notify the other render function if present
+          if (typeof window.renderPollOptions === 'function') window.renderPollOptions();
+        } else {
+          // not ready yet - ensure pollVisible is false so animation can run later
+          pollVisible = false;
+          showMessage('Wait until the lead has randomly chosen all three books with the slot machine.');
+        }
       } catch (err) {
         console.error(err);
         showMessage('Failed to load book details.');
       }
-    })();
+    }
+
+    // initial load
+    loadWinnersAndChoices();
+
+    // Poll localStorage periodically in case winners are written by another tab
+    const POLL_INTERVAL_MS = 2000;
+    const pollTimer = setInterval(() => {
+      try{ loadWinnersAndChoices(); }catch(e){}
+    }, POLL_INTERVAL_MS);
+
+    // Also listen to storage events (cross-tab) and custom events from admin script
+    window.addEventListener('storage', (ev)=>{
+      if(!ev.key) return;
+      try{
+        if(ev.key==='winners' || ev.key==='slotMachineState' || ev.key==='pollChoices'){
+          loadWinnersAndChoices();
+          return;
+        }
+        if(ev.key==='votes'){
+          // reload votes and refresh voter displays
+          try{ votes = JSON.parse(localStorage.getItem('votes')) || {}; }catch(e){ votes = {}; }
+          // update all voter divs and checkbox states
+          (pollChoices||[]).forEach(c=> updateVoters(c.book));
+          return;
+        }
+      }catch(e){ /* ignore */ }
+    });
+
+    // Custom events dispatched by admin page when winners are saved/cleared
+    window.addEventListener('winnersSaved', (ev)=>{ try{ loadWinnersAndChoices(); }catch(e){} });
+    window.addEventListener('winnersCleared', (ev)=>{ try{ pollOptions.innerHTML=''; showMessage('Wait until the lead has randomly chosen all three books with the slot machine.'); }catch(e){} });
   </script>
 </body>
 </html>

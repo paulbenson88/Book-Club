@@ -2,159 +2,174 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>The Missing Half – Character List</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="css/styles.css" rel="stylesheet">
   <style>
-    body { font-family: Arial, sans-serif; max-width: 700px; margin: 2em auto; padding: 0 1em; line-height: 1.5; }
-    h1, p { text-align: center; }
-    .chapter { margin: 1.5em 0; border: 1px solid #ddd; padding: 1em; border-radius: 8px; background: #fafafa; }
-    .chapter h2 { margin: 0; }
-    button { margin-top: 0.5em; padding: 0.5em 1em; font-size: 1em; cursor: pointer; border: none; background: #007bff; color: white; border-radius: 4px; }
-    .characters { display: none; margin-top: 0.5em; padding-left: 1em; }
-    .back { display: inline-block; margin-top: 2em; text-decoration: none; color: #007bff; font-size: 1em; }
+    .chapter { margin: 1rem 0; }
+    .characters { display: none; margin-top: .5rem; padding-left: 1rem; }
   </style>
 </head>
 <body>
-  <h1>The Missing Half</h1>
-  <p><strong>⚠️ Spoiler Warning:</strong> Only expand chapters you’ve read.</p>
+  <header style="text-align:center; margin:1rem 0;">
+    <a href="index.html" class="btn btn-secondary">🏠 Main Page</a>
+  </header>
 
-  <!-- Chapter list start -->
-  <div class="chapter">
-    <h2>Chapter 1</h2>
-    <button onclick="toggle('ch1')">Show Characters</button>
-    <div class="characters" id="ch1">
-      • Brad Andrews – Nicole’s manager.<br>
-      • Sandy Andrews – Brad’s wife.<br>
-      • Nicole Monroe (“Nic”) – One of the protagonists.<br>
-      • Kasey Marie Monroe (“Kase”) – Nicole’s missing sister.
+  <main class="container">
+    <div class="card shadow-sm mb-3">
+      <div class="card-body">
+        <h1 class="h4">The Missing Half</h1>
+        <p class="small text-muted"><strong>⚠️ Spoiler Warning:</strong> Only expand chapters you’ve read.</p>
+      </div>
     </div>
-  </div>
-  <div class="chapter">
-    <h2>Chapter 2</h2>
-    <button onclick="toggle('ch2')">Show Characters</button>
-    <div class="characters" id="ch2">
-      • Lauren Perkins – Kasey’s best friend (Lauren Tate).
+
+    <div class="card">
+      <div class="card-body">
+        <!-- Chapter list start -->
+        <div class="chapter">
+          <h2>Chapter 1</h2>
+          <button class="btn btn-sm btn-primary mt-2" onclick="toggle('ch1')">Show Characters</button>
+          <div class="characters" id="ch1">
+            • Brad Andrews – Nicole’s manager.<br>
+            • Sandy Andrews – Brad’s wife.<br>
+            • Nicole Monroe (“Nic”) – One of the protagonists.<br>
+            • Kasey Marie Monroe (“Kase”) – Nicole’s missing sister.
+          </div>
+        </div>
+        <div class="chapter">
+          <h2>Chapter 2</h2>
+          <button class="btn btn-sm btn-primary mt-2" onclick="toggle('ch2')">Show Characters</button>
+          <div class="characters" id="ch2">
+            • Lauren Perkins – Kasey’s best friend (Lauren Tate).
+          </div>
+        </div>
+        <div class="chapter">
+          <h2>Chapter 3</h2>
+          <button class="btn btn-sm btn-primary mt-2" onclick="toggle('ch3')">Show Characters</button>
+          <div class="characters" id="ch3">
+            • Jenna Connor – One of the protagonists.<br>
+            • Jules Connor – Jenna’s missing sister.
+          </div>
+        </div>
+        <div class="chapter">
+          <h2>Chapter 5</h2>
+          <button class="btn btn-sm btn-primary mt-2" onclick="toggle('ch5')">Show Characters</button>
+          <div class="characters" id="ch5">
+            • Ted Bundy – A famous serial killer.<br>
+            • Detective Wyler – Assigned to the investigation.
+          </div>
+        </div>
+        <div class="chapter">
+          <h2>Chapter 6</h2>
+          <button class="btn btn-sm btn-primary mt-2" onclick="toggle('ch6')">Show Characters</button>
+          <div class="characters" id="ch6">
+            • Pam – Nicole’s friend from the animal shelter.<br>
+            • Banksy – The skinny calico cat.<br>
+            • Nancy – AA meeting chair.<br>
+            • Henry – AA member.<br>
+            • Michaela – AA member.<br>
+            • Lexi – Michaela’s oldest daughter.<br>
+            • Natalie – Michaela’s youngest daughter.
+          </div>
+        </div>
+        <div class="chapter">
+          <h2>Chapter 7</h2>
+          <button class="btn btn-sm btn-primary mt-2" onclick="toggle('ch7')">Show Characters</button>
+          <div class="characters" id="ch7">
+            • Zach Walton – Kasey’s friend.<br>
+            • Brianna – Kasey’s friend.
+          </div>
+        </div>
+        <div class="chapter">
+          <h2>Chapter 9</h2>
+          <button class="btn btn-sm btn-primary mt-2" onclick="toggle('ch9')">Show Characters</button>
+          <div class="characters" id="ch9">
+            • Matthew Tate – Lauren’s husband.<br>
+            • Beth Anne Tate – Lauren’s daughter.<br>
+            • Thomas Tate – Lauren’s son.
+          </div>
+        </div>
+        <div class="chapter">
+          <h2>Chapter 10</h2>
+          <button class="btn btn-sm btn-primary mt-2" onclick="toggle('ch10')">Show Characters</button>
+          <div class="characters" id="ch10">
+            • Steve McLean – Lauren’s old boss at Mesquite (aka “Skeevy Steve”).
+          </div>
+        </div>
+        <div class="chapter">
+          <h2>Chapter 11</h2>
+          <button class="btn btn-sm btn-primary mt-2" onclick="toggle('ch11')">Show Characters</button>
+          <div class="characters" id="ch11">
+            • Joe Perkins – Lauren’s father.<br>
+            • Bitsy Perkins – Lauren’s mother.
+          </div>
+        </div>
+        <div class="chapter">
+          <h2>Chapter 13</h2>
+          <button class="btn btn-sm btn-primary mt-2" onclick="toggle('ch13')">Show Characters</button>
+          <div class="characters" id="ch13">
+            • Matty – Waiter at Mesquite.
+          </div>
+        </div>
+        <div class="chapter">
+          <h2>Chapter 21</h2>
+          <button class="btn btn-sm btn-primary mt-2" onclick="toggle('ch21')">Show Characters</button>
+          <div class="characters" id="ch21">
+            • Jose – One of the cooks.<br>
+            • Aubrey – Nicole’s coworker.
+          </div>
+        </div>
+        <div class="chapter">
+          <h2>Chapter 25</h2>
+          <button class="btn btn-sm btn-primary mt-2" onclick="toggle('ch25')">Show Characters</button>
+          <div class="characters" id="ch25">
+            • Gabe – The Uber driver.
+          </div>
+        </div>
+        <div class="chapter">
+          <h2>Chapter 26</h2>
+          <button class="btn btn-sm btn-primary mt-2" onclick="toggle('ch26')">Show Characters</button>
+          <div class="characters" id="ch26">
+            • Larry – One of Brad’s employees.
+          </div>
+        </div>
+        <div class="chapter">
+          <h2>Chapter 31</h2>
+          <button class="btn btn-sm btn-primary mt-2" onclick="toggle('ch31')">Show Characters</button>
+          <div class="characters" id="ch31">
+            • Detective Aimes – The new missing-persons detective.
+          </div>
+        </div>
+        <div class="chapter">
+          <h2>Chapter 35</h2>
+          <button class="btn btn-sm btn-primary mt-2" onclick="toggle('ch35')">Show Characters</button>
+          <div class="characters" id="ch35">
+            • Shawna Jackson – Jules’s friend.<br>
+            • Amy Miller – Jules’s friend.
+          </div>
+        </div>
+        <div class="chapter">
+          <h2>Chapter 44</h2>
+          <button class="btn btn-sm btn-primary mt-2" onclick="toggle('ch44')">Show Characters</button>
+          <div class="characters" id="ch44">
+            • Phillip Johnson – Detective who handled Jules’s case.
+          </div>
+        </div>
+        <div class="chapter">
+          <h2>Chapter 45</h2>
+          <button class="btn btn-sm btn-primary mt-2" onclick="toggle('ch45')">Show Characters</button>
+          <div class="characters" id="ch45">
+            • Jean – Kasey and Nic’s aunt.
+          </div>
+        </div>
+      </div>
     </div>
-  </div>
-  <div class="chapter">
-    <h2>Chapter 3</h2>
-    <button onclick="toggle('ch3')">Show Characters</button>
-    <div class="characters" id="ch3">
-      • Jenna Connor – One of the protagonists.<br>
-      • Jules Connor – Jenna’s missing sister.
+
+    <div class="text-center mt-3">
+      <a href="character-lists.html" class="btn btn-link">← Back to Character Lists</a>
     </div>
-  </div>
-  <div class="chapter">
-    <h2>Chapter 5</h2>
-    <button onclick="toggle('ch5')">Show Characters</button>
-    <div class="characters" id="ch5">
-      • Ted Bundy – A famous serial killer.<br>
-      • Detective Wyler – Assigned to the investigation.
-    </div>
-  </div>
-  <div class="chapter">
-    <h2>Chapter 6</h2>
-    <button onclick="toggle('ch6')">Show Characters</button>
-    <div class="characters" id="ch6">
-      • Pam – Nicole’s friend from the animal shelter.<br>
-      • Banksy – The skinny calico cat.<br>
-      • Nancy – AA meeting chair.<br>
-      • Henry – AA member.<br>
-      • Michaela – AA member.<br>
-      • Lexi – Michaela’s oldest daughter.<br>
-      • Natalie – Michaela’s youngest daughter.
-    </div>
-  </div>
-  <div class="chapter">
-    <h2>Chapter 7</h2>
-    <button onclick="toggle('ch7')">Show Characters</button>
-    <div class="characters" id="ch7">
-      • Zach Walton – Kasey’s friend.<br>
-      • Brianna – Kasey’s friend.
-    </div>
-  </div>
-  <div class="chapter">
-    <h2>Chapter 9</h2>
-    <button onclick="toggle('ch9')">Show Characters</button>
-    <div class="characters" id="ch9">
-      • Matthew Tate – Lauren’s husband.<br>
-      • Beth Anne Tate – Lauren’s daughter.<br>
-      • Thomas Tate – Lauren’s son.
-    </div>
-  </div>
-  <div class="chapter">
-    <h2>Chapter 10</h2>
-    <button onclick="toggle('ch10')">Show Characters</button>
-    <div class="characters" id="ch10">
-      • Steve McLean – Lauren’s old boss at Mesquite (aka “Skeevy Steve”).
-    </div>
-  </div>
-  <div class="chapter">
-    <h2>Chapter 11</h2>
-    <button onclick="toggle('ch11')">Show Characters</button>
-    <div class="characters" id="ch11">
-      • Joe Perkins – Lauren’s father.<br>
-      • Bitsy Perkins – Lauren’s mother.
-    </div>
-  </div>
-  <div class="chapter">
-    <h2>Chapter 13</h2>
-    <button onclick="toggle('ch13')">Show Characters</button>
-    <div class="characters" id="ch13">
-      • Matty – Waiter at Mesquite.
-    </div>
-  </div>
-  <div class="chapter">
-    <h2>Chapter 21</h2>
-    <button onclick="toggle('ch21')">Show Characters</button>
-    <div class="characters" id="ch21">
-      • Jose – One of the cooks.<br>
-      • Aubrey – Nicole’s coworker.
-    </div>
-  </div>
-  <div class="chapter">
-    <h2>Chapter 25</h2>
-    <button onclick="toggle('ch25')">Show Characters</button>
-    <div class="characters" id="ch25">
-      • Gabe – The Uber driver.
-    </div>
-  </div>
-  <div class="chapter">
-    <h2>Chapter 26</h2>
-    <button onclick="toggle('ch26')">Show Characters</button>
-    <div class="characters" id="ch26">
-      • Larry – One of Brad’s employees.
-    </div>
-  </div>
-  <div class="chapter">
-    <h2>Chapter 31</h2>
-    <button onclick="toggle('ch31')">Show Characters</button>
-    <div class="characters" id="ch31">
-      • Detective Aimes – The new missing-persons detective.
-    </div>
-  </div>
-  <div class="chapter">
-    <h2>Chapter 35</h2>
-    <button onclick="toggle('ch35')">Show Characters</button>
-    <div class="characters" id="ch35">
-      • Shawna Jackson – Jules’s friend.<br>
-      • Amy Miller – Jules’s friend.
-    </div>
-  </div>
-  <div class="chapter">
-    <h2>Chapter 44</h2>
-    <button onclick="toggle('ch44')">Show Characters</button>
-    <div class="characters" id="ch44">
-      • Phillip Johnson – Detective who handled Jules’s case.
-    </div>
-  </div>
-  <div class="chapter">
-    <h2>Chapter 45</h2>
-    <button onclick="toggle('ch45')">Show Characters</button>
-    <div class="characters" id="ch45">
-      • Jean – Kasey and Nic’s aunt.
-    </div>
-  </div>
+  </main>
 
   <script>
     function toggle(id) {
@@ -170,6 +185,5 @@
     }
   </script>
 
-  <a href="character-lists.html" class="back">← Back to Character Lists</a>
 </body>
 </html>

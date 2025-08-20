@@ -22,9 +22,13 @@
         return { title: slotBooks[idx] || '', suggestedBy: slotNames[idx] || '' };
       });
       localStorage.setItem(WINNERS_KEY, JSON.stringify(winners));
+      try{ window.dispatchEvent(new CustomEvent('winnersSaved', { detail: winners })); }catch(e){}
+  // Clearing any reset flag because we now have new winners
+  try{ localStorage.removeItem('slotMachineReset'); }catch(e){}
     }catch(e){}
   }
   function clearWinners(){ try{ localStorage.removeItem(WINNERS_KEY); }catch(e){} }
+    try{ window.dispatchEvent(new Event('winnersCleared')); }catch(e){}
 
   // DOM variables (assigned after DOM ready)
   let slotScrolls, slotReels, slotStopBtns, slotRespinBtns, slotSpinBtn, slotResultDiv, slotLoadingDiv;
@@ -178,6 +182,8 @@
     for(let i=1;i<=3;i++){ const el = document.getElementById(`suggested${i}-name`); if(el) el.textContent = ''; }
     if(slotResultDiv) slotResultDiv.textContent = '';
     localStorage.removeItem(STORAGE_KEY);
+  // mark that the machine was reset so other pages can react (e.g., clear poll votes)
+  try{ localStorage.setItem('slotMachineReset', '1'); }catch(e){}
     clearWinners(); // remove persisted winners on reset
     slotReels.forEach((r,i)=>{ r.classList.remove('winner'); renderIdle(i); });
     slotStopBtns.forEach(btn=>{ if(btn){ btn.classList.remove('d-none'); btn.disabled = true; btn.setAttribute('disabled',''); btn.classList.add('disabled'); btn.style.pointerEvents = 'none'; btn.tabIndex = -1; }});
@@ -224,10 +230,34 @@
         const parsed = parseCSV(csv);
         const data = parsed.length>0 ? parsed.slice(1) : [];
         slotBooks = []; slotNames = [];
+        function splitTitleAndAuthor(rawTitle, rawAuthor){
+          let title = (rawTitle || '').trim();
+          let author = (rawAuthor || '').trim();
+          if(!author){
+            // Prefer dash separator: "Title - Author"
+            const dashRe = /\s*-\s*/;
+            if(dashRe.test(title)){
+              const parts = title.split(dashRe);
+              title = parts.slice(0,1).join('-').trim();
+              author = parts.slice(1).join('-').trim();
+            } else {
+              // Fallback to ' by ' (case-insensitive)
+              const byMatch = title.match(/\s+by\s+/i);
+              if(byMatch){
+                const parts = title.split(/\s+by\s+/i);
+                title = parts[0].trim();
+                author = parts.slice(1).join(' by ').trim();
+              }
+            }
+          }
+          return { title, author };
+        }
+
         data.forEach(cols => {
-          const book = (cols[1] || '').trim();
-          const name = (cols[2] || '').trim();
-          if(book){ slotBooks.push(book); slotNames.push(name); }
+          const rawBook = (cols[1] || '').trim();
+          const rawName = (cols[2] || '').trim();
+          const parsed = splitTitleAndAuthor(rawBook, rawName);
+          if(parsed.title){ slotBooks.push(parsed.title); slotNames.push(parsed.author); }
         });
         if(slotLoadingDiv) slotLoadingDiv.style.display='none';
         for(let i=1;i<=3;i++){ const el=document.getElementById(`suggested${i}-name`); if(el) el.textContent=''; }
