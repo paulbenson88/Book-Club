@@ -56,6 +56,24 @@
   @keyframes spin { to { transform:rotate(360deg); } }
   .dog-bob { animation: bob 2s ease-in-out infinite; }
   @keyframes bob { 0%{transform:translateY(0)}50%{transform:translateY(-6px)}100%{transform:translateY(0)} }
+  /* Load-poll badge (mobile-friendly) */
+  #loadPollBtn {
+    display: none;
+    position: fixed;
+    right: 12px;
+    bottom: 12px;
+    z-index: 1200;
+    background: #222;
+    color: #fff;
+    padding: 10px 14px;
+    border-radius: 28px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.2);
+    font-weight: 600;
+    font-size: 0.95rem;
+  }
+  @media (max-width:420px){
+    #loadPollBtn{ right:12px; left:12px; width:auto; padding:12px; border-radius:10px; text-align:center; }
+  }
   </style>
 </head>
 
@@ -63,6 +81,8 @@
   <header class="main-btn-header">
     <a href="index.html" class="btn btn-secondary">🏠 Main Page</a>
   </header>
+  <!-- quick manual apply button shown only when background poll finds new data -->
+  <button id="loadPollBtn" aria-live="polite">Poll ready — Tap to load</button>
   <h1>📊 Voting Poll</h1>
 
   <div class="section">
@@ -434,11 +454,67 @@
     // initial load
     loadWinnersAndChoices();
 
-    // Poll localStorage periodically in case winners are written by another tab
-    const POLL_INTERVAL_MS = 2000;
-    const pollTimer = setInterval(() => {
-      try{ loadWinnersAndChoices(); }catch(e){}
-    }, POLL_INTERVAL_MS);
+    // Background polling: compute updates without touching DOM; surface via a "Poll ready" button
+    const loadPollBtn = document.getElementById('loadPollBtn');
+    let newPollAvailable = false;
+    let newPollData = null;
+
+    // compute final choices without applying them (same logic as loadWinnersAndChoices' CSV+slot merge)
+    async function fetchFinalChoices() {
+      const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSLdPdPu4pwIwsAjADiCQOXYUJ8ACgWXaJn0DUVgNEy8ZZfc06EUGz2G9imE4gQ9FRs_zoDamhYTHhQ/pub?output=csv";
+      try {
+        // try slotMachineState and manual winners first
+        const raw = localStorage.getItem('slotMachineState');
+        let chosenIdxs = null;
+        if (raw) {
+          try { const st = JSON.parse(raw); if (Array.isArray(st.chosenIdxs)) chosenIdxs = st.chosenIdxs.slice(0,3); } catch(e){}
+        }
+        const rawManual = JSON.parse(localStorage.getItem('winners') || 'null');
+        let manualChoices = Array.isArray(rawManual) ? rawManual.map(w => { const book = (w && (w.title || w.book || w[0])) || ''; const name = (w && (w.suggestedBy || w.name || w[1])) || ''; return { book: String(book).trim() || '(Unknown)', name: String(name).trim() || '' }; }).filter(x=>x && x.book) : [];
+
+        if ((!chosenIdxs || chosenIdxs.every(v=>v===null || v===undefined)) && manualChoices.length === 0){ return null; }
+
+        const res = await fetch(CSV_URL);
+        const csv = await res.text();
+        const rows = csv.split('\n').slice(1);
+        const norm = s => String(s || '').toLowerCase().replace(/["'’“”\(\)\[\]\.\,;:\-—\/]/g,'').replace(/\s+/g,' ').trim();
+        function parseLineToPair(line){
+          const cols = (function(line){ const out=[]; let cur=''; let inQ=false; for(let i=0;i<line.length;i++){ const ch=line[i]; if(ch==='"'){ if(inQ && line[i+1]==='"'){ cur+='"'; i++; } else inQ = !inQ; } else if(ch===',' && !inQ){ out.push(cur); cur=''; } else cur+=ch; } out.push(cur); return out; })(line);
+          const rawTitle = (cols[1] || '').trim(); const suggestedBy = (cols[2] || '').trim(); let titleOnly = rawTitle; const dashRe = /\s*\-\s*/; if(dashRe.test(rawTitle)){ const parts = rawTitle.split(dashRe); titleOnly = parts.slice(0,1).join('-').trim(); } else { const byMatch = rawTitle.match(/\s+by\s+/i); if(byMatch){ const parts = rawTitle.split(/\s+by\s+/i); titleOnly = parts[0].trim(); } } return { display: rawTitle || '', title: titleOnly || '', name: suggestedBy || '' };
+        }
+        const bookToName = {};
+        for(let i=0;i<rows.length;i++){ const raw = rows[i]||''; if(!raw.trim()) continue; const p = parseLineToPair(raw); const k = norm(p.title); if(k && !bookToName[k]) bookToName[k] = p.name || ''; }
+        const slotChoices = [];
+        if (Array.isArray(chosenIdxs)) chosenIdxs.forEach((origIdx) => { if (origIdx === null || origIdx === undefined) return; const row = rows[origIdx] || ''; const p = parseLineToPair(row); slotChoices.push({ book: p.display || p.title || 'Unknown book', title: p.title || '', name: p.name || '' }); });
+
+        const final = []; const seen = new Set();
+        for(const m of manualChoices){ if(final.length>=3) break; const titleOnly = (function(b){ const parts = String(b||'').split(/\s-\s/); return parts[0]||b||''; })(m.book); const key = norm(titleOnly); if(!seen.has(key)){ final.push({ book: m.book, title: titleOnly, name: m.suggestedBy||m.name||'' }); seen.add(key); } }
+        for(const s of slotChoices){ if(final.length>=3) break; const key = norm(s.title||s.book||''); if(!seen.has(key)){ final.push({ book: s.book, title: s.title||s.book, name: s.name||'' }); seen.add(key); } }
+        final.forEach(item => { if(!item.name || !String(item.name).trim()){ const k = norm(item.title || item.book); if(k && bookToName[k]) item.name = bookToName[k]; } });
+        return final.length ? final.map(i=>({book:i.book,name:i.name||''})) : null;
+      } catch(e){ console.warn('fetchFinalChoices failed', e); return null; }
+    }
+
+    // Poll for updates in the background and only surface to the user when different
+    const POLL_INTERVAL_MS = 15000; // 15s
+    async function pollForUpdates(){ if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return; try{ const updated = await fetchFinalChoices(); const a = JSON.stringify(updated || []); const b = JSON.stringify(pollChoices || []); if (a !== b){ newPollAvailable = true; newPollData = updated || []; if (loadPollBtn) loadPollBtn.style.display = 'block'; } }catch(e){} }
+
+    // Wire up manual apply button
+    if (loadPollBtn) {
+      loadPollBtn.addEventListener('click', ()=> {
+        if (!newPollAvailable || !newPollData) return;
+        try{
+          pollChoices = Array.isArray(newPollData) ? newPollData.map(i=>({book:i.book,name:i.name||''})) : [];
+          persistPollChoices(pollChoices);
+          try{ showPollChoicesAnimated(); }catch(e){ if(typeof loadPollChoices === 'function') loadPollChoices(); }
+        }catch(e){ console.warn('apply new poll failed', e); }
+        newPollAvailable = false; newPollData = null; loadPollBtn.style.display='none';
+      });
+    }
+
+    // start background polling (does not change the UI directly)
+    const pollTimer = setInterval(() => { pollForUpdates(); }, POLL_INTERVAL_MS);
+    setTimeout(()=> pollForUpdates(), 3000);
 
     // Also listen to storage events (cross-tab) and custom events from admin script
     window.addEventListener('storage', (ev)=>{
