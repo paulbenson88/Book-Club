@@ -7,11 +7,11 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="css/styles.css" rel="stylesheet">
   <!-- Favicons -->
-  <link rel="icon" href="/favicon/favicon.ico" />
-  <link rel="icon" type="image/png" sizes="32x32" href="/favicon/favicon-32x32.png" />
-  <link rel="icon" type="image/png" sizes="16x16" href="/favicon/favicon-16x16.png" />
-  <link rel="apple-touch-icon" sizes="180x180" href="/favicon/apple-touch-icon.png" />
-  <link rel="manifest" href="/favicon/site.webmanifest" />
+  <link rel="icon" href="favicon/favicon.ico" />
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon/favicon-32x32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="favicon/favicon-16x16.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="favicon/apple-touch-icon.png" />
+  <link rel="manifest" href="favicon/site.webmanifest" />
   <meta name="theme-color" content="#ffffff">
   <style>
     /* Site-wide nav styles copied from index.html for consistent header */
@@ -30,6 +30,21 @@
     }
     .site-nav a:hover { background: #aee; color: #105; }
     .site-nav a.active { background:#ffc107; color:#111; border-color:#e0a800; }
+  /* Lightweight custom modal for spin confirmation */
+  /* Scroll-lock body while modal is open */
+  body.modal-open { overflow: hidden; height: 100vh; touch-action: none; }
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.46); display: flex; align-items: center; justify-content: center; z-index: 1050; padding: 12px; }
+  .modal-card { background: #fff; border-radius: 10px; max-width: 520px; width: 100%; padding: 14px 16px; box-shadow: 0 12px 36px rgba(0,0,0,0.28); border: 1px solid rgba(0,0,0,0.06); transform: translateY(8px); opacity: 0; transition: transform .18s ease, opacity .18s ease; }
+  .modal-overlay.show .modal-card { transform: translateY(0); opacity: 1; }
+  .modal-card h3 { margin: 0 0 6px 0; font-size: 1rem; font-weight:600; }
+  .modal-card p { margin: 0; color: #222; font-size: 0.96rem; line-height:1.35; }
+  .modal-actions { display:flex; gap:10px; justify-content:flex-end; margin-top:14px; }
+  /* larger touch targets */
+  .modal-actions .btn { min-width: 96px; padding: 10px 14px; font-size: 1rem; border-radius: 8px; }
+  .modal-actions .btn.btn-primary { background:#0b5ed7; border-color:#0a58ca; color:#fff; }
+  .modal-actions .btn.btn-outline-secondary { color:#333; border-color:rgba(0,0,0,0.12); }
+  @media (max-width:420px){ .modal-actions { flex-direction: column-reverse; } .modal-actions .btn{ width:100%; } }
+  .modal-overlay.d-none { display: none; }
   </style>
 </head>
 <body>
@@ -73,12 +88,8 @@
       </div>
     </div>
 
-    <div id="slot-area">
-      <div class="alert alert-info small">Click "Become lead" to take control of the slot machine for this session.</div>
-      <div class="d-flex gap-2">
-        <button id="become-lead" class="btn btn-primary">Become lead</button>
-        <button id="end-lead" class="btn btn-outline-danger">End lead session</button>
-      </div>
+  <div id="slot-area">
+  <div class="alert alert-info small">Admin controls: anyone on this page may operate the slot machine.</div>
       <div id="slot-host" class="mt-3">
           <div id="slot-container" class="d-none">
             <div class="slot-machine-frame">
@@ -187,124 +198,33 @@
   </div>
 
   <script src="js/qrcode.min.js"></script>
+  <!-- Slot confirmation modal (shown before Spin or Reset) -->
+  <div id="slotConfirmModal" class="modal-overlay d-none" aria-hidden="true">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="slotConfirmTitle">
+      <h3 id="slotConfirmTitle">Confirm slot operation</h3>
+      <p id="slotConfirmMessage">Only proceed if you're the designated spinner — this will overwrite someone else's results.</p>
+      <div class="modal-actions">
+        <button id="slotConfirmCancel" class="btn btn-outline-secondary">Cancel</button>
+        <button id="slotConfirmOk" class="btn btn-primary">Proceed</button>
+      </div>
+    </div>
+  </div>
   <script>
     (function(){
       const msg = document.getElementById('admin-msg');
       const host = document.getElementById('slot-host');
 
-      // Lead persistence helpers
-      let _leadHeartbeat = null;
-      const LEAD_TIMEOUT = 10 * 60 * 1000; // 10 minutes
-      function _randId(){ return Math.random().toString(36).slice(2,10); }
-
-      function isLeadStale(obj){
-        try{ if(!obj || !obj.lastSeen) return true; return (Date.now() - obj.lastSeen) > LEAD_TIMEOUT; }catch(e){ return true; }
-      }
-
-      function reclaimStaleLead(){
-        try{
-          const cur = JSON.parse(localStorage.getItem('leadSession')||'null');
-          if(cur && isLeadStale(cur)){
-            // remove stale session so someone else can claim lead
-            localStorage.removeItem('leadSession');
-          }
-        }catch(e){}
-      }
-
-      function startLeadHeartbeat(){
-        stopLeadHeartbeat();
-        _leadHeartbeat = setInterval(()=>{
-          try{
-            const cur = JSON.parse(localStorage.getItem('leadSession')||'null');
-            // Only update lastSeen if this tab actually owns the session
-            if(cur && cur.id === sessionStorage.getItem('leadId')){
-              cur.lastSeen = Date.now();
-              localStorage.setItem('leadSession', JSON.stringify(cur));
-            }
-          }catch(e){}
-        }, 5000);
-      }
-      function stopLeadHeartbeat(){ if(_leadHeartbeat){ clearInterval(_leadHeartbeat); _leadHeartbeat = null; } }
-
-      function setLead(){
-        try{
-          const id = sessionStorage.getItem('leadId') || _randId();
-          sessionStorage.setItem('leadId', id);
-          sessionStorage.setItem('isLead','1');
-          const obj = { id: id, when: Date.now(), lastSeen: Date.now() };
-          localStorage.setItem('leadSession', JSON.stringify(obj));
-          startLeadHeartbeat();
-        }catch(e){}
-        if(msg) msg.innerHTML = '<div class="alert alert-success small mb-2">You are now the lead for this session.</div>';
-        // reveal the slot UI and load the voting script once
-        const cont = document.getElementById('slot-container'); if(cont) cont.classList.remove('d-none');
-        loadVotingScript();
-        try{ if(window.showAdminPollShare) window.showAdminPollShare(); }catch(e){}
-        try{ document.getElementById('slot-container').scrollIntoView({behavior:'smooth'}); }catch(e){}
-        try{ renderAdminBookList(); showAdminPollControls(); }catch(e){}
-      }
-
-      function clearLead(){
-        try{ sessionStorage.removeItem('isLead'); }catch(e){}
-        try{ const myId = sessionStorage.getItem('leadId'); sessionStorage.removeItem('leadId');
-          const cur = JSON.parse(localStorage.getItem('leadSession')||'null');
-          // Only remove the shared leadSession if this tab is the owner
-          if(cur && myId && cur.id === myId){ localStorage.removeItem('leadSession'); }
-        }catch(e){}
-        stopLeadHeartbeat();
-        const cont = document.getElementById('slot-container'); if(cont) cont.classList.add('d-none');
-        if(msg) msg.innerHTML = '<div class="alert alert-warning small mb-2">Lead session ended.</div>';
-      }
-
-      // On load, reclaim any stale session so a new lead can claim it
-      try{ reclaimStaleLead(); }catch(e){}
-
-      // Restore lead on load if a leadSession exists and matches this device (best-effort)
-      try{
-        const ls = JSON.parse(localStorage.getItem('leadSession')||'null');
-        if(ls){
-          // if this tab previously owned the session (leadId) restore it
-          const myId = sessionStorage.getItem('leadId');
-          if(myId && ls.id === myId){ setLead(); }
-        }
-      }catch(e){}
-
-      // Periodically check and reclaim stale lead sessions (runs in all tabs)
-      try{ setInterval(reclaimStaleLead, 30000); }catch(e){}
-
-      // When another tab clears or sets leadSession, react accordingly
-      window.addEventListener('storage', (ev)=>{
-        if(ev.key==='leadSession'){
-          try{
-            const val = JSON.parse(ev.newValue||'null');
-            // If the incoming value looks stale, remove it immediately so others can claim
-            if(val && isLeadStale(val)){
-              try{ localStorage.removeItem('leadSession'); }catch(e){}
-              return;
-            }
-            const myId = sessionStorage.getItem('leadId');
-            if(!val){ // cleared
-              if(sessionStorage.getItem('isLead')){ /* keep local ended state */ clearLead(); }
-            } else {
-              // if someone else became lead, and it's not me, hide controls
-              if(!myId || val.id !== myId){
-                const cont = document.getElementById('slot-container'); if(cont) cont.classList.add('d-none');
-              }
-            }
-          }catch(e){}
-        }
-      });
+  // Reveal slot UI for any visitor and load voting script
+  try{ const cont = document.getElementById('slot-container'); if(cont) cont.classList.remove('d-none'); }catch(e){}
+  try{ loadVotingScript(); }catch(e){}
 
       function loadVotingScript(){
         if(document.querySelector('script[data-voting-loaded]')) return;
         const s = document.createElement('script'); s.src = 'js/voting.js'; s.setAttribute('data-voting-loaded','1'); document.body.appendChild(s);
       }
 
-      document.getElementById('become-lead').addEventListener('click', ()=>{ setLead(); });
-      // show manual winners UI for leads (also revealed by setLead)
-      document.getElementById('become-lead').addEventListener('click', ()=>{
-        try{ const mw = document.getElementById('manual-winners'); if(mw) mw.classList.remove('d-none'); }catch(e){}
-      });
+  // reveal manual winners UI for admins
+  try{ const mw = document.getElementById('manual-winners'); if(mw) mw.classList.remove('d-none'); }catch(e){}
 
       // manual winners save/clear handlers
       try{
@@ -460,12 +380,8 @@
 
     // End lead session button handler
     (function(){
-      const endBtn = document.getElementById('end-lead');
-      endBtn && endBtn.addEventListener('click', ()=>{
-        try{ if(typeof clearLead === 'function') clearLead(); }catch(e){}
-        // notify other tabs
-        try{ window.dispatchEvent(new StorageEvent('storage', { key:'leadSession', newValue: null })); }catch(e){}
-      });
+  // ensure admin controls are visible and populated immediately
+  try{ renderAdminBookList(); showAdminPollControls(); }catch(e){}
     })();
 
     // Admin poll controls (clear votes, manual add)
@@ -544,12 +460,9 @@
 
       adminRefresh && adminRefresh.addEventListener('click', ()=>{ renderAdminBookList(); });
 
-      // Show panel automatically if leader and poll choices exist
-      try{ if(sessionStorage.getItem('isLead')){ renderAdminBookList(); showAdminPollControls(); } }catch(e){}
-
-      // Also show when winners/pollChoices become available
-      window.addEventListener('storage', (ev)=>{ if(ev.key==='pollChoices' || ev.key==='winners'){ try{ renderAdminBookList(); showAdminPollControls(); }catch(e){} } });
-      window.addEventListener('winnersSaved',(ev)=>{ try{ renderAdminBookList(); showAdminPollControls(); }catch(e){} });
+  // Also show and refresh when winners/pollChoices become available
+  window.addEventListener('storage', (ev)=>{ if(ev.key==='pollChoices' || ev.key==='winners'){ try{ renderAdminBookList(); showAdminPollControls(); }catch(e){} } });
+  window.addEventListener('winnersSaved',(ev)=>{ try{ renderAdminBookList(); showAdminPollControls(); }catch(e){} });
       // Remove votes handler
       const adminRemove = document.getElementById('admin-remove-votes');
       adminRemove && adminRemove.addEventListener('click', ()=>{
