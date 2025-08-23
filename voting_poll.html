@@ -2,46 +2,64 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Voting Poll</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="utf-8">
+<title>Voting Poll</title>
+  <!-- Firebase compat SDK (CDN) - replace config below with your project's values -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script>
+    (function(){
+      const firebaseConfig = {
+        apiKey: "AIzaSyAe01ZUiPZfOhUht9XiKPf4brF-NXIkWlE",
+        authDomain: "book-club-hub-4bdda.firebaseapp.com",
+        projectId: "book-club-hub-4bdda",
+        storageBucket: "book-club-hub-4bdda.firebasestorage.app",
+        messagingSenderId: "404245538140",
+        appId: "1:404245538140:web:956fe120fc1651def00d99",
+        measurementId: "G-Z7T8TMH090"
+      };
+      try{
+        if(window.firebase && !window._firestoreInitDone){
+          firebase.initializeApp(firebaseConfig);
+          window._firestore = firebase.firestore();
+          window._firestoreInitDone = true;
+          console.log('[voting_poll] Firestore initialized (placeholder)');
+          // Subscribe to poll/current document
+          const docRef = window._firestore.collection('poll').doc('current');
+          console.log('[voting_poll] subscribing to poll/current snapshot');
+          docRef.onSnapshot((snap)=>{
+            try{
+              console.log('[voting_poll] snapshot received', snap && snap.exists);
+              if(!snap.exists) return;
+              const data = snap.data(); if(!data) return;
+              const choices = data.choices || [];
+              const str = JSON.stringify(choices);
+              if(localStorage.getItem('pollChoices') !== str){
+                localStorage.setItem('pollChoices', str);
+                try{ window.dispatchEvent(new StorageEvent('storage', { key:'pollChoices', newValue: str })); }catch(e){}
+              }
+              // Force UI update so viewers immediately render the published poll
+              try{
+                console.log('[voting_poll] forcing UI update after snapshot');
+                if(typeof loadWinnersAndChoices === 'function') try{ loadWinnersAndChoices(); }catch(e){ console.error('[voting_poll] loadWinnersAndChoices failed', e); }
+                if(typeof loadPollChoices === 'function') try{ loadPollChoices(); }catch(e){ /* not fatal */ }
+                try{ if(typeof showPollChoicesAnimated === 'function') showPollChoicesAnimated(); }catch(e){ /* ignore */ }
+              }catch(e){ console.error('[voting_poll] UI update after snapshot failed', e); }
+            }catch(e){ console.error('[voting_poll] snapshot handler', e); }
+          }, (err)=>{ console.error('[voting_poll] snapshot error', err); });
+          // One-time fallback: if snapshot didn't fire quickly, fetch the doc once so incognito pages see current poll
+          setTimeout(async ()=>{
+            try{
+              console.log('[voting_poll] performing one-time get() fallback for poll/current');
+              const snap = await docRef.get();
+              if(snap && snap.exists){ const data = snap.data(); const choices = data.choices || []; const str = JSON.stringify(choices); if(localStorage.getItem('pollChoices') !== str){ localStorage.setItem('pollChoices', str); try{ window.dispatchEvent(new StorageEvent('storage', { key:'pollChoices', newValue: str })); }catch(e){} try{ loadWinnersAndChoices(); }catch(e){} } }
+            }catch(e){ console.warn('[voting_poll] one-time get() failed', e); }
+          }, 700);
+        }
+      }catch(e){ console.warn('[voting_poll] Firestore init failed', e); }
+    })();
+  </script>
   <style>
-    /* keep minimal header button style for Main Page */
-    .main-btn-header { text-align:center; margin:1rem 0; }
-    .main-btn-header .btn { padding:0.6rem 1rem; }
-  </style>
-  <!-- Favicons -->
-  <link rel="icon" href="favicon/favicon.ico" />
-  <link rel="icon" type="image/png" sizes="32x32" href="favicon/favicon-32x32.png" />
-  <link rel="icon" type="image/png" sizes="16x16" href="favicon/favicon-16x16.png" />
-  <link rel="apple-touch-icon" sizes="180x180" href="favicon/apple-touch-icon.png" />
-  <link rel="manifest" href="favicon/site.webmanifest" />
-  <meta name="theme-color" content="#ffffff">
-  <style>
-    body { font-family: sans-serif; max-width: 500px; margin: 2em auto; text-align: center; }
-    .section { background: #fafafa; border-radius: 12px; border: 1px solid #ddd; margin: 1.5em 0; padding: 1em 0.5em; }
-    .poll-item { margin: 15px 0; padding: 15px; border: 1px solid #ccc; border-radius: 8px; background: #f9f9f9; display: flex; align-items: center; }
-    .vote-container { display: flex; align-items: center; justify-content: center; padding: 10px; border: 1px solid #ddd; border-radius: 8px; background: #f0f0f0; margin-right: 15px; }
-    .vote-container input[type="checkbox"] { transform: scale(1.5); margin-right: 10px; cursor: pointer; }
-    .vote-container input[type="checkbox"]:disabled { cursor: not-allowed; opacity: 0.5; } /* Grayed-out style for disabled checkboxes */
-    .vote-container label { font-size: 1.1em; color: #333; font-weight: normal; } /* Un-bolded by default */
-    .vote-container label.bold { font-weight: bold; } /* Bold when enabled */
-    .poll-content { text-align: center; flex: 1; }
-    .poll-content label { font-size: 1.2em; display: block; margin-bottom: 5px; font-weight: bold; } /* Bold book names */
-    .poll-content .suggested-by { font-size: 1em; color: #555; margin-top: 5px; font-style: italic; } /* Author name under book title */
-    .voters { font-size: 0.9em; color: #555; margin-top: 10px; text-align: center; }
-    .voters span { margin-right: 5px; display: inline-block; }
-    #nameInput { margin-bottom: 15px; padding: 10px; font-size: 1em; width: 70%; border: 1px solid #ccc; border-radius: 5px; display: inline-block; transition: width 0.3s ease; }
-    #submitNameBtn { margin-left: 10px; padding: 10px 15px; font-size: 1em; cursor: pointer; display: inline-block; }
-    #editNameBtn { margin-top: 10px; padding: 10px 15px; font-size: 1em; cursor: pointer; }
-    /* Additional styles for winners section */
-    .card { border: 1px solid #ddd; border-radius: 8px; background: #fff; }
-    .card-title { font-size: 1.5em; margin: 0; }
-    .text-muted { color: #888; }
-    .small { font-size: 0.9em; }
-    .mb-2 { margin-bottom: 0.5em; }
-    .mt-2 { margin-top: 0.5em; }
-    .fs-5 { font-size: 1.25em; }
     .shadow-sm { box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
     /* transition helpers */
     .fade-in { animation: fadeIn 420ms cubic-bezier(.2,.8,.2,1) both; }
@@ -87,11 +105,6 @@
   </div>
 
   <!-- Selected Books section removed -->
-
-  <script>
-  // Legacy poll UI only. Helper functions and rendering live in the older script below.
-  // No-op here - legacy script will handle rendering into #poll-options and respond to pollChoices changes.
-  </script>
   <script>
   let pollChoices = JSON.parse(localStorage.getItem("pollChoices")) || []; // Load poll choices
   // Normalize any legacy or internal shapes into {book,name}

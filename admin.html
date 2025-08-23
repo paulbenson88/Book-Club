@@ -123,7 +123,16 @@
               <div class="card-body text-center" style="padding:22px;">
                 <h3 class="mb-2">Publish Final Choices</h3>
                 <p class="small text-muted mb-3">When you're happy with the three selected books, publish the poll so members can vote.</p>
-                <button id="startPollBtn" class="btn btn-success btn-lg" disabled aria-disabled="true" style="padding:14px 32px; font-size:1.05rem; border-radius:10px;">Start Poll</button>
+                <div style="display:flex;gap:10px;justify-content:center;align-items:center;flex-wrap:wrap;">
+                  <button id="startPollBtn" class="btn btn-success btn-lg" disabled aria-disabled="true" style="padding:14px 32px; font-size:1.05rem; border-radius:10px;">Start Poll</button>
+                  <div id="authControls" style="display:flex;gap:8px;align-items:center;flex-direction:column;">
+                    <div style="display:flex;gap:8px;align-items:center;">
+                      <button id="signInBtn" class="btn btn-outline-primary" style="display:none;">Sign in (Google)</button>
+                      <button id="signOutBtn" class="btn btn-outline-secondary" style="display:none;">Sign out</button>
+                    </div>
+                    <div id="authStatus" class="small text-muted" style="display:block;">Not signed in</div>
+                  </div>
+                </div>
                 <div id="startPollHelp" class="small text-muted mt-2" style="display:block;">Button enabled when three choices are available.</div>
               </div>
             </div>
@@ -209,6 +218,17 @@
   </div>
 
   <script src="js/qrcode.min.js"></script>
+  <!-- Firebase SDK (placeholder) -->
+  <!--
+    To enable Firestore publishing:
+    1) Create a Firebase project at https://console.firebase.google.com/
+    2) Add a Web app and copy the config below into the firebaseConfig object.
+    3) Enable Firestore in the console and add rules that allow writes from an authenticated admin only.
+    4) Replace the placeholder values below.
+  -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <!-- Slot confirmation modal (shown before Spin or Reset) -->
   <div id="slotConfirmModal" class="modal-overlay d-none" aria-hidden="true">
     <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="slotConfirmTitle">
@@ -267,7 +287,7 @@
           const t2 = (document.getElementById('mw-title-2')||{}).value||'';
           const t3 = (document.getElementById('mw-title-3')||{}).value||'';
           const arr = [t1,t2,t3].map(s=>s.trim()).filter(s=>s.length>0).map(s=>{
-            // Prefer explicit " by " for suggester; otherwise capture ' - ' author but do not treat it as suggestedBy
+            // Prefer explicit "by" for suggester; otherwise capture ' - ' author but do not treat it as suggestedBy
             let title = s, suggestedBy = '', author = '';
             if(/\sby\s/i.test(s)){
               const parts = s.split(/\sby\s/i); title = parts[0].trim(); suggestedBy = parts.slice(1).join(' by ').trim();
@@ -419,6 +439,13 @@
             if(winners.length < 3){ alert('Three choices are required to start the poll.'); hideModal(); return; }
             const pollChoices = winners.map(w=>({ book: w.book, name: w.name||'' }));
             localStorage.setItem('pollChoices', JSON.stringify(pollChoices));
+            // Publish to Firestore if configured (best-effort)
+            try{
+              if(typeof publishToFirestore === 'function'){
+                try{ console.log('[admin] attempting publishToFirestore, auth user=', window._auth && window._auth.currentUser && window._auth.currentUser.uid); }catch(e){}
+                publishToFirestore(pollChoices).catch(e=>console.warn('Firestore publish failed',e));
+              }
+            }catch(e){}
             try{ window.dispatchEvent(new StorageEvent('storage', { key:'pollChoices', newValue: JSON.stringify(pollChoices) })); }catch(e){}
             try{ window.dispatchEvent(new CustomEvent('winnersSaved', { detail: winners })); }catch(e){}
             // feedback
@@ -427,6 +454,85 @@
             updateStartBtnState();
           }catch(e){ console.warn('Publish poll failed', e); alert('Failed to publish poll'); hideModal(); }
         });
+
+        // Firestore helper (optional) — replace firebaseConfig below with your project's config
+        (function(){
+          // Example config -- REPLACE with your Firebase project's values
+          const firebaseConfig = {
+            apiKey: "AIzaSyAe01ZUiPZfOhUht9XiKPf4brF-NXIkWlE",
+            authDomain: "book-club-hub-4bdda.firebaseapp.com",
+            projectId: "book-club-hub-4bdda",
+            storageBucket: "book-club-hub-4bdda.firebasestorage.app",
+            messagingSenderId: "404245538140",
+            appId: "1:404245538140:web:956fe120fc1651def00d99",
+            measurementId: "G-Z7T8TMH090"
+          };
+          try{
+            if(window.firebase && !window._firestoreInitDone){
+              firebase.initializeApp(firebaseConfig);
+              window._firestore = firebase.firestore();
+              window._firestoreInitDone = true;
+              console.log('[admin] Firebase initialized (placeholder)');
+              // Init auth
+              try{ window._auth = firebase.auth(); }catch(e){ console.warn('[admin] auth init failed', e); }
+            }
+          }catch(e){ console.warn('[admin] Firebase init skipped', e); }
+
+          // Auth UI wiring: show Sign in/Sign out buttons and handle state; do NOT auto-trigger popups during publish
+          (function(){
+            const signInBtn = document.getElementById('signInBtn');
+            const signOutBtn = document.getElementById('signOutBtn');
+            const authStatus = document.getElementById('authStatus');
+            function updateAuthUi(user){
+              if(user){ if(signInBtn) signInBtn.style.display='none'; if(signOutBtn) signOutBtn.style.display='inline-block'; if(authStatus) authStatus.textContent = user.email || user.uid; }
+              else { if(signInBtn) signInBtn.style.display='inline-block'; if(signOutBtn) signOutBtn.style.display='none'; if(authStatus) authStatus.textContent = 'Not signed in'; }
+            }
+            if(window._auth){
+              window._auth.onAuthStateChanged((user)=>{ try{ updateAuthUi(user); console.log('[admin] auth state changed', !!user, user && user.email); }catch(e){} });
+            } else { updateAuthUi(null); }
+            if(signInBtn){ signInBtn.addEventListener('click', ()=>{
+              try{
+                const provider = new firebase.auth.GoogleAuthProvider();
+                // Only open popup in direct response to user click
+                if(window._auth) window._auth.signInWithPopup(provider).catch(e=>{ console.warn('Sign-in failed',e); alert('Sign-in failed: '+(e && e.message)); });
+              }catch(e){ console.warn('signIn click failed', e); }
+            }); }
+            if(signOutBtn){ signOutBtn.addEventListener('click', ()=>{ try{ if(window._auth) window._auth.signOut(); }catch(e){} }); }
+          })();
+
+          // Publish pollChoices to Firestore - writes to collection 'poll' doc 'current'
+          // By default we'll attempt an unauthenticated write when signed out (best-effort) so you can skip Google sign-in during testing.
+          window._allowUnauthenticatedPublish = true;
+          window.publishToFirestore = async function(pollChoices){
+            if(!window._firestore) throw new Error('Firestore not initialized');
+            try{
+              const user = window._auth ? window._auth.currentUser : null;
+              const docRef = window._firestore.collection('poll').doc('current');
+              if(user){
+                await docRef.set({ choices: pollChoices, publishedAt: new Date().toISOString() }, { merge: true });
+                console.log('[admin] Published poll to Firestore (authenticated)');
+                return;
+              }
+              // attempt unauthenticated write if allowed (may be blocked by rules)
+              if(window._allowUnauthenticatedPublish){
+                try{
+                  await docRef.set({ choices: pollChoices, publishedAt: new Date().toISOString() }, { merge: true });
+                  console.log('[admin] Published poll to Firestore (unauthenticated)');
+                  return;
+                }catch(err){
+                  // likely permission error — surface a clearer message and rethrow
+                  console.warn('[admin] Unauthenticated publish blocked (likely Firestore rules).', err);
+                  const e2 = new Error('Unauthenticated publish blocked by Firestore rules. Enable public writes or sign in.');
+                  e2.original = err; throw e2;
+                }
+              }
+              // Not allowed to publish unauthenticated and not signed in
+              const err = new Error('Auth required: please sign in using the Sign in button before publishing');
+              console.warn('publishToFirestore blocked: not signed in');
+              throw err;
+            }catch(e){ console.warn('publishToFirestore error', e); throw e; }
+          };
+        })();
 
         // react to winners/pollChoices storage updates and enable/disable button accordingly
         window.addEventListener('storage', (ev)=>{ if(ev.key==='winners' || ev.key==='pollChoices' || ev.key==='slotMachineState'){ try{ updateStartBtnState(); if(ev.key==='winners'){ showSharePanel(); } }catch(e){} } });
