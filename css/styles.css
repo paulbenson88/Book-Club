@@ -156,3 +156,17 @@ img.qr {
 
 /* caption under QR images */
 .qr-caption { text-align: center; margin-top: 0.25rem; color: #666; }
+
+/* Start Poll card attention animation */
+.start-poll-card.animate-ready { animation: pulse-up 900ms cubic-bezier(.2,.9,.2,1) 1; }
+@keyframes pulse-up {
+  0% { transform: translateY(0) scale(1); box-shadow: 0 8px 24px rgba(0,0,0,0.12); }
+  30% { transform: translateY(-6px) scale(1.02); box-shadow: 0 18px 40px rgba(0,0,0,0.18); }
+  65% { transform: translateY(-2px) scale(1.01); box-shadow: 0 12px 30px rgba(0,0,0,0.14); }
+  100% { transform: translateY(0) scale(1); box-shadow: 0 8px 24px rgba(0,0,0,0.12); }
+}
+
+/* Reduce motion for users who prefer reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .start-poll-card.animate-ready { animation: none; }
+}
