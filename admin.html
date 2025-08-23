@@ -123,7 +123,7 @@
               <div class="card-body text-center" style="padding:22px;">
                 <h3 class="mb-2">Publish Final Choices</h3>
                 <p class="small text-muted mb-3">When you're happy with the three selected books, publish the poll so members can vote.</p>
-                <button id="startPollBtn" class="btn btn-success btn-lg" style="padding:14px 32px; font-size:1.05rem; border-radius:10px;">Start Poll</button>
+                <button id="startPollBtn" class="btn btn-success btn-lg" disabled aria-disabled="true" style="padding:14px 32px; font-size:1.05rem; border-radius:10px;">Start Poll</button>
                 <div id="startPollHelp" class="small text-muted mt-2" style="display:block;">Button enabled when three choices are available.</div>
               </div>
             </div>
@@ -402,7 +402,9 @@
         if(startPollBtn){
           // initialize state
           updateStartBtnState();
-          startPollBtn.addEventListener('click', ()=>{
+          startPollBtn.addEventListener('click', (ev)=>{
+            // Protect against activation when disabled (works for mouse + keyboard)
+            if(startPollBtn.disabled) return;
             const winners = getCurrentWinners();
             if(winners.length < 3){ alert('Three choices are required to start the poll.'); return; }
             showModalWith(winners);
