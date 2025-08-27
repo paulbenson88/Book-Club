@@ -1,9 +1,9 @@
-  
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <title>Voting Poll</title>
+<link rel="icon" href="/favicon/favicon.ico" type="image/x-icon">
   <!-- Firebase compat SDK (CDN) - replace config below with your project's values -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
@@ -77,27 +77,27 @@
   @keyframes bob { 0%{transform:translateY(0)}50%{transform:translateY(-6px)}100%{transform:translateY(0)} }
   /* Poll updates are published by admin; no background polling on this page */
   </style>
-</head>
+  <link rel="icon" href="/favicon/favicon.ico" type="image/x-icon"></head>
 
 <body>
   <header class="main-btn-header">
-    <a href="index.html" class="btn btn-secondary">🏠 Main Page</a>
+    <a href="index.html" class="btn btn-secondary">ðŸ  Main Page</a>
   </header>
   <!-- Poll updates are published by admin; viewers will react to storage events -->
-  <h1>📊 Voting Poll</h1>
+  <h1>ðŸ“Š Voting Poll</h1>
 
   <div class="section">
   <h2>Vote for the next book - toggle your votes</h2>
   <input type="text" id="nameInput" placeholder="Enter your name" />
   <button id="submitNameBtn">Submit Name</button>
   <button id="editNameBtn" style="display: none;">Edit Name</button>
-  <p class="text-muted small mb-2 mt-2">Please vote for which book(s) you'd like to read next month — you may vote for more than one option.</p>
+  <p class="text-muted small mb-2 mt-2">Please vote for which book(s) you'd like to read next month â€” you may vote for more than one option.</p>
   <div id="poll-reset-banner" style="display:none; margin-top:12px; padding:8px; border-radius:6px; background:#fff3cd; color:#856404; border:1px solid #ffeeba; font-size:0.95em;"></div>
   <!-- Poll UI (legacy) -->
   <div id="poll-options">
     <div class="wait-box" style="padding:18px;">
       <img class="wait-dog dog-bob" src="images/Merc.jpg" alt="Merc the dog" loading="lazy" style="width:220px;max-width:90%;border-radius:12px;box-shadow:0 6px 18px rgba(0,0,0,0.12);" />
-      <div class="wait-text">Please wait patiently with Merc — the lead will randomly choose all three books with the slot machine.</div>
+      <div class="wait-text">Please wait patiently with Merc â€” the lead will randomly choose all three books with the slot machine.</div>
       <div class="wait-sub">We'll let you know when voting starts.</div>
       <div class="spinner" aria-hidden="true"></div>
     </div>
@@ -285,7 +285,7 @@
         const dogHtml = `
             <div class="wait-box">
               <img class="wait-dog dog-bob" src="images/Merc.jpg" alt="Merc the dog" loading="lazy" />
-              <div class="wait-text">Please wait patiently with Merc — the lead will randomly choose all three books with the slot machine.</div>
+              <div class="wait-text">Please wait patiently with Merc â€” the lead will randomly choose all three books with the slot machine.</div>
               <div class="wait-sub">We'll let you know when voting starts.</div>
               <div class="spinner" aria-hidden="true"></div>
             </div>`;
@@ -312,7 +312,7 @@
           const dogHtml = `
             <div class="wait-box">
               <img class="wait-dog dog-bob" src="images/Merc.jpg" alt="Merc the dog" loading="lazy" />
-              <div class="wait-text">Please wait patiently with Merc — the lead will randomly choose all three books with the slot machine.</div>
+              <div class="wait-text">Please wait patiently with Merc â€” the lead will randomly choose all three books with the slot machine.</div>
               <div class="wait-sub">We'll let you know when voting starts.</div>
               <div class="spinner" aria-hidden="true"></div>
             </div>`;
@@ -383,7 +383,7 @@
         const rows = csv.split('\n').slice(1); // skip header
         // helper to normalize book titles for matching
         const norm = s => String(s || '').toLowerCase()
-          .replace(/["'’“”\(\)\[\]\.\,;:\-—\/]/g,'') // remove punctuation incl. hyphen and em-dash and slashes
+          .replace(/["'â€™â€œâ€\(\)\[\]\.\,;:\-â€”\/]/g,'') // remove punctuation incl. hyphen and em-dash and slashes
           .replace(/\s+/g,' ').trim();
         // parse any CSV line into {display,title,name}
         function parseLineToPair(line){
