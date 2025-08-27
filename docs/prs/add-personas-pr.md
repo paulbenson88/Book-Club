@@ -10,9 +10,10 @@ Adds two personas and three user stories to guide Book-Club feature design and p
 Provides user-centered guidance for upcoming RSVP and accessibility work.
 
 ## Related
-Closes #<issue-number>  <!-- replace <issue-number> with the Persona issue number to auto-close it -->
+Closes #17  <!-- replace 17 with the Persona issue number to auto-close it -->
 
 ## Testing / Notes
 - Review personas and user stories for accuracy.
 - Update or extend personas as we gather usability feedback.
 ```
+
