@@ -1,4 +1,4 @@
-```markdown
+﻿```markdown
 // filepath: c:\Users\Paul\book-club\docs\issues\bug-start-poll-manual-choice.md
 # Bug: Start Poll fails when adding a manual choice
 
@@ -27,5 +27,5 @@ Suggested fix
 - Add unit test for adding manual choice then starting poll
 
 Priority: high
-Estimate: small–medium
+Estimate: smallâ€“medium
 ```

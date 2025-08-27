@@ -1,4 +1,4 @@
-```markdown
+﻿```markdown
 // filepath: c:\Users\Paul\book-club\docs\case-studies\README.md
 # Case Studies
 

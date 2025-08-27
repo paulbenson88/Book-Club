@@ -1,6 +1,6 @@
-```markdown
+﻿```markdown
 // filepath: c:\Users\Paul\book-club\docs\issues\feat-make-it-pretty.md
-# Feature: Make it pretty — consult with Hannah
+# Feature: Make it pretty â€” consult with Hannah
 
 Summary
 Improve UI visuals and spacing, coordinate design choices with Hannah.

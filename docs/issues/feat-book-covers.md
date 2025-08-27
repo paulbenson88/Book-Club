@@ -1,4 +1,4 @@
-```markdown
+﻿```markdown
 // filepath: c:\Users\Paul\book-club\docs\issues\feat-book-covers.md
 # Feature: Add book cover images to books-read.html
 

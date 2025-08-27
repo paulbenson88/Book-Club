@@ -1,4 +1,4 @@
-```markdown
+﻿```markdown
 // filepath: c:\Users\Paul\book-club\docs\issues\bug-slot-machine-manual.md
 # Bug / Improvement: Replace manual choice with searchable dropdown for slot machine
 

@@ -1,4 +1,4 @@
-```markdown
+﻿```markdown
 // filepath: c:\Users\Paul\book-club\docs\prs\add-personas-pr.md
 ## Summary
 Adds two personas and three user stories to guide Book-Club feature design and prioritization.

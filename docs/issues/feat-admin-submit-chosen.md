@@ -1,4 +1,4 @@
-```markdown
+﻿```markdown
 // filepath: c:\Users\Paul\book-club\docs\issues\feat-admin-submit-chosen.md
 # Feature: Admin finalize chosen book and update lists automatically
 
@@ -15,5 +15,5 @@ Acceptance criteria
 Notes
 - If using Google Sheets, implement Sheets API update (or use a mock for now)
 Priority: medium
-Estimate: medium–large (depending on integration)
+Estimate: mediumâ€“large (depending on integration)
 ```

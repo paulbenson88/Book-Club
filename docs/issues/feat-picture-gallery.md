@@ -1,4 +1,4 @@
-```markdown
+﻿```markdown
 // filepath: c:\Users\Paul\book-club\docs\issues\feat-picture-gallery.md
 # Feature: Picture gallery and optional upload
 
