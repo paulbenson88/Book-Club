@@ -299,7 +299,7 @@
   const pollResetBanner = document.getElementById('poll-reset-banner');
   function showResetBanner(text){ if(pollResetBanner){ pollResetBanner.textContent = text; pollResetBanner.style.display = 'block'; setTimeout(()=>{ if(pollResetBanner) pollResetBanner.style.display='none'; }, 8000); } }
 
-  <!-- Pull the three chosen indexes from slotMachineState and render titles/names -->
+  // Pull the three chosen indexes from slotMachineState and render titles/names
   async function loadWinnersAndChoices(){
       const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSLdPdPu4pwIwsAjADiCQOXYUJ8ACgWXaJn0DUVgNEy8ZZfc06EUGz2G9imE4gQ9FRs_zoDamhYTHhQ/pub?output=csv";
       const container = document.getElementById('winners-container');
@@ -515,3 +515,4 @@
   </script>
 </body>
 </html>
+
