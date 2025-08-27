@@ -2,7 +2,7 @@
 // filepath: c:\Users\Paul\book-club\docs\personas.md
 # Personas (starter)
 
-## Persona: Emily â€” Busy organizer
+## Persona: Emily — Busy organizer
 - Age: 38
 - Tech comfort: Comfortable with web apps, desktop-first but uses mobile when needed
 - Goals:
@@ -14,7 +14,7 @@
 - Typical scenario:
   - Emily sets up a monthly meeting, invites members, and needs a clear attendee list and an easy way to send reminders.
 
-## Persona: Sam â€” Casual reader
+## Persona: Sam — Casual reader
 - Age: 28
 - Tech comfort: Mobile-first, casual app user
 - Goals:
