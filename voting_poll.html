@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Voting Poll</title>
 <link rel="icon" href="/favicon/favicon.ico" type="image/x-icon">
   <!-- Firebase compat SDK (CDN) - replace config below with your project's values -->
@@ -76,31 +77,75 @@
   .dog-bob { animation: bob 2s ease-in-out infinite; }
   @keyframes bob { 0%{transform:translateY(0)}50%{transform:translateY(-6px)}100%{transform:translateY(0)} }
   /* Poll updates are published by admin; no background polling on this page */
+  /* small helpers for this page */
+  .flex-gap { display:flex; gap:8px; flex-wrap:wrap; }
+  .poll-reset-banner { display:none; margin-top:12px; padding:8px; border-radius:6px; background:#fff3cd; color:#856404; border:1px solid #ffeeba; font-size:0.95em; }
+  /* Poll responsive fixes: ensure items don't overlap and vote control stays left */
+  .poll-item { width:100%; box-sizing:border-box; display:flex; align-items:center; gap:12px; margin:12px 0; padding:12px; border:1px solid #e5e5e5; border-radius:8px; background:#fff; }
+  .poll-content { flex:1 1 auto; min-width:0; text-align:left; }
+  .vote-container { flex:0 0 86px; display:flex; align-items:center; justify-content:center; padding:8px; border-radius:8px; background:#f6f6f6; border:1px solid #e6e6e6; }
+  .vote-container input[type="checkbox"] { transform: scale(1.15); margin-right:8px; }
+  .vote-label.bold { font-weight:700; }
+  @media (max-width:600px){
+    .poll-item { gap:10px; }
+    .vote-container { flex:0 0 72px; }
+    .vote-container input[type="checkbox"] { transform: scale(1.05); }
+    .wait-dog { width:160px; }
+  }
   </style>
-  <link rel="icon" href="/favicon/favicon.ico" type="image/x-icon"></head>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    /* Overrides after main stylesheet to keep vote control left on mobile */
+    @media (max-width:600px) {
+      .poll-item { flex-direction: row !important; align-items: center !important; gap: 8px !important; }
+      .vote-container { min-width:56px !important; flex: 0 0 56px !important; justify-content: center !important; padding:6px !important; }
+      .vote-container input[type="checkbox"] { transform: scale(0.95) !important; }
+      .vote-label { display:block; font-size:0.9rem; margin-top:4px; }
+      .poll-content label { font-size:1rem; }
+      /* Prevent poll cards from collapsing or overlapping */
+      #poll-options { overflow: visible; }
+    }
+  /* Make the name input responsive so it can't overflow the card */
+  #nameInput { width:100% !important; max-width:100% !important; box-sizing:border-box !important; display:block; }
+  /* Add extra breathing room between the name input and action buttons */
+  .name-actions { margin-top:12px !important; gap:12px !important; }
+  </style>
+</head>
 
 <body>
-  <header class="main-btn-header">
-    <a href="index.html" class="btn btn-secondary">ðŸ  Main Page</a>
-  </header>
-  <!-- Poll updates are published by admin; viewers will react to storage events -->
-  <h1>ðŸ“Š Voting Poll</h1>
+  <nav class="site-nav">
+    <a href="index.html" class="main-page-btn">🏠 Main Page</a>
+  </nav>
 
-  <div class="section">
+  <div class="container">
+    <div class="card">
+      <div class="card-body">
+        <!-- Poll updates are published by admin; viewers will react to storage events -->
+        <h1 class="card-title">📚 Voting Poll</h1>
+
+        <div id="winners-container" class="mb-3"></div>
+        <div id="winners-loading" class="d-none"></div>
+
+        <div class="section">
   <h2>Vote for the next book - toggle your votes</h2>
-  <input type="text" id="nameInput" placeholder="Enter your name" />
-  <button id="submitNameBtn">Submit Name</button>
-  <button id="editNameBtn" style="display: none;">Edit Name</button>
-  <p class="text-muted small mb-2 mt-2">Please vote for which book(s) you'd like to read next month â€” you may vote for more than one option.</p>
-  <div id="poll-reset-banner" style="display:none; margin-top:12px; padding:8px; border-radius:6px; background:#fff3cd; color:#856404; border:1px solid #ffeeba; font-size:0.95em;"></div>
+  <div class="mb-3">
+    <input type="text" id="nameInput" placeholder="Enter your name" />
+  </div>
+  <div class="mb-3 flex-gap name-actions">
+  <button id="submitNameBtn" class="cta-primary">Submit Name</button>
+  <button id="editNameBtn" class="main-page-btn" style="display:none;">Edit Name</button>
+  </div>
+  <p class="text-muted small mb-2 mt-2">Please vote for which book(s) you'd like to read next month — you may vote for more than one option.</p>
+  <div id="poll-reset-banner" class="poll-reset-banner"></div>
   <!-- Poll UI (legacy) -->
   <div id="poll-options">
-    <div class="wait-box" style="padding:18px;">
-      <img class="wait-dog dog-bob" src="images/Merc.jpg" alt="Merc the dog" loading="lazy" style="width:220px;max-width:90%;border-radius:12px;box-shadow:0 6px 18px rgba(0,0,0,0.12);" />
-      <div class="wait-text">Please wait patiently with Merc â€” the lead will randomly choose all three books with the slot machine.</div>
-      <div class="wait-sub">We'll let you know when voting starts.</div>
-      <div class="spinner" aria-hidden="true"></div>
-    </div>
+      <div class="card shadow-sm">
+  <div class="card-body wait-box" style="padding:18px; text-align:center;">
+  <img class="wait-dog dog-bob" src="images/Merc.jpg" alt="Merc the dog" loading="lazy" />
+          <div class="wait-text">Please wait patiently with Merc — the lead will randomly choose all three books with the slot machine.</div>
+          <div class="wait-sub">We'll let you know when voting starts.</div>
+          <div class="spinner" aria-hidden="true"></div>
+        </div>
   </div>
   </div>
 
@@ -513,6 +558,9 @@
   // Run initial load so waiting UI is shown immediately when no poll is present
   try{ loadWinnersAndChoices(); }catch(e){ console.warn('initial load failed', e); }
   </script>
+      </div>
+    </div>
+  </div>
 </body>
 </html>
 
