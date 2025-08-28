@@ -5,13 +5,13 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Admin - Book Slot Machine</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="css/styles.css" rel="stylesheet">
+  <link href="../css/styles.css" rel="stylesheet">
   <!-- Favicons -->
-  <link rel="icon" href="favicon/favicon.ico" />
-  <link rel="icon" type="image/png" sizes="32x32" href="favicon/favicon-32x32.png" />
-  <link rel="icon" type="image/png" sizes="16x16" href="favicon/favicon-16x16.png" />
-  <link rel="apple-touch-icon" sizes="180x180" href="favicon/apple-touch-icon.png" />
-  <link rel="manifest" href="favicon/site.webmanifest" />
+  <link rel="icon" href="../favicon/favicon.ico" />
+  <link rel="icon" type="image/png" sizes="32x32" href="../favicon/favicon-32x32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="../favicon/favicon-16x16.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="../favicon/apple-touch-icon.png" />
+  <link rel="manifest" href="../favicon/site.webmanifest" />
   <meta name="theme-color" content="#ffffff">
   <style>
     /* Site-wide nav styles copied from index.html for consistent header */
@@ -49,7 +49,7 @@
 </head>
 <body>
   <header style="text-align:center; margin:1rem 0;">
-    <a href="index.html" class="btn btn-secondary">🏠 Main Page</a>
+  <a href="../index.html" class="btn btn-secondary">🏠 Main Page</a>
   </header>
   <div class="container">
     <div class="card shadow-sm mb-3">
@@ -74,7 +74,7 @@
                 <div class="flex-grow-1">
                   <p class="mb-2"><strong>Member view URL</strong></p>
                   <div class="d-flex gap-2 align-items-center">
-                    <input id="memberLink" type="text" class="form-control" value="https://paulbenson88.github.io/Book-Club/voting.html" />
+                    <input id="memberLink" type="text" class="form-control" value="https://paulbenson88.github.io/Book-Club/pages/voting.html" />
                     <button id="copyMemberLink" class="btn btn-outline-primary">Copy link</button>
                     <a id="openMember" href="voting.html" class="btn btn-secondary">Open Member View</a>
                   </div>
@@ -151,7 +151,7 @@
                     <div class="flex-grow-1">
                       <p class="mb-2"><strong>Voting poll URL</strong></p>
                       <div class="d-flex gap-2 align-items-center">
-                        <input id="pollLink" type="text" class="form-control" value="https://paulbenson88.github.io/Book-Club/voting_poll.html" />
+                        <input id="pollLink" type="text" class="form-control" value="https://paulbenson88.github.io/Book-Club/pages/voting_poll.html" />
                         <button id="copyPollLink" class="btn btn-outline-primary">Copy link</button>
                         <a id="openPoll" href="voting_poll.html" class="btn btn-primary">Open Poll</a>
                       </div>
@@ -217,7 +217,7 @@
     </div>
   </div>
 
-  <script src="js/qrcode.min.js"></script>
+  <script src="../js/qrcode.min.js"></script>
   <!-- Firebase SDK (placeholder) -->
   <!--
     To enable Firestore publishing:
@@ -260,9 +260,9 @@
   try{ const cont = document.getElementById('slot-container'); if(cont) cont.classList.remove('d-none'); }catch(e){}
   try{ loadVotingScript(); }catch(e){}
 
-      function loadVotingScript(){
+        function loadVotingScript(){
         if(document.querySelector('script[data-voting-loaded]')) return;
-        const s = document.createElement('script'); s.src = 'js/voting.js'; s.setAttribute('data-voting-loaded','1'); document.body.appendChild(s);
+        const s = document.createElement('script'); s.src = '../js/voting.js'; s.setAttribute('data-voting-loaded','1'); document.body.appendChild(s);
       }
 
   // reveal manual winners UI for admins
@@ -307,7 +307,7 @@
     })();
     // QR + copy-link handling for voting poll (use local QR lib, show panel only when winners present)
     (function(){
-  const pollUrl = 'https://paulbenson88.github.io/Book-Club/voting_poll.html';
+  const pollUrl = 'https://paulbenson88.github.io/Book-Club/pages/voting_poll.html';
       // expose canonical poll url for other scripts
       try{ window.adminPollUrl = pollUrl; }catch(e){}
       const linkInput = document.getElementById('pollLink');
@@ -554,7 +554,7 @@
 
     // Member view share handling (top panel)
     (function(){
-      const memberUrl = 'https://paulbenson88.github.io/Book-Club/voting.html';
+  const memberUrl = 'https://paulbenson88.github.io/Book-Club/pages/voting.html';
       const memberInput = document.getElementById('memberLink');
       const copyMemberBtn = document.getElementById('copyMemberLink');
       const openMemberBtn = document.getElementById('openMember');
