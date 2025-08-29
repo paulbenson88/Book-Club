@@ -45,6 +45,24 @@
   .modal-actions .btn.btn-outline-secondary { color:#333; border-color:rgba(0,0,0,0.12); }
   @media (max-width:420px){ .modal-actions { flex-direction: column-reverse; } .modal-actions .btn{ width:100%; } }
   .modal-overlay.d-none { display: none; }
+  /* Custom styled dropdown for Edit Choice panels to match site look */
+  .edit-choice-panel { position: relative; }
+  .edit-choice-datalist { display: none !important; } /* hide native datalist UI in favor of styled list */
+  .edit-choice-results {
+    position: absolute;
+    left: 0;
+    right: 0;
+    z-index: 2050;
+    margin-top: 6px;
+    max-height: 220px;
+    overflow: auto;
+    border: 1px solid rgba(0,0,0,0.08);
+    background: #fff;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+    border-radius: 8px;
+  }
+  .edit-choice-results .list-group-item{ cursor: pointer; padding: 8px 10px; font-size: 0.95rem; }
+  .edit-choice-results .list-group-item:hover{ background:#f1f7fb; }
   </style>
 </head>
 <body>
@@ -100,43 +118,45 @@
               <div class="slot-scroll" id="slotScroll1"><div class="slot-scroll-list"></div></div>
               <button id="slotStopBtn1" class="btn stop-btn mt-2" disabled>Stop</button>
               <button class="btn reel-respin mt-2 d-none" data-reel="0" disabled>⟲ Respin</button>
-              <div class="suggested-by text-muted small mt-1 text-center">Suggested by: <span id="suggested1-name"></span></div>
+              <button class="btn btn-outline-secondary edit-choice mt-2 d-none" data-reel="0">Edit Choice</button>
+              <div class="edit-choice-panel mt-2 d-none" data-reel="0">
+                <input type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" class="form-control edit-choice-input" placeholder="Search or choose a book..." aria-label="Search or choose a book" />
+                <datalist id="edit-choice-list-0" class="edit-choice-datalist"></datalist>
+                <div class="edit-choice-results list-group d-none" aria-hidden="true"></div>
+                <div class="small text-muted mt-1">Select a book to replace this reel.</div>
+              </div>
+               <div class="suggested-by text-muted small mt-1 text-center">Suggested by: <span id="suggested1-name"></span></div>
             </div>
             <div class="slot-reel" id="slot2">
               <div class="slot-scroll" id="slotScroll2"><div class="slot-scroll-list"></div></div>
               <button id="slotStopBtn2" class="btn stop-btn mt-2" disabled>Stop</button>
               <button class="btn reel-respin mt-2 d-none" data-reel="1" disabled>⟲ Respin</button>
+              <button class="btn btn-outline-secondary edit-choice mt-2 d-none" data-reel="1">Edit Choice</button>
+              <div class="edit-choice-panel mt-2 d-none" data-reel="1">
+                <input type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" class="form-control edit-choice-input" placeholder="Search or choose a book..." aria-label="Search or choose a book" />
+                <datalist id="edit-choice-list-1" class="edit-choice-datalist"></datalist>
+                <div class="edit-choice-results list-group d-none" aria-hidden="true"></div>
+                <div class="small text-muted mt-1">Select a book to replace this reel.</div>
+              </div>
               <div class="suggested-by text-muted small mt-1 text-center">Suggested by: <span id="suggested2-name"></span></div>
             </div>
             <div class="slot-reel" id="slot3">
               <div class="slot-scroll" id="slotScroll3"><div class="slot-scroll-list"></div></div>
               <button id="slotStopBtn3" class="btn stop-btn mt-2" disabled>Stop</button>
               <button class="btn reel-respin mt-2 d-none" data-reel="2" disabled>⟲ Respin</button>
+              <button class="btn btn-outline-secondary edit-choice mt-2 d-none" data-reel="2">Edit Choice</button>
+              <div class="edit-choice-panel mt-2 d-none" data-reel="2">
+                <input type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" class="form-control edit-choice-input" placeholder="Search or choose a book..." aria-label="Search or choose a book" />
+                <datalist id="edit-choice-list-2" class="edit-choice-datalist"></datalist>
+                <div class="edit-choice-results list-group d-none" aria-hidden="true"></div>
+                <div class="small text-muted mt-1">Select a book to replace this reel.</div>
+              </div>
               <div class="suggested-by text-muted small mt-1 text-center">Suggested by: <span id="suggested3-name"></span></div>
             </div>
           </div>
           <div id="slotResult" class="slot-result"></div>
           <div id="slotLoading" class="text-muted text-center mt-2 small">Loading book list...</div>
-          <!-- Large Start Poll card placed beneath the slot machine -->
-          <div class="mt-3">
-            <div id="startPollCard" class="card shadow-lg start-poll-card" style="border-radius:12px;">
-              <div class="card-body text-center" style="padding:22px;">
-                <h3 class="mb-2">Publish Final Choices</h3>
-                <p class="small text-muted mb-3">When you're happy with the three selected books, publish the poll so members can vote.</p>
-                <div style="display:flex;gap:10px;justify-content:center;align-items:center;flex-wrap:wrap;">
-                  <button id="startPollBtn" class="btn btn-success btn-lg" disabled aria-disabled="true" style="padding:14px 32px; font-size:1.05rem; border-radius:10px;">Start Poll</button>
-                  <div id="authControls" style="display:flex;gap:8px;align-items:center;flex-direction:column;">
-                    <div style="display:flex;gap:8px;align-items:center;">
-                      <button id="signInBtn" class="btn btn-outline-primary" style="display:none;">Sign in (Google)</button>
-                      <button id="signOutBtn" class="btn btn-outline-secondary" style="display:none;">Sign out</button>
-                    </div>
-                    <div id="authStatus" class="small text-muted" style="display:block;">Not signed in</div>
-                  </div>
-                </div>
-                <div id="startPollHelp" class="small text-muted mt-2" style="display:block;">Button enabled when three choices are available.</div>
-              </div>
-            </div>
-          </div>
+          
         </div>
             <!-- Voting poll share panel (hidden until winners present) -->
             <div id="poll-share" class="mt-4 d-none">
@@ -164,24 +184,7 @@
               </div>
             </div>
               <!-- Manual winners fallback (lead can paste titles/authors) -->
-              <div id="manual-winners" class="mt-3 d-none">
-                <div class="card shadow-sm">
-                  <div class="card-body">
-                    <h2 class="h6">Manual: Final choices</h2>
-                    <p class="small text-muted">If the slot machine fails, enter up to three final choices below and click Save.</p>
-                    <div class="row g-2">
-                      <div class="col-12 col-md-6"><input id="mw-title-1" class="form-control" placeholder="Title - Author (optional)" /></div>
-                      <div class="col-12 col-md-6"><input id="mw-title-2" class="form-control" placeholder="Title - Author (optional)" /></div>
-                      <div class="col-12 col-md-6 mt-2"><input id="mw-title-3" class="form-control" placeholder="Title - Author (optional)" /></div>
-                    </div>
-                    <div class="mt-3 d-flex gap-2">
-                      <button id="mw-save" class="btn btn-primary">Save choices</button>
-                      <button id="mw-clear" class="btn btn-outline-danger">Clear manual choices</button>
-                    </div>
-                    <div id="mw-feedback" class="small text-success mt-2" style="display:none;">Manual choices saved</div>
-                  </div>
-                </div>
-              </div>
+              
                 <!-- Admin poll controls (fail-safe) -->
                 <div id="admin-poll-controls" class="mt-3 d-none">
                   <div class="card shadow-sm">
@@ -265,45 +268,7 @@
         const s = document.createElement('script'); s.src = '../js/voting.js'; s.setAttribute('data-voting-loaded','1'); document.body.appendChild(s);
       }
 
-  // reveal manual winners UI for admins
-  try{ const mw = document.getElementById('manual-winners'); if(mw) mw.classList.remove('d-none'); }catch(e){}
-
-      // manual winners save/clear handlers
-      try{
-  const saveBtn = document.getElementById('mw-save');
-  const clearBtn = document.getElementById('mw-clear');
-  const fb = document.getElementById('mw-feedback');
-  const inputs = [document.getElementById('mw-title-1'), document.getElementById('mw-title-2'), document.getElementById('mw-title-3')];
-  let saveTimer = null;
-  function showSavedFeedback(){ if(fb){ fb.style.display='block'; clearTimeout(fb._timer); fb._timer = setTimeout(()=>fb.style.display='none',2500); } }
-  function publishManual(arr){ try{ localStorage.setItem('winners', JSON.stringify(arr)); try{ window.dispatchEvent(new CustomEvent('winnersSaved', { detail: arr })); }catch(e){} }catch(e){} }
-  function readAndPublish(){ const arr = readManual(); if(arr.length){ publishManual(arr); showSavedFeedback(); try{ if(window.showAdminPollShare) window.showAdminPollShare(); }catch(e){} } else { try{ localStorage.removeItem('winners'); try{ window.dispatchEvent(new Event('winnersCleared')); }catch(e){} }catch(e){} } }
-
-  // Debounced autosave on input, immediate save on blur or Enter
-  function scheduleSave(){ clearTimeout(saveTimer); saveTimer = setTimeout(()=>{ try{ readAndPublish(); }catch(e){} }, 700); }
-  inputs.forEach(inp=>{ if(!inp) return; inp.addEventListener('input', scheduleSave); inp.addEventListener('blur', ()=>{ try{ readAndPublish(); }catch(e){} }); inp.addEventListener('keydown', (ev)=>{ if(ev.key==='Enter'){ ev.preventDefault(); try{ readAndPublish(); }catch(e){} } }); });
-        function readManual(){
-          const t1 = (document.getElementById('mw-title-1')||{}).value||'';
-          const t2 = (document.getElementById('mw-title-2')||{}).value||'';
-          const t3 = (document.getElementById('mw-title-3')||{}).value||'';
-          const arr = [t1,t2,t3].map(s=>s.trim()).filter(s=>s.length>0).map(s=>{
-            // Prefer explicit "by" for suggester; otherwise capture ' - ' author but do not treat it as suggestedBy
-            let title = s, suggestedBy = '', author = '';
-            if(/\sby\s/i.test(s)){
-              const parts = s.split(/\sby\s/i); title = parts[0].trim(); suggestedBy = parts.slice(1).join(' by ').trim();
-            } else if(/\s-\s/.test(s)){
-              const parts = s.split(/\s-\s/); title = parts[0].trim(); author = parts.slice(1).join(' - ').trim();
-            }
-            const book = author ? (title + ' - ' + author) : title;
-            return { book, suggestedBy };
-          });
-          return arr;
-        }
-  saveBtn && saveBtn.addEventListener('click', ()=>{ try{ readAndPublish(); }catch(err){ console.warn(err); } });
-        clearBtn && clearBtn.addEventListener('click', ()=>{
-          try{ localStorage.removeItem('winners'); try{ window.dispatchEvent(new Event('winnersCleared')); }catch(e){}; }catch(e){}
-        });
-      }catch(e){}
+  // Manual winners UI removed — manual save/clear handlers cleaned up.
     })();
     // QR + copy-link handling for voting poll (use local QR lib, show panel only when winners present)
     (function(){
@@ -367,177 +332,7 @@
         if(Array.isArray(winners) && winners.length>=3){ showSharePanel(); }
       }catch(e){ /* ignore */ }
 
-      // Start Poll flow: preview + publish
-      try{
-        const startPollBtn = document.getElementById('startPollBtn');
-        const startPollModal = document.getElementById('startPollModal');
-        const startPollList = document.getElementById('startPollList');
-        const startPollCancel = document.getElementById('startPollCancel');
-        const startPollConfirm = document.getElementById('startPollConfirm');
-        const copyFeedbackEl = document.getElementById('copyFeedback');
-
-        function getCurrentWinners(){
-          try{
-            let winners = JSON.parse(localStorage.getItem('winners') || 'null') || [];
-            winners = (Array.isArray(winners) ? winners.slice(0,3) : []).map(w => ({ book: (w && (w.title || w.book || w[0]))||'', name: (w && (w.suggestedBy || w.name || w[1]))||'' })).filter(x=>x && x.book);
-            // if winners incomplete, try stored pollChoices as fallback preview
-            if(winners.length < 3){ const pcs = JSON.parse(localStorage.getItem('pollChoices')||'[]'); if(Array.isArray(pcs) && pcs.length>=3) return pcs.slice(0,3).map(p=>({ book:p.book||'', name:p.name||'' })); }
-            return winners;
-          }catch(e){ return []; }
-        }
-
-        function updateStartBtnState(){
-          if(!startPollBtn) return;
-          const winners = getCurrentWinners();
-          const enabled = winners.length >= 3;
-          startPollBtn.disabled = !enabled;
-          startPollBtn.setAttribute('aria-disabled', String(!enabled));
-          if(!enabled){ startPollBtn.classList.add('disabled'); } else { startPollBtn.classList.remove('disabled'); }
-          try{ const help = document.getElementById('startPollHelp'); if(help) help.style.display = enabled ? 'none' : 'block'; }catch(e){}
-
-          // animate the Start Poll card briefly when it becomes enabled to draw attention
-          try{
-            const cardEl = document.getElementById('startPollCard');
-            if(cardEl){
-              if(enabled){
-                // restart the animation by removing then forcing reflow and re-adding the class
-                cardEl.classList.remove('animate-ready');
-                void cardEl.offsetWidth;
-                cardEl.classList.add('animate-ready');
-              } else {
-                cardEl.classList.remove('animate-ready');
-              }
-            }
-          }catch(e){}
-        }
-
-        function showModalWith(winners){
-          if(!startPollModal || !startPollList) return;
-          startPollList.innerHTML = winners.map((w,i)=>`<div style="padding:6px 0;border-bottom:1px solid #eee;"><strong>${i+1}.</strong> ${w.book} <div class='small text-muted'>Suggested by ${w.name||'—'}</div></div>`).join('');
-          startPollModal.classList.remove('d-none'); startPollModal.classList.add('show'); document.body.classList.add('modal-open');
-        }
-
-        function hideModal(){ if(!startPollModal) return; startPollModal.classList.add('d-none'); startPollModal.classList.remove('show'); document.body.classList.remove('modal-open'); }
-
-        if(startPollBtn){
-          // initialize state
-          updateStartBtnState();
-          startPollBtn.addEventListener('click', (ev)=>{
-            // Protect against activation when disabled (works for mouse + keyboard)
-            if(startPollBtn.disabled) return;
-            const winners = getCurrentWinners();
-            if(winners.length < 3){ alert('Three choices are required to start the poll.'); return; }
-            showModalWith(winners);
-          });
-        }
-
-        if(startPollCancel) startPollCancel.addEventListener('click', ()=>{ hideModal(); });
-
-        if(startPollConfirm) startPollConfirm.addEventListener('click', ()=>{
-          try{
-            const winners = getCurrentWinners();
-            if(winners.length < 3){ alert('Three choices are required to start the poll.'); hideModal(); return; }
-            const pollChoices = winners.map(w=>({ book: w.book, name: w.name||'' }));
-            localStorage.setItem('pollChoices', JSON.stringify(pollChoices));
-            // Publish to Firestore if configured (best-effort)
-            try{
-              if(typeof publishToFirestore === 'function'){
-                try{ console.log('[admin] attempting publishToFirestore, auth user=', window._auth && window._auth.currentUser && window._auth.currentUser.uid); }catch(e){}
-                publishToFirestore(pollChoices).catch(e=>console.warn('Firestore publish failed',e));
-              }
-            }catch(e){}
-            try{ window.dispatchEvent(new StorageEvent('storage', { key:'pollChoices', newValue: JSON.stringify(pollChoices) })); }catch(e){}
-            try{ window.dispatchEvent(new CustomEvent('winnersSaved', { detail: winners })); }catch(e){}
-            // feedback
-            if(copyFeedbackEl){ copyFeedbackEl.style.display='inline'; setTimeout(()=>copyFeedbackEl.style.display='none',2000); }
-            hideModal();
-            updateStartBtnState();
-          }catch(e){ console.warn('Publish poll failed', e); alert('Failed to publish poll'); hideModal(); }
-        });
-
-        // Firestore helper (optional) — replace firebaseConfig below with your project's config
-        (function(){
-          // Example config -- REPLACE with your Firebase project's values
-          const firebaseConfig = {
-            apiKey: "AIzaSyAe01ZUiPZfOhUht9XiKPf4brF-NXIkWlE",
-            authDomain: "book-club-hub-4bdda.firebaseapp.com",
-            projectId: "book-club-hub-4bdda",
-            storageBucket: "book-club-hub-4bdda.firebasestorage.app",
-            messagingSenderId: "404245538140",
-            appId: "1:404245538140:web:956fe120fc1651def00d99",
-            measurementId: "G-Z7T8TMH090"
-          };
-          try{
-            if(window.firebase && !window._firestoreInitDone){
-              firebase.initializeApp(firebaseConfig);
-              window._firestore = firebase.firestore();
-              window._firestoreInitDone = true;
-              console.log('[admin] Firebase initialized (placeholder)');
-              // Init auth
-              try{ window._auth = firebase.auth(); }catch(e){ console.warn('[admin] auth init failed', e); }
-            }
-          }catch(e){ console.warn('[admin] Firebase init skipped', e); }
-
-          // Auth UI wiring: show Sign in/Sign out buttons and handle state; do NOT auto-trigger popups during publish
-          (function(){
-            const signInBtn = document.getElementById('signInBtn');
-            const signOutBtn = document.getElementById('signOutBtn');
-            const authStatus = document.getElementById('authStatus');
-            function updateAuthUi(user){
-              if(user){ if(signInBtn) signInBtn.style.display='none'; if(signOutBtn) signOutBtn.style.display='inline-block'; if(authStatus) authStatus.textContent = user.email || user.uid; }
-              else { if(signInBtn) signInBtn.style.display='inline-block'; if(signOutBtn) signOutBtn.style.display='none'; if(authStatus) authStatus.textContent = 'Not signed in'; }
-            }
-            if(window._auth){
-              window._auth.onAuthStateChanged((user)=>{ try{ updateAuthUi(user); console.log('[admin] auth state changed', !!user, user && user.email); }catch(e){} });
-            } else { updateAuthUi(null); }
-            if(signInBtn){ signInBtn.addEventListener('click', ()=>{
-              try{
-                const provider = new firebase.auth.GoogleAuthProvider();
-                // Only open popup in direct response to user click
-                if(window._auth) window._auth.signInWithPopup(provider).catch(e=>{ console.warn('Sign-in failed',e); alert('Sign-in failed: '+(e && e.message)); });
-              }catch(e){ console.warn('signIn click failed', e); }
-            }); }
-            if(signOutBtn){ signOutBtn.addEventListener('click', ()=>{ try{ if(window._auth) window._auth.signOut(); }catch(e){} }); }
-          })();
-
-          // Publish pollChoices to Firestore - writes to collection 'poll' doc 'current'
-          // By default we'll attempt an unauthenticated write when signed out (best-effort) so you can skip Google sign-in during testing.
-          window._allowUnauthenticatedPublish = true;
-          window.publishToFirestore = async function(pollChoices){
-            if(!window._firestore) throw new Error('Firestore not initialized');
-            try{
-              const user = window._auth ? window._auth.currentUser : null;
-              const docRef = window._firestore.collection('poll').doc('current');
-              if(user){
-                await docRef.set({ choices: pollChoices, publishedAt: new Date().toISOString() }, { merge: true });
-                console.log('[admin] Published poll to Firestore (authenticated)');
-                return;
-              }
-              // attempt unauthenticated write if allowed (may be blocked by rules)
-              if(window._allowUnauthenticatedPublish){
-                try{
-                  await docRef.set({ choices: pollChoices, publishedAt: new Date().toISOString() }, { merge: true });
-                  console.log('[admin] Published poll to Firestore (unauthenticated)');
-                  return;
-                }catch(err){
-                  // likely permission error — surface a clearer message and rethrow
-                  console.warn('[admin] Unauthenticated publish blocked (likely Firestore rules).', err);
-                  const e2 = new Error('Unauthenticated publish blocked by Firestore rules. Enable public writes or sign in.');
-                  e2.original = err; throw e2;
-                }
-              }
-              // Not allowed to publish unauthenticated and not signed in
-              const err = new Error('Auth required: please sign in using the Sign in button before publishing');
-              console.warn('publishToFirestore blocked: not signed in');
-              throw err;
-            }catch(e){ console.warn('publishToFirestore error', e); throw e; }
-          };
-        })();
-
-        // react to winners/pollChoices storage updates and enable/disable button accordingly
-        window.addEventListener('storage', (ev)=>{ if(ev.key==='winners' || ev.key==='pollChoices' || ev.key==='slotMachineState'){ try{ updateStartBtnState(); if(ev.key==='winners'){ showSharePanel(); } }catch(e){} } });
-        window.addEventListener('winnersSaved', ()=>{ try{ updateStartBtnState(); showSharePanel(); }catch(e){} });
-      }catch(e){}
+  // Start Poll flow removed — publishing handled elsewhere or not used in this build.
 
       // Listen for storage events so panel appears when winners are saved in another tab
       window.addEventListener('storage', (ev)=>{
@@ -825,6 +620,294 @@
       // Enable download button when URL entered
       csvInput && csvInput.addEventListener('input', ()=>{ downloadCsvBtn.disabled = !(csvInput.value && localStorage.getItem('finalized')); });
     })();
+  </script>
+  <script>
+(function(){
+  let sheetOptions = [];
+  let sheetLoaded = false;
+
+  function getSheetUrl(){
+    const el = document.getElementById('csvUrlInput');
+    if(el && el.value && el.value.trim()) return el.value.trim();
+  // Prefer explicit global, otherwise try a repository-relative CSV as a sensible default
+  return window.sheetCsvUrl || '../sheet.csv' || '';
+  }
+
+  async function loadSheetOptions(){
+    if(sheetLoaded) return sheetOptions;
+    const url = getSheetUrl();
+    if(!url) return sheetOptions;
+    try{
+      const res = await fetch(url);
+      const csv = await res.text();
+      sheetOptions = parseCsv(csv);
+      sheetLoaded = true;
+    }catch(e){
+      console.warn('[admin] failed to load sheet CSV', e);
+    }
+    return sheetOptions;
+  }
+
+  function parseCsv(text){
+    const lines = text.split(/\r?\n/).filter(Boolean);
+    if(lines.length === 0) return [];
+    // Detect and skip a header row that contains column names like "Timestamp" or "Book Title"
+    const firstCols = splitCsvLine(lines[0]).map(c=> (c||'').toLowerCase());
+    let start = 0;
+    if(firstCols.some(c => c.includes('timestamp') || c.includes('book') || c.includes('title') || c.includes('author'))){
+      start = 1;
+    }
+    const rows = lines.slice(start).map(l => splitCsvLine(l));
+    return rows.map(cols => {
+      // Some sheets include a leading timestamp column. Detect date-like entries in cols[0].
+      const first = (cols[0]||'').trim();
+      const looksLikeTimestamp = /\d{1,4}[\/-]\d{1,2}[\/-]\d{1,4}|\d{1,2}:\d{2}|am|pm/i.test(first);
+      const titleIndex = looksLikeTimestamp ? 1 : 0;
+      const authorIndex = looksLikeTimestamp ? 2 : 1;
+      const sugIndex = looksLikeTimestamp ? 3 : 2;
+      const title = (cols[titleIndex]||'').trim();
+      const author = (cols[authorIndex]||'').trim();
+      const sug = (cols[sugIndex]||'').trim();
+      const display = author ? `${title} - ${author}` : title;
+      return { title, author, suggestedBy: sug, display, raw: cols };
+    }).filter(o => o.title && !/\d{1,2}[\/:]\d{2}/.test(o.title));
+  }
+
+  function splitCsvLine(line){
+    const res = [];
+    let cur = '', inQ = false;
+    for(let i=0;i<line.length;i++){
+      const ch = line[i];
+      if(ch === '"' ) { inQ = !inQ; continue; }
+      if(ch === ',' && !inQ){ res.push(cur); cur=''; continue; }
+      cur += ch;
+    }
+    res.push(cur);
+    return res;
+  }
+
+  function filterOptions(q){
+    if(!q) return sheetOptions.slice(0,50);
+    const qq = q.toLowerCase();
+    return sheetOptions.filter(o => (o.display||'').toLowerCase().includes(qq) || (o.title||'').toLowerCase().includes(qq)).slice(0,50);
+  }
+
+  // Populate the per-panel datalist elements with all unique displays sorted alphabetically
+  function populateDatalists(){
+    try{
+      const lists = Array.from(document.querySelectorAll('.edit-choice-datalist'));
+      if(!lists.length) return;
+      // Build unique list keyed by display
+      const map = new Map();
+      sheetOptions.forEach(o => { if(o && o.display) map.set(o.display, o); });
+      // Sort alphabetically by book title (not by author portion)
+      const all = Array.from(map.values()).sort((a,b)=> (a.title||'').localeCompare(b.title||'', undefined, { sensitivity: 'base' }));
+      lists.forEach(dl => {
+        // clear existing options
+        dl.innerHTML = '';
+        all.forEach(opt => {
+          const el = document.createElement('option'); el.value = opt.display; dl.appendChild(el);
+        });
+      });
+    }catch(e){ console.warn('populateDatalists failed', e); }
+  }
+
+  // Update the datalist for a given panel based on query and return the first match
+  function showResults(panel, reelIndex, q){
+    const input = panel.querySelector('.edit-choice-input');
+    const results = panel.querySelector('.edit-choice-results');
+    if(!input || !results) return null;
+    const matches = filterOptions(q || '');
+  // Sort matches alphabetically by book title (case-insensitive) so dropdown is ordered
+  matches.sort((a,b)=> (a.title||'').localeCompare(b.title||'', undefined, { sensitivity: 'base' }));
+    // populate styled results list
+    results.innerHTML = '';
+    if(matches.length === 0){
+      results.classList.add('d-none'); results.setAttribute('aria-hidden','true');
+      return null;
+    }
+    matches.forEach(opt => {
+      const item = document.createElement('button');
+      item.type = 'button';
+      item.className = 'list-group-item list-group-item-action';
+      item.textContent = opt.display;
+      item.addEventListener('click', ()=>{ selectOptionForReel(reelIndex, opt, panel); });
+      results.appendChild(item);
+    });
+    results.classList.remove('d-none'); results.setAttribute('aria-hidden','false');
+    // If the input value exactly matches one of the displays, prefer that as selected
+    const exact = matches.find(m => m.display === input.value);
+    return exact || matches[0] || null;
+  }
+
+  function selectOptionForReel(reelIndex, opt, panel){
+    try{
+      // Render markup that matches the slot machine's stopped state: a .slot-scroll-list
+      // containing a single .slot-scroll-item. Put the full "Title - Author" string
+      // into the reel display and set the Suggested by line below.
+      const slotScroll = document.querySelector(`#slot${reelIndex+1} .slot-scroll`);
+      // Some rows may have been imported into a single cell ("Title - Author - Suggested By").
+      // If the parsed opt.suggestedBy is empty but the display contains 2+ ' - ' segments,
+      // treat the last segment as the suggester and render only Title - Author in the reel.
+      let display = String(opt.display || '').trim();
+      let suggested = (opt.suggestedBy || '').trim();
+      if(!suggested){
+        const parts = display.split(/\s-\s/);
+        if(parts.length >= 3){
+          suggested = parts.slice(2).join(' - ').trim();
+          display = parts.slice(0,2).join(' - ').trim();
+        }
+      }
+      if(slotScroll){
+        slotScroll.innerHTML = `<div class="slot-scroll-list"><div class="slot-scroll-item" style="border-bottom:none">${escapeHtml(display)}</div></div>`;
+      }
+      const sugEl = document.getElementById(`suggested${reelIndex+1}-name`);
+      if(sugEl) sugEl.textContent = suggested || '';
+
+      // Persist winners using the same shape the slot machine uses: { title, suggestedBy }
+      try{
+        let winners = JSON.parse(localStorage.getItem('winners')||'null') || [];
+  // Derive a plain title (without author) for the stored title field when possible
+  const plainTitle = (opt.title && opt.title.trim()) ? opt.title.trim() : (String(display||'').split(/\s-\s/)[0]||String(display||'')).trim();
+  winners[reelIndex] = { title: plainTitle, suggestedBy: suggested || '' };
+        localStorage.setItem('winners', JSON.stringify(winners));
+        try{ window.dispatchEvent(new CustomEvent('winnersSaved', { detail: winners })); }catch(e){}
+      }catch(e){}
+
+      // Also keep the older admin slotMachineState shape for backwards compatibility
+      try{
+        let sms = JSON.parse(localStorage.getItem('slotMachineState')||'null');
+        if(Array.isArray(sms) && sms.length > reelIndex){
+          // keep admin-era shape but store the visible Title - Author and suggester
+          sms[reelIndex] = { book: display, name: suggested || '' };
+          localStorage.setItem('slotMachineState', JSON.stringify(sms));
+          try{ window.dispatchEvent(new StorageEvent('storage', { key:'slotMachineState', newValue: JSON.stringify(sms) })); }catch(e){}
+        }
+      }catch(e){}
+    }catch(e){ console.warn('replace choice failed', e); }
+    panel.classList.add('d-none');
+  }
+
+  function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, c=> ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+  function initEditChoiceUI(){
+    const editBtns = Array.from(document.querySelectorAll('.edit-choice'));
+    editBtns.forEach(btn => {
+      const idx = Number(btn.getAttribute('data-reel'));
+      const panel = document.querySelector(`.edit-choice-panel[data-reel="${idx}"]`);
+      const input = panel && panel.querySelector('.edit-choice-input');
+      const datalist = panel && panel.querySelector('.edit-choice-datalist');
+      btn.addEventListener('click', async ()=>{
+        if(!sheetLoaded) await loadSheetOptions();
+        panel.classList.toggle('d-none');
+        if(!panel.classList.contains('d-none')){
+          // populate selects when panel is opened (if options loaded)
+          try{ populateDatalists(); }catch(e){}
+          showResults(panel, idx, input.value || '');
+          input.focus();
+        }
+      });
+      if(input){
+        input.addEventListener('input', (ev)=>{ showResults(panel, idx, ev.target.value); });
+        input.addEventListener('keydown', (ev)=>{ if(ev.key === 'Enter'){ ev.preventDefault(); const first = showResults(panel, idx, input.value); if(first) selectOptionForReel(idx, first, panel); } });
+        // When the input loses focus or changes, if it matches an option exactly, apply it
+        input.addEventListener('change', (ev)=>{
+          const val = (ev.target && ev.target.value) || '';
+          if(!val) return;
+          // find matching option object by display
+          const opt = sheetOptions.find(o=>o.display === val) || sheetOptions.find(o=>o.title === val) || { display: val, title: val, author: '' };
+          if(opt) selectOptionForReel(idx, opt, panel);
+        });
+  // hide results when input loses focus after a short delay (to allow click)
+  input.addEventListener('blur', ()=>{ setTimeout(()=>{ const r = panel.querySelector('.edit-choice-results'); if(r){ r.classList.add('d-none'); r.setAttribute('aria-hidden','true'); } }, 150); });
+      }
+      // datalist has no change events to select from; selection is handled via input's change/enter handlers above
+    });
+  }
+
+  // Close any open panels when clicking outside
+  document.addEventListener('click', (ev)=>{
+    const target = ev.target;
+    const isInside = target.closest && (target.closest('.edit-choice-panel') || target.closest('.edit-choice'));
+    if(!isInside){
+      document.querySelectorAll('.edit-choice-panel').forEach(p=>{ if(!p.classList.contains('d-none')) p.classList.add('d-none'); const r = p.querySelector('.edit-choice-results'); if(r){ r.classList.add('d-none'); r.setAttribute('aria-hidden','true'); } });
+    }
+  });
+
+  window.showEditChoiceForReel = function(reelIndex){
+    try{ const btn = document.querySelector(`.edit-choice[data-reel="${reelIndex}"]`); if(btn) btn.classList.remove('d-none'); }catch(e){}
+  };
+
+  document.addEventListener('DOMContentLoaded', ()=>{
+    initEditChoiceUI();
+    try{
+      // On load, reveal edit buttons only when the reel appears to be stopped
+      // (the stop button is hidden with .d-none and/or disabled by the slot script when stopped).
+      for(let i=1;i<=3;i++){
+        const stopBtn = document.getElementById('slotStopBtn'+i);
+        const editBtn = document.querySelector(`.edit-choice[data-reel="${i-1}"]`);
+  if(stopBtn && stopBtn.classList.contains('d-none') && editBtn){
+          editBtn.classList.remove('d-none');
+        }
+      }
+    }catch(e){}
+
+    // Reveal the Edit button for a reel when that reel has been stopped.
+    try{
+      // Wire stop button clicks: when a reel's Stop button is clicked, show its Edit button
+      for(let i=1;i<=3;i++){
+        (function(idx){
+          const stopBtn = document.getElementById('slotStopBtn'+idx);
+          const editBtn = document.querySelector(`.edit-choice[data-reel="${idx-1}"]`);
+          if(stopBtn && editBtn){
+            stopBtn.addEventListener('click', ()=>{ editBtn.classList.remove('d-none'); });
+          }
+        })(i);
+      }
+
+      // Also reveal when storage updates indicate a reel has a selection (other tabs or scripts)
+      window.addEventListener('storage', (ev)=>{
+        if(!ev) return;
+        try{
+          if((ev.key === 'slotMachineState' || ev.key === 'winners') && ev.newValue){
+            const arr = JSON.parse(ev.newValue || 'null') || [];
+            arr.forEach((s, idx)=>{
+              if(s && (s.book || s.title)){
+                const stopBtn = document.getElementById('slotStopBtn'+(idx+1));
+                const edit = document.querySelector(`.edit-choice[data-reel="${idx}"]`);
+                if(edit && stopBtn && stopBtn.classList.contains('d-none')){
+                  edit.classList.remove('d-none');
+                }
+              }
+            });
+          }
+        }catch(e){}
+      });
+
+      // In-window custom event used elsewhere in the app — reveal matching edit buttons when winnersSaved fires
+      window.addEventListener('winnersSaved', (ev)=>{
+        try{
+          const w = (ev && ev.detail) || JSON.parse(localStorage.getItem('winners')||'null') || [];
+          w.forEach((s, idx)=>{
+            if(s && (s.book || s.title)){
+              const stopBtn = document.getElementById('slotStopBtn'+(idx+1));
+              const edit = document.querySelector(`.edit-choice[data-reel="${idx}"]`);
+              if(edit && stopBtn && stopBtn.classList.contains('d-none')){
+                edit.classList.remove('d-none');
+              }
+            }
+          });
+        }catch(e){}
+      });
+    }catch(e){}
+    // Attempt to load the published sheet CSV on page load and populate the "choose from all" selects.
+    try{
+      loadSheetOptions().then(()=>{
+        try{ populateDatalists(); }catch(e){}
+      }).catch(()=>{/* ignore */});
+    }catch(e){}
+  });
+})();
   </script>
 </body>
 </html>
