@@ -1,9 +1,0 @@
-﻿Summary of changes made tonight:
-
-- Removed the manual "Final choices" admin card and its JS handlers (manual winners fallback).
-- Removed the Start Poll publish / Firestore preview flow and modal from `pages/admin.html`.
-- Kept and restored the Voting Poll QR share panel and QR helper logic.
-- Added the Edit Dropdown (Edit Choice) UI and CSV-driven search/dropdown for replacing reel choices.
-- Cleaned up related unused JS references.
-
-This PR contains the admin cleanup and feature note for the Edit Dropdown.
