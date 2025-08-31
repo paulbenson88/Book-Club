@@ -126,6 +126,8 @@
     slotStopBtns.forEach(btn=>{ if(btn){ btn.classList.remove('d-none'); btn.disabled = false; btn.removeAttribute('disabled'); btn.classList.remove('disabled'); btn.style.pointerEvents = 'auto'; btn.tabIndex = 0; }});
     slotRespinBtns.forEach(b=>{ if(b){ b.classList.add('d-none'); b.disabled = true; }});
     spinning = [true,true,true];
+  // hide any Edit buttons while a spin is in progress
+  try{ document.querySelectorAll('.edit-choice').forEach(b=>{ if(b) b.classList.add('d-none'); }); }catch(e){}
     if(slotSpinBtn){ slotSpinBtn.style.pointerEvents = 'none'; slotSpinBtn.disabled = true; }
     localStateSpun = true; saveState(); updateResetState();
     intervals[0] = startReelScroll(0); intervals[1] = startReelScroll(1); intervals[2] = startReelScroll(2);
@@ -155,6 +157,12 @@
 
     const resp = document.querySelector(`.reel-respin[data-reel="${reelIdx}"]`);
     if(resp){ resp.classList.remove('d-none'); resp.disabled = false; }
+
+    // Reveal the Edit button for this reel now that it has stopped
+    try{
+      const editBtn = document.querySelector(`.edit-choice[data-reel="${reelIdx}"]`);
+      if(editBtn) editBtn.classList.remove('d-none');
+    }catch(e){}
 
     for(let j=0;j<3;j++){
       if(j===reelIdx) continue;
@@ -188,6 +196,8 @@
     slotReels.forEach((r,i)=>{ r.classList.remove('winner'); renderIdle(i); });
     slotStopBtns.forEach(btn=>{ if(btn){ btn.classList.remove('d-none'); btn.disabled = true; btn.setAttribute('disabled',''); btn.classList.add('disabled'); btn.style.pointerEvents = 'none'; btn.tabIndex = -1; }});
     slotRespinBtns.forEach(b=>{ if(b){ b.classList.add('d-none'); b.disabled = true; }});
+  // hide edit buttons on reset
+  try{ document.querySelectorAll('.edit-choice').forEach(b=>{ if(b) b.classList.add('d-none'); }); }catch(e){}
     if(slotSpinBtn){ slotSpinBtn.disabled = false; slotSpinBtn.style.pointerEvents = 'auto'; }
     updateResetState();
   }
@@ -200,6 +210,12 @@
 
     const respBtn = document.querySelector(`.reel-respin[data-reel="${reelIdx}"]`);
     if(respBtn){ respBtn.classList.add('d-none'); respBtn.disabled = true; }
+
+    // Hide the Edit button for this reel while respinning to avoid accidental replacements
+    try{
+      const editBtn = document.querySelector(`.edit-choice[data-reel="${reelIdx}"]`);
+      if(editBtn) editBtn.classList.add('d-none');
+    }catch(e){}
 
     clearWinners(); // winners changed when respin starts
     const available = getAvailableIndices();
