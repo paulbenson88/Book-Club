@@ -64,11 +64,35 @@
   .edit-choice-results .list-group-item{ cursor: pointer; padding: 8px 10px; font-size: 0.95rem; }
   .edit-choice-results .list-group-item:hover{ background:#f1f7fb; }
   </style>
+  <style>
+    /* Admin toast */
+    .admin-toast {
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      background: rgba(33,33,33,0.95);
+      color: #fff;
+      padding: 10px 14px;
+      border-radius: 8px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+      font-size: 0.95rem;
+      z-index: 9999;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity 220ms ease, transform 220ms ease;
+      pointer-events: none;
+    }
+    .admin-toast.show { opacity: 1; transform: translateY(0); pointer-events: auto; }
+  </style>
 </head>
 <body>
   <header style="text-align:center; margin:1rem 0;">
   <a href="../index.html" class="btn btn-secondary">🏠 Main Page</a>
   </header>
+  <!-- Very prominent start-new-session action for admin -->
+  <div style="max-width:900px;margin:0.6rem auto 0;">
+    <button id="topStartNewSessionBtn" class="btn btn-lg btn-primary w-100" style="font-size:1.45rem;padding:18px;">Start new book voting session</button>
+  </div>
   <div class="container">
     <div class="card shadow-sm mb-3">
       <div class="card-body">
@@ -155,10 +179,16 @@
             </div>
           </div>
           <div id="slotResult" class="slot-result"></div>
+          <div style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+            <button id="forcePublishBtn" class="btn btn-success">Submit choices / Create Vote</button>
+            <button id="forceClearBtn" class="btn btn-outline-secondary">Clear Poll (admin)</button>
+            <button id="announceWinnerBtn" class="btn btn-warning">All votes in — Announce Winner</button>
+            <button id="startNewSessionBtn" class="btn btn-outline-primary">Start new book voting session</button>
+          </div>
           <div id="slotLoading" class="text-muted text-center mt-2 small">Loading book list...</div>
           
         </div>
-            <!-- Voting poll share panel (hidden until winners present) -->
+            <!-- Voting poll share panel (hidden until pollChoices present) -->
             <div id="poll-share" class="mt-4 d-none">
               <div class="card shadow-sm">
                 <div class="card-body">
@@ -183,39 +213,7 @@
                 </div>
               </div>
             </div>
-              <!-- Manual winners fallback (lead can paste titles/authors) -->
-              
-                <!-- Admin poll controls (fail-safe) -->
-                <div id="admin-poll-controls" class="mt-3 d-none">
-                  <div class="card shadow-sm">
-                    <div class="card-body">
-                      <h2 class="h6">Admin: Poll controls (fail-safe)</h2>
-                      <p class="small text-muted">If the poll UI or syncing breaks, you can clear all votes here or add votes manually on behalf of a member. Use these sparingly — they're intended as emergency tools.</p>
-                      <div class="mb-2">
-                        <button id="clear-all-votes" class="btn btn-outline-danger">Clear all votes from poll</button>
-                        <span id="clear-votes-feedback" class="small text-success ms-2" style="display:none;">Votes cleared</span>
-                      </div>
-                      <hr />
-                      <div class="row g-2 align-items-center">
-                        <div class="col-12 col-md-6">
-                          <input id="admin-voter-name" class="form-control" placeholder="Name to add votes for (e.g. Merc)" />
-                        </div>
-                        <div class="col-12 col-md-6">
-                          <div id="admin-poll-books" class="d-flex gap-2 flex-wrap"></div>
-                        </div>
-                        <div class="col-12">
-                          <div class="d-flex gap-2 mt-2">
-                            <button id="admin-add-votes" class="btn btn-primary">Add votes for selected books</button>
-                            <button id="admin-remove-votes" class="btn btn-warning">Remove votes for selected books</button>
-                            <button id="admin-refresh-books" class="btn btn-outline-secondary">Refresh book list</button>
-                          </div>
-                          <div id="admin-add-feedback" class="small text-success mt-2" style="display:none;">Votes added</div>
-                          <div id="admin-add-warning" class="small text-muted mt-1">Tip: this only updates the poll's local votes storage; open poll tab will reflect changes automatically.</div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <!-- Legacy manual poll controls removed (replaced by searchable dropdown edit UI) -->
       </div>
     </div>
   </div>
@@ -254,6 +252,8 @@
       </div>
     </div>
   </div>
+  <!-- Admin toast container -->
+  <div id="adminToast" class="admin-toast" aria-live="polite" role="status" style="display:none;"></div>
   <script>
     (function(){
       const msg = document.getElementById('admin-msg');
@@ -268,9 +268,9 @@
         const s = document.createElement('script'); s.src = '../js/voting.js'; s.setAttribute('data-voting-loaded','1'); document.body.appendChild(s);
       }
 
-  // Manual winners UI removed — manual save/clear handlers cleaned up.
+  // Manual poll UI removed — manual save/clear handlers cleaned up.
     })();
-    // QR + copy-link handling for voting poll (use local QR lib, show panel only when winners present)
+  // QR + copy-link handling for voting poll (use local QR lib, show panel only when pollChoices present)
     (function(){
   const pollUrl = 'https://paulbenson88.github.io/Book-Club/pages/voting_poll.html';
       // expose canonical poll url for other scripts
@@ -326,23 +326,23 @@
   // Re-render when admin edits the poll link input
   if(linkInput){ linkInput.addEventListener('change', ()=>{ try{ renderQR(linkInput.value); }catch(e){} }); }
 
-      // Show share panel only if there are winners saved
+      // Show share panel only if there are published pollChoices
       try{
-        const winners = JSON.parse(localStorage.getItem('winners') || 'null');
-        if(Array.isArray(winners) && winners.length>=3){ showSharePanel(); }
+        const pcs = JSON.parse(localStorage.getItem('pollChoices') || 'null');
+  if(Array.isArray(pcs) && pcs.length>=3){ try{ if(window.showAdminPollShare) window.showAdminPollShare(); else { const _ps = document.getElementById('poll-share'); if(_ps){ _ps.classList.remove('d-none'); _ps.style.display='block'; try{ if(window.renderAdminPollQR) window.renderAdminPollQR(); }catch(e){} } } }catch(e){} }
       }catch(e){ /* ignore */ }
 
   // Start Poll flow removed — publishing handled elsewhere or not used in this build.
 
-      // Listen for storage events so panel appears when winners are saved in another tab
+      // Listen for storage events so panel appears when pollChoices are saved in another tab
       window.addEventListener('storage', (ev)=>{
-        if(ev.key==='winners' && ev.newValue){
-          try{ const w = JSON.parse(ev.newValue); if(Array.isArray(w) && w.length>=3) showSharePanel(); }catch(e){}
+        if(ev.key==='pollChoices' && ev.newValue){
+          try{ const w = JSON.parse(ev.newValue); if(Array.isArray(w) && w.length>=3) try{ if(window.showAdminPollShare) window.showAdminPollShare(); else { const _ps = document.getElementById('poll-share'); if(_ps){ _ps.classList.remove('d-none'); _ps.style.display='block'; try{ if(window.renderAdminPollQR) window.renderAdminPollQR(); }catch(e){} } } }catch(e){} }catch(e){}
         }
       });
   // Also listen for same-window custom events from the slot script
-  window.addEventListener('winnersSaved',(ev)=>{ try{ const w = ev.detail; if(Array.isArray(w) && w.length>=3) showSharePanel(); }catch(e){} });
-  window.addEventListener('winnersCleared', ()=>{ try{ if(pollShare) pollShare.classList.add('d-none'); }catch(e){} });
+  window.addEventListener('pollPublished',(ev)=>{ try{ const w = ev.detail; if(Array.isArray(w) && w.length>=3) try{ if(window.showAdminPollShare) window.showAdminPollShare(); else { const _ps = document.getElementById('poll-share'); if(_ps){ _ps.classList.remove('d-none'); _ps.style.display='block'; try{ if(window.renderAdminPollQR) window.renderAdminPollQR(); }catch(e){} } } }catch(e){} }catch(e){} });
+  window.addEventListener('pollCleared', ()=>{ try{ if(pollShare) pollShare.classList.add('d-none'); }catch(e){} });
       // ensure QR image has a src on load so the img doesn't show alt text
       try{ renderQR(); }catch(e){}
     })();
@@ -358,6 +358,25 @@
 
       function showMemberPanel(){ try{ if(memberShare){ memberShare.classList.remove('d-none'); memberShare.style.display='block'; } }catch(e){}
       }
+      // Admin force publish button (ensures poll is only published when admin confirms)
+      try{
+        const forceBtn = document.getElementById('forcePublishBtn');
+        const forceClear = document.getElementById('forceClearBtn');
+        const announceBtn = document.getElementById('announceWinnerBtn');
+        const startNewBtn = document.getElementById('startNewSessionBtn');
+  if(forceBtn){ forceBtn.addEventListener('click', ()=>{ try{ if(window.adminPublishPoll) window.adminPublishPoll(); console.log('[admin] forcePublish clicked'); try{ if(window.showAdminPollShare) window.showAdminPollShare(); else { const _ps = document.getElementById('poll-share'); if(_ps){ _ps.classList.remove('d-none'); _ps.style.display='block'; try{ if(window.renderAdminPollQR) window.renderAdminPollQR(); }catch(e){} } } }catch(e){} }catch(e){ console.warn(e); } }); }
+  if(forceClear){ forceClear.addEventListener('click', ()=>{ try{ if(window.adminClearPoll) window.adminClearPoll(); console.log('[admin] forceClear clicked'); const _pollShare = document.getElementById('poll-share'); if(_pollShare) _pollShare.classList.add('d-none'); }catch(e){ console.warn(e); } }); }
+        if(announceBtn){ announceBtn.addEventListener('click', ()=>{
+          try{
+            // If there is a finalized selection UI, prefer that; otherwise pick top choice from pollChoices
+            let winner = null;
+            try{ const pcs = JSON.parse(localStorage.getItem('pollChoices')||'[]'); if(Array.isArray(pcs) && pcs.length>0) winner = pcs[0] && (pcs[0].book||pcs[0]); }catch(e){}
+            if(!winner){ winner = prompt('Enter the winning book title to announce:'); }
+            if(winner){ if(window.adminAnnounceWinner) window.adminAnnounceWinner(winner); console.log('[admin] announced winner', winner); const _pollShare = document.getElementById('poll-share'); if(_pollShare) _pollShare.classList.add('d-none'); showAdminToast('Winner announced to viewers: '+winner); }
+          }catch(e){ console.warn(e); }
+        }); }
+  if(startNewBtn){ startNewBtn.addEventListener('click', ()=>{ try{ if(window.adminStartNewSession) window.adminStartNewSession(); console.log('[admin] startNewSession clicked'); const _pollShare = document.getElementById('poll-share'); if(_pollShare) _pollShare.classList.add('d-none'); showAdminToast('Started a new voting session (cleared winner and poll choices).'); }catch(e){ console.warn(e); } }); }
+      }catch(e){}
 
       function renderMemberQR(url){
         try{
@@ -382,8 +401,8 @@
 
       if(memberInput){ memberInput.addEventListener('change', ()=>{ try{ renderMemberQR(memberInput.value); }catch(e){} }); }
 
-      // Show member panel if leader or always render small QR on load
-      try{ const winners = JSON.parse(localStorage.getItem('winners') || 'null'); if(sessionStorage.getItem('isLead')) showMemberPanel(); }catch(e){}
+  // Show member panel if leader or always render small QR on load
+  try{ if(sessionStorage.getItem('isLead')) showMemberPanel(); }catch(e){}
       try{ renderMemberQR(); }catch(e){}
     })();
 
@@ -393,111 +412,25 @@
   try{ renderAdminBookList(); showAdminPollControls(); }catch(e){}
     })();
 
-    // Admin poll controls (clear votes, manual add)
+    // Wire up the prominent top Start New Session button
     (function(){
-      const ctrls = document.getElementById('admin-poll-controls');
-      const clearBtn = document.getElementById('clear-all-votes');
-      const clearFb = document.getElementById('clear-votes-feedback');
-  const adminName = document.getElementById('admin-voter-name');
-  const adminBooks = document.getElementById('admin-poll-books');
-  const adminAdd = document.getElementById('admin-add-votes');
-  const adminRefresh = document.getElementById('admin-refresh-books');
-  const adminRemoveBtnInit = document.getElementById('admin-remove-votes');
-  if(adminAdd) adminAdd.disabled = true;
-  if(adminRemoveBtnInit) adminRemoveBtnInit.disabled = true;
-      const adminFb = document.getElementById('admin-add-feedback');
-
-      function showAdminPollControls(){ try{ if(ctrls) ctrls.classList.remove('d-none'); }catch(e){} }
-
-      // Expose when leader becomes lead
-      window.showAdminPollControls = showAdminPollControls;
-
-      // Populate book list from localStorage.pollChoices — only when the 3 choices are published
-      function renderAdminBookList(){
-        try{
-          adminBooks.innerHTML = '';
-          const pcs = JSON.parse(localStorage.getItem('pollChoices')||'[]');
-          // Require at least 3 published choices before enabling manual vote tools
-          if(!Array.isArray(pcs) || pcs.length < 3){
-            adminBooks.innerHTML = '<div class="small text-muted">Poll choices are not ready yet — waiting for 3 published choices. Refresh this list after the lead publishes the final choices.</div>';
-            if(adminAdd) adminAdd.disabled = true;
-            const adminRemoveBtn = document.getElementById('admin-remove-votes'); if(adminRemoveBtn) adminRemoveBtn.disabled = true;
-            return;
-          }
-          // Render only the first three published choices (in order)
-          pcs.slice(0,3).forEach((c, idx)=>{
-            const id = 'admin-poll-book-'+idx;
-            const wrapper = document.createElement('div'); wrapper.className = 'form-check';
-            wrapper.style.minWidth='140px'; wrapper.style.marginRight='8px'; wrapper.style.marginBottom='6px';
-            wrapper.innerHTML = `<input class="form-check-input" type="checkbox" value="${c.book}" id="${id}"><label class="form-check-label" for="${id}">${c.book}</label>`;
-            adminBooks.appendChild(wrapper);
-          });
-          // Enable buttons now that choices are available
-          if(adminAdd) adminAdd.disabled = false;
-          const adminRemoveBtn2 = document.getElementById('admin-remove-votes'); if(adminRemoveBtn2) adminRemoveBtn2.disabled = false;
-        }catch(e){ adminBooks.innerHTML = '<div class="small text-muted">Failed to load choices</div>'; }
-      }
-
-      // Clear all votes handler
-      clearBtn && clearBtn.addEventListener('click', ()=>{
-        try{
-          localStorage.removeItem('votes');
-          // Dispatch a storage-like event for same-window listeners
-          try{ window.dispatchEvent(new StorageEvent('storage', { key:'votes', newValue: null })); }catch(e){}
-          if(clearFb){ clearFb.style.display='inline'; clearTimeout(clearFb._t); clearFb._t = setTimeout(()=>clearFb.style.display='none',2500); }
-        }catch(e){ console.warn(e); }
-      });
-
-      // Add votes for selected books for a given name
-      adminAdd && adminAdd.addEventListener('click', ()=>{
-        try{
-          const name = (adminName && adminName.value || '').trim();
-          if(!name) { alert('Enter a name to add votes for'); return; }
-          const checked = Array.from(adminBooks.querySelectorAll('input[type=checkbox]:checked')).map(i=>i.value);
-          if(!checked.length){ alert('Select at least one book to add votes for'); return; }
-          const current = JSON.parse(localStorage.getItem('votes')||'{}');
-          checked.forEach(book => {
-            if(!current[book]) current[book] = [];
-            if(!current[book].includes(name)) current[book].push(name);
-          });
-          localStorage.setItem('votes', JSON.stringify(current));
-          // Notify other tabs
-          try{ window.dispatchEvent(new StorageEvent('storage', { key:'votes', newValue: JSON.stringify(current) })); }catch(e){}
-          if(adminFb){ adminFb.style.display='block'; clearTimeout(adminFb._t); adminFb._t = setTimeout(()=>adminFb.style.display='none',2500); }
-        }catch(e){ console.warn(e); }
-      });
-
-      adminRefresh && adminRefresh.addEventListener('click', ()=>{ renderAdminBookList(); });
-
-  // Also show and refresh when winners/pollChoices become available
-  window.addEventListener('storage', (ev)=>{ if(ev.key==='pollChoices' || ev.key==='winners'){ try{ renderAdminBookList(); showAdminPollControls(); }catch(e){} } });
-  window.addEventListener('winnersSaved',(ev)=>{ try{ renderAdminBookList(); showAdminPollControls(); }catch(e){} });
-      // Remove votes handler
-      const adminRemove = document.getElementById('admin-remove-votes');
-      adminRemove && adminRemove.addEventListener('click', ()=>{
-        try{
-          const name = (adminName && adminName.value || '').trim();
-          if(!name) { alert('Enter a name to remove votes for'); return; }
-          const checked = Array.from(adminBooks.querySelectorAll('input[type=checkbox]:checked')).map(i=>i.value);
-          if(!checked.length){ alert('Select at least one book to remove votes for'); return; }
-          const current = JSON.parse(localStorage.getItem('votes')||'{}');
-          let changed = false;
-          checked.forEach(book => {
-            if(current[book]){
-              const before = current[book].length;
-              current[book] = current[book].filter(n=>n!==name);
-              if(current[book].length !== before) changed = true;
-              if(current[book].length===0) delete current[book];
-            }
-          });
-          if(changed){
-            localStorage.setItem('votes', JSON.stringify(current));
-            try{ window.dispatchEvent(new StorageEvent('storage', { key:'votes', newValue: JSON.stringify(current) })); }catch(e){}
-            if(adminFb){ adminFb.style.display='block'; clearTimeout(adminFb._t); adminFb._t = setTimeout(()=>adminFb.style.display='none',2500); }
-          } else { alert('No votes were removed (the name may not have had votes for the selected books).'); }
-        }catch(e){ console.warn(e); }
-      });
+      try{
+        const topBtn = document.getElementById('topStartNewSessionBtn');
+  if(topBtn){ topBtn.addEventListener('click', ()=>{ try{ if(window.adminStartNewSession) window.adminStartNewSession(); console.log('[admin] top startNewSession clicked'); const _pollShare = document.getElementById('poll-share'); if(_pollShare) _pollShare.classList.add('d-none'); showAdminToast('Started a new voting session (cleared winner and poll choices).'); }catch(e){ console.warn(e); } }); }
+      }catch(e){}
     })();
+
+    // Admin toast helper
+    function showAdminToast(text, ms=2500){
+      try{
+        const t = document.getElementById('adminToast'); if(!t) return;
+        t.textContent = text; t.style.display = 'block'; t.classList.add('show');
+        clearTimeout(t._hideTimer);
+        t._hideTimer = setTimeout(()=>{ try{ t.classList.remove('show'); setTimeout(()=>{ t.style.display='none'; },240); }catch(e){} }, ms);
+      }catch(e){ console.warn('showAdminToast failed', e); }
+    }
+
+  // Legacy manual admin poll controls removed (functionality replaced by searchable dropdowns/edit UI in slot machine)
 
     // Finalize chosen book (mark final locally and offer CSV removal helper)
     (function(){
@@ -527,8 +460,8 @@
       // Initialize when leader
       try{ if(sessionStorage.getItem('isLead')){ populateSelect(); showFinalize(); } }catch(e){}
 
-      window.addEventListener('storage', (ev)=>{ if(ev.key==='pollChoices' || ev.key==='winners'){ try{ populateSelect(); showFinalize(); }catch(e){} } });
-      window.addEventListener('winnersSaved',(ev)=>{ try{ populateSelect(); showFinalize(); }catch(e){} });
+  window.addEventListener('storage', (ev)=>{ if(ev.key==='pollChoices'){ try{ populateSelect(); showFinalize(); }catch(e){} } });
+  window.addEventListener('pollPublished',(ev)=>{ try{ populateSelect(); showFinalize(); }catch(e){} });
 
           // Finalize action: store finalized book in localStorage.finalized and remove from local pollChoices (local only)
       finalizeBtn && finalizeBtn.addEventListener('click', ()=>{
@@ -764,14 +697,14 @@
       const sugEl = document.getElementById(`suggested${reelIndex+1}-name`);
       if(sugEl) sugEl.textContent = suggested || '';
 
-      // Persist winners using the same shape the slot machine uses: { title, suggestedBy }
+      // Persist selection into slotMachineState so the slot script picks it up
       try{
-        let winners = JSON.parse(localStorage.getItem('winners')||'null') || [];
-  // Derive a plain title (without author) for the stored title field when possible
-  const plainTitle = (opt.title && opt.title.trim()) ? opt.title.trim() : (String(display||'').split(/\s-\s/)[0]||String(display||'')).trim();
-  winners[reelIndex] = { title: plainTitle, suggestedBy: suggested || '' };
-        localStorage.setItem('winners', JSON.stringify(winners));
-        try{ window.dispatchEvent(new CustomEvent('winnersSaved', { detail: winners })); }catch(e){}
+        let sms = JSON.parse(localStorage.getItem('slotMachineState')||'null');
+        if(!Array.isArray(sms)) sms = [null,null,null];
+        // store visible Title - Author and suggester for compatibility
+        sms[reelIndex] = { book: display, name: suggested || '' };
+        localStorage.setItem('slotMachineState', JSON.stringify(sms));
+        try{ window.dispatchEvent(new StorageEvent('storage', { key:'slotMachineState', newValue: JSON.stringify(sms) })); }catch(e){}
       }catch(e){}
 
       // Also keep the older admin slotMachineState shape for backwards compatibility
@@ -869,7 +802,7 @@
       window.addEventListener('storage', (ev)=>{
         if(!ev) return;
         try{
-          if((ev.key === 'slotMachineState' || ev.key === 'winners') && ev.newValue){
+          if(ev.key === 'slotMachineState' && ev.newValue){
             const arr = JSON.parse(ev.newValue || 'null') || [];
             arr.forEach((s, idx)=>{
               if(s && (s.book || s.title)){
@@ -884,10 +817,10 @@
         }catch(e){}
       });
 
-      // In-window custom event used elsewhere in the app — reveal matching edit buttons when winnersSaved fires
-      window.addEventListener('winnersSaved', (ev)=>{
+      // In-window custom event used elsewhere in the app — reveal matching edit buttons when pollPublished fires
+      window.addEventListener('pollPublished', (ev)=>{
         try{
-          const w = (ev && ev.detail) || JSON.parse(localStorage.getItem('winners')||'null') || [];
+          const w = (ev && ev.detail) || JSON.parse(localStorage.getItem('pollChoices')||'null') || [];
           w.forEach((s, idx)=>{
             if(s && (s.book || s.title)){
               const stopBtn = document.getElementById('slotStopBtn'+(idx+1));

@@ -80,8 +80,8 @@ body {
 #nameInput { padding:8px 10px; border-radius:6px; border:1px solid #ccc; width:60%; max-width:320px; }
 .btn { cursor:pointer; }
 
-/* Winners card styling */
-.winners-list .mb-2 { margin-bottom: .5rem; }
+/* Poll card styling */
+.poll-list .mb-2 { margin-bottom: .5rem; }
 
 /* Small utilities */
 .text-muted { color:#888; }
