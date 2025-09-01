@@ -1,7 +1,6 @@
 // Clean DOM-ready voting script (no stray markdown/code-fence text)
 (function(){
   const STORAGE_KEY = 'slotMachineState';
-  const WINNERS_KEY = 'winners';
   let slotBooks = [], slotNames = [];
   let spinning = [false,false,false];
   let intervals = [null,null,null];
@@ -9,26 +8,75 @@
   let offsets = [0,0,0];
   let chosenSet = new Set();
   let localStateSpun = false;
+  // BroadcastChannel for reliable same-origin cross-tab messaging (fallbacks to storage events remain)
+  let _bc = null;
+  try { _bc = new BroadcastChannel('book-club'); } catch(e) { _bc = null; }
 
   function saveState(){ localStorage.setItem(STORAGE_KEY, JSON.stringify({spun:!!localStateSpun, chosenIdxs})); }
   function loadState(){ try { return JSON.parse(localStorage.getItem(STORAGE_KEY)); } catch { return null; } }
   function getAvailableIndices(){ const a=[]; for(let i=0;i<slotBooks.length;i++) if(!chosenSet.has(i)) a.push(i); return a; }
 
-  // New: persist winners as full objects (title + suggestedBy)
-  function saveWinners(){
+  // Publish pollChoices derived from chosenIdxs
+  function publishPoll(){
     try{
-      const winners = chosenIdxs.map(idx => {
+      const pollChoices = chosenIdxs.map(idx => {
         if(idx == null) return null;
-        return { title: slotBooks[idx] || '', suggestedBy: slotNames[idx] || '' };
-      });
-      localStorage.setItem(WINNERS_KEY, JSON.stringify(winners));
-      try{ window.dispatchEvent(new CustomEvent('winnersSaved', { detail: winners })); }catch(e){}
-  // Clearing any reset flag because we now have new winners
-  try{ localStorage.removeItem('slotMachineReset'); }catch(e){}
+        return { book: slotBooks[idx] || '', name: slotNames[idx] || '' };
+      }).filter(Boolean);
+  localStorage.setItem('pollChoices', JSON.stringify(pollChoices));
+  try{ localStorage.setItem('pollPublishedAt', (new Date()).toISOString()); }catch(e){}
+  console.log('[voting] publishPoll called, pollChoices=', pollChoices);
+      // Notify same-window listeners via custom event
+      try{ window.dispatchEvent(new CustomEvent('pollPublished', { detail: { pollChoices, publishedAt: localStorage.getItem('pollPublishedAt') } })); }catch(e){}
+      // Broadcast the published pollChoices for cross-tab delivery
+      try{ if(_bc) _bc.postMessage({ type: 'pollPublished', pollChoices, publishedAt: localStorage.getItem('pollPublishedAt') }); }catch(e){}
+      // Clearing any reset flag because we now have new poll choices
+      try{ localStorage.removeItem('slotMachineReset'); }catch(e){}
     }catch(e){}
   }
-  function clearWinners(){ try{ localStorage.removeItem(WINNERS_KEY); }catch(e){} }
-    try{ window.dispatchEvent(new Event('winnersCleared')); }catch(e){}
+
+  function clearPoll(){
+  try{ localStorage.removeItem('pollChoices'); }catch(e){}
+  try{ localStorage.removeItem('pollPublishedAt'); }catch(e){}
+    try{ window.dispatchEvent(new Event('pollCleared')); }catch(e){}
+    try{ if(_bc) _bc.postMessage({ type: 'pollCleared' }); }catch(e){}
+  }
+
+  // Expose admin helpers so admin page can trigger publish/clear explicitly
+  try{ window.adminPublishPoll = publishPoll; window.adminClearPoll = clearPoll; }catch(e){}
+
+  // Announce a final winner to viewers, clear the poll choices, and broadcast the event
+  function announceWinner(book){
+    try{
+      const payload = { book: String(book||'').trim(), when: (new Date()).toISOString() };
+      try{ localStorage.setItem('pollWinner', JSON.stringify(payload)); }catch(e){}
+  try{ localStorage.removeItem('pollChoices'); }catch(e){}
+  try{ localStorage.removeItem('pollPublishedAt'); }catch(e){}
+      try{ window.dispatchEvent(new CustomEvent('pollWinner', { detail: payload })); }catch(e){}
+      try{ if(_bc) _bc.postMessage({ type: 'pollWinner', winner: payload }); }catch(e){}
+      // also notify same-window listeners that pollChoices were cleared
+      try{ window.dispatchEvent(new Event('pollCleared')); }catch(e){}
+      console.log('[voting] announceWinner', payload);
+    }catch(e){ console.warn('[voting] announceWinner failed', e); }
+  }
+
+  // Start a fresh voting session: clear winner, clear pollChoices and reset machine
+  function startNewSession(){
+    try{
+      try{ localStorage.removeItem('pollWinner'); }catch(e){}
+  try{ localStorage.removeItem('pollChoices'); }catch(e){}
+  try{ localStorage.removeItem('pollPublishedAt'); }catch(e){}
+      try{ localStorage.removeItem('finalized'); }catch(e){}
+      try{ window.dispatchEvent(new Event('pollCleared')); }catch(e){}
+      try{ if(_bc) _bc.postMessage({ type: 'pollCleared' }); }catch(e){}
+      // Attempt to call resetMachine if available
+      try{ if(typeof resetMachine === 'function') resetMachine(); }catch(e){}
+      console.log('[voting] startNewSession invoked');
+    }catch(e){ console.warn('[voting] startNewSession failed', e); }
+  }
+
+  // Expose winner/session helpers to admin page
+  try{ window.adminAnnounceWinner = announceWinner; window.adminStartNewSession = startNewSession; }catch(e){}
 
   // DOM variables (assigned after DOM ready)
   let slotScrolls, slotReels, slotStopBtns, slotRespinBtns, slotSpinBtn, slotResultDiv, slotLoadingDiv;
@@ -118,7 +166,10 @@
     if(slotResultDiv) slotResultDiv.textContent = '';
     chosenIdxs = [null,null,null];
     chosenSet.clear();
-    clearWinners(); // clear winners when starting a new spin
+  // clear any previously published pollChoices when a new spin starts
+  try{ clearPoll(); }catch(e){ try{ localStorage.removeItem('pollChoices'); }catch(e){} }
+  // also remove any publish preview UI if present
+  try{ clearPublishPreview(); }catch(e){}
     for(let i=1;i<=3;i++){ const el = document.getElementById(`suggested${i}-name`); if(el) el.textContent = ''; }
     const available = getAvailableIndices();
     for(let i=0;i<3;i++) offsets[i] = Math.floor(Math.random() * Math.max(1, available.length));
@@ -174,13 +225,44 @@
 
     saveState();
     if(spinning.every(s=>!s)){
-      // all stopped — persist winners for polling page
-      saveWinners();
+  // all stopped — show admin preview and wait for explicit publish action
+  try{ showPublishPreview(); }catch(e){ /* fallback to immediate publish */ publishPoll(); }
       if(slotSpinBtn){ slotSpinBtn.style.pointerEvents = 'auto'; slotSpinBtn.disabled = false; }
       if(slotResultDiv) slotResultDiv.innerHTML = '';
       saveState();
     }
     updateResetState();
+  }
+
+  // Publish preview helpers: show a preview of the three chosen books and publish button
+  function clearPublishPreview(){
+    try{ const prev = document.getElementById('publish-preview'); if(prev) prev.remove(); }catch(e){}
+  }
+
+  function showPublishPreview(){
+    if(!slotResultDiv) return;
+    clearPublishPreview();
+    const container = document.createElement('div'); container.id = 'publish-preview'; container.className = 'card shadow-sm mt-3';
+    const body = document.createElement('div'); body.className = 'card-body';
+    const title = document.createElement('h3'); title.className = 'h6'; title.textContent = 'Preview poll choices';
+    body.appendChild(title);
+    const list = document.createElement('div'); list.className = 'publish-list mb-3';
+    for(let i=0;i<3;i++){
+      const idx = chosenIdxs[i];
+      const text = (idx!=null && slotBooks[idx]) ? (slotBooks[idx] + (slotNames[idx] ? ' — ' + slotNames[idx] : '')) : '(Missing)';
+      const item = document.createElement('div'); item.className = 'mb-2'; item.textContent = `${i+1}. ${text}`;
+      list.appendChild(item);
+    }
+    body.appendChild(list);
+    const actions = document.createElement('div'); actions.className = 'd-flex gap-2';
+  const publishBtn = document.createElement('button'); publishBtn.className = 'btn btn-success'; publishBtn.textContent = 'Submit choices and create poll';
+  publishBtn.addEventListener('click', ()=>{ try{ publishPoll(); }catch(e){} try{ clearPublishPreview(); }catch(e){} });
+    const cancelBtn = document.createElement('button'); cancelBtn.className = 'btn btn-outline-secondary'; cancelBtn.textContent = 'Cancel';
+    cancelBtn.addEventListener('click', ()=>{ try{ clearPublishPreview(); }catch(e){} });
+    actions.appendChild(publishBtn); actions.appendChild(cancelBtn);
+    body.appendChild(actions);
+    container.appendChild(body);
+    slotResultDiv.appendChild(container);
   }
 
   function resetMachine(){
@@ -192,7 +274,7 @@
     localStorage.removeItem(STORAGE_KEY);
   // mark that the machine was reset so other pages can react (e.g., clear poll votes)
   try{ localStorage.setItem('slotMachineReset', '1'); }catch(e){}
-    clearWinners(); // remove persisted winners on reset
+    clearPoll(); // remove persisted pollChoices on reset
     slotReels.forEach((r,i)=>{ r.classList.remove('winner'); renderIdle(i); });
     slotStopBtns.forEach(btn=>{ if(btn){ btn.classList.remove('d-none'); btn.disabled = true; btn.setAttribute('disabled',''); btn.classList.add('disabled'); btn.style.pointerEvents = 'none'; btn.tabIndex = -1; }});
     slotRespinBtns.forEach(b=>{ if(b){ b.classList.add('d-none'); b.disabled = true; }});
@@ -217,7 +299,7 @@
       if(editBtn) editBtn.classList.add('d-none');
     }catch(e){}
 
-    clearWinners(); // winners changed when respin starts
+  clearPoll(); // pollChoices changed when respin starts
     const available = getAvailableIndices();
     offsets[reelIdx] = Math.floor(Math.random() * Math.max(1, available.length));
     spinning[reelIdx] = true;
@@ -312,9 +394,10 @@
               }
             }
           });
-          // If we have chosenIdxs persisted, also ensure winners key exists for other pages
+          // If we have chosenIdxs persisted, do NOT auto-publish here.
+          // Publishing must be an explicit admin action (publishPoll is exposed to admin page).
           if(chosenIdxs.every(v => v === null) === false){
-            saveWinners();
+            console.log('[voting] chosenIdxs restored but auto-publish disabled; admin must explicitly publish the poll');
           }
           updateResetState();
         }
@@ -339,7 +422,6 @@
       if (isLocal || forceReset) {
         try {
           localStorage.removeItem('slotMachineState');
-          localStorage.removeItem('winners');
           localStorage.removeItem('pollChoices');
         } catch (e) {}
         window.addEventListener('load', () => { if (typeof resetMachine === 'function') resetMachine(); });
