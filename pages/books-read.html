@@ -21,6 +21,10 @@
       .desktop-only { display: none !important; }
       .mobile-only { display: block !important; }
     }
+    /* Center table content */
+    .books-read-table th, .books-read-table td { text-align:center; vertical-align:middle; }
+    .mobile-only .list-group-item .d-flex { text-align:center; justify-content:center !important; }
+    .mobile-only .list-group-item small { text-align:center; }
   </style>
 </head>
 <body>
@@ -28,39 +32,37 @@
     <a href="../index.html" class="btn btn-secondary">🏠 Main Page</a>
   </header>
 
-  <main class="container">
+  <main id="books-read-root" class="container">
     <div class="card mb-3 shadow-sm">
       <div class="card-body">
-        <h1 class="card-title fs-4">📚 Books Read So Far</h1>
-        <p class="text-muted small mb-0"></p>
+  <h1 class="card-title fs-4 text-center">📚 Books Read So Far</h1>
+  <p class="text-muted small mb-0"></p>
   <div class="mt-2"></div>
       </div>
     </div>
 
   <!-- Desktop/table view -->
   <div class="table-responsive desktop-only">
-          <table class="table table-striped table-bordered align-middle">
+          <table class="table table-striped table-bordered align-middle books-read-table">
             <thead class="table-light">
               <tr>
+                <th>Month Chosen</th>
                 <th>Book</th>
                 <th>Author</th>
-                <th>Month chosen</th>
-                <th>Suggested by</th>
+                <th>Suggested By</th>
               </tr>
             </thead>
             <tbody>
-              <tr><td>Perfect Son</td><td>Freida McFadden</td><td>October 2024</td><td>Maria</td></tr>
-              <tr><td>The Lost Bookshop</td><td>Evie Woods
-</td><td>November 2024</td><td>Aubrey</td></tr>
-              <tr><td>Cloud Cuckoo Land</td><td>Anthony Doerr</td><td>December 2024</td><td>Josh</td></tr>
-              <tr><td>Billy Summers</td><td>Stephen King</td><td>January 2025</td><td>Maria</td></tr>
-              <tr><td>Listen for the Lie</td><td>Amy Tintera</td><td>February 2025</td><td>—</td></tr>
-              <tr><td>Wrong Place, Wrong Time</td><td>Gillian McAllister</td><td>March 2025</td><td>Hannah</td></tr>
-              <tr><td>The Paris Apartment</td><td>Lucy Foley</td><td>April 2025</td><td>Hannah</td></tr>
-              <tr><td>The Wedding People</td><td>Alison Espach
-</td><td>May 2025</td><td>Taylor</td></tr>
-              <tr><td>Sign Here</td><td>Claudia Lux</td><td>June 2025</td><td>Hannah</td></tr>
-              <tr><td>Pet Sematary</td><td>Stephen King</td><td>July 2025</td><td>Maria</td></tr>
+              <tr><td>October 2024</td><td>Perfect Son</td><td>Freida McFadden</td><td>Maria</td></tr>
+              <tr><td>November 2024</td><td>The Lost Bookshop</td><td>Evie Woods</td><td>Aubrey</td></tr>
+              <tr><td>December 2024</td><td>Cloud Cuckoo Land</td><td>Anthony Doerr</td><td>Josh</td></tr>
+              <tr><td>January 2025</td><td>Billy Summers</td><td>Stephen King</td><td>Maria</td></tr>
+              <tr><td>February 2025</td><td>Listen for the Lie</td><td>Amy Tintera</td><td>—</td></tr>
+              <tr><td>March 2025</td><td>Wrong Place, Wrong Time</td><td>Gillian McAllister</td><td>Hannah</td></tr>
+              <tr><td>April 2025</td><td>The Paris Apartment</td><td>Lucy Foley</td><td>Hannah</td></tr>
+              <tr><td>May 2025</td><td>The Wedding People</td><td>Alison Espach</td><td>Taylor</td></tr>
+              <tr><td>June 2025</td><td>Sign Here</td><td>Claudia Lux</td><td>Hannah</td></tr>
+              <tr><td>July 2025</td><td>Pet Sematary</td><td>Stephen King</td><td>Maria</td></tr>
             </tbody>
           </table>
         </div>
@@ -161,8 +163,6 @@
           </div>
         </div>
 
-      </div>
-    </section>
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
