@@ -136,11 +136,12 @@
 
   <!-- Removed empty .section wrapper that caused a small gray box (fixes #30) -->
   <!-- Name input so voters can identify themselves and enable voting (hidden until poll is published) -->
-  <div class="mb-3" style="display:none;">
+  <div id="name-flow" class="mb-3" style="display:none;">
     <input type="text" id="nameInput" placeholder="Enter your name" />
-  <div class="mb-3 flex-gap name-actions" style="display:none;">
-    <button id="submitNameBtn" class="cta-primary">Submit Name</button>
-    <button id="editNameBtn" class="main-page-btn" style="display:none;">Edit Name</button>
+    <div class="mb-3 flex-gap name-actions" style="display:none;">
+      <button id="submitNameBtn" class="cta-primary">Submit Name</button>
+      <button id="editNameBtn" class="main-page-btn" style="display:none;">Edit Name</button>
+    </div>
   </div>
   <div id="poll-reset-banner" class="poll-reset-banner"></div>
   <!-- Poll UI (legacy) -->
@@ -196,7 +197,27 @@ try{
 // Helper to determine if the viewer is ignoring server polls (accept either old session flag or new persistent local flag)
 function viewerIsIgnoring(){ try{ return !!(localStorage.getItem('viewerIgnoreServerPolls') || sessionStorage.getItem('viewerIgnoreServerPolls')); }catch(e){ return false; } }
 
-function setNameControlsVisible(visible){ try{ const ni = document.getElementById('nameInput'); const na = document.querySelector('.name-actions'); if(ni) ni.parentElement.style.display = visible ? '' : 'none'; if(na) na.style.display = visible ? 'flex' : 'none'; }catch(e){} }
+function setNameControlsVisible(visible){
+  try{
+    const flow = document.getElementById('name-flow');
+    const na = document.querySelector('.name-actions');
+    if(flow) flow.style.display = visible ? '' : 'none';
+    if(na) na.style.display = visible ? 'flex' : 'none';
+  }catch(e){}
+}
+// Hide just the name entry/edit UI after a winner is announced (issue #31)
+function hideNameControlsAfterWinner(){
+  try{
+    const flow = document.getElementById('name-flow');
+    const ni = document.getElementById('nameInput');
+    const submitBtn = document.getElementById('submitNameBtn');
+    const editBtn = document.getElementById('editNameBtn');
+    if(flow) flow.style.display = 'none';
+    if(ni){ ni.blur(); }
+    if(submitBtn) submitBtn.style.display='none';
+    if(editBtn) editBtn.style.display='none';
+  }catch(e){}
+}
 
 function showPollEntryPrompt(){
   try{
@@ -477,9 +498,12 @@ function renderWinner(book){
     const status = document.getElementById('poll-status');
     if(!status) return;
     const safeBook = String(book||'').replace(/</g,'&lt;');
-    status.innerHTML = `<div class="card shadow-sm" style="padding:12px;"><h2 style="margin:0 0 6px 0">Winner 🎉</h2><div class="small text-muted">The club lead has announced the winner:</div><div style="font-size:1.1rem;font-weight:700;margin-top:8px;">${safeBook}</div></div>`;
+  status.innerHTML = `<div class="card shadow-sm" style="padding:12px;"><h2 style="margin:0 0 6px 0">Winner 🎉</h2><div class="small text-muted">The club lead has announced the winner:</div><div style="font-size:1.1rem;font-weight:700;margin-top:8px;">${safeBook}</div></div>`;
     // remove outdated pollChoices to avoid reappearance
     try{ localStorage.removeItem('pollChoices'); }catch(e){}
+  // Hide any name flow / prompt (issue #31)
+  try{ hidePollEntryPrompt(); }catch(e){}
+  try{ hideNameControlsAfterWinner(); }catch(e){}
   }catch(e){ console.warn('[voting_poll] renderWinner error', e); }
 }
 
@@ -590,6 +614,11 @@ window.addEventListener('load', ()=>{
     }catch(e){}
   // Wire up the enter name prompt button
   try{ const enterBtn = document.getElementById('enterNameBtn'); if(enterBtn) enterBtn.addEventListener('click', ()=>{ try{ beginNameFlow(); }catch(e){} }); }catch(e){}
+  // If a winner was already announced before this viewer loaded, render winner immediately (issue #31)
+  try{
+    const existingWinner = JSON.parse(localStorage.getItem('pollWinner')||'null');
+    if(existingWinner && existingWinner.book){ renderWinner(existingWinner.book); }
+  }catch(e){}
   }catch(e){ console.warn('[voting_poll] defensive clear error', e); }
 });
 </script>
