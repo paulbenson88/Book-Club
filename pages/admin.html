@@ -92,15 +92,15 @@
   <header style="text-align:center; margin:1rem 0;">
   <a href="../index.html" class="btn btn-secondary">🏠 Main Page</a>
   </header>
-  <!-- Very prominent start-new-session action for admin -->
-  <div style="max-width:900px;margin:0.6rem auto 0;">
-    <button id="topStartNewSessionBtn" class="btn btn-lg btn-primary w-100" style="font-size:1.45rem;padding:18px;">Start new book voting session</button>
-  </div>
+  <!-- Start New Session button moved into the card (was previously above) -->
   <div class="container">
     <div class="card shadow-sm mb-3">
       <div class="card-body">
         <h1 class="h4">Admin: Book Slot Machine</h1>
         <p class="small text-muted">This page is for the club lead to control the SPIN / RESET actions for choosing next month's book. Only one person should be in control at a time.</p>
+        <div class="my-3">
+          <button id="topStartNewSessionBtn" class="btn btn-primary w-100" style="font-size:1.15rem;padding:14px;">Start new book voting session</button>
+        </div>
   <div id="admin-msg" class="mt-2"><small id="qr-status" class="text-muted"></small></div>
         <div class="mt-3">
           <a href="voting.html" class="btn btn-secondary me-2">Member View</a>
@@ -134,7 +134,6 @@
     </div>
 
   <div id="slot-area">
-  <div class="alert alert-info small">Admin controls: anyone on this page may operate the slot machine.</div>
       <div id="slot-host" class="mt-3">
           <div id="slot-container" class="d-none">
             <div class="slot-machine-frame">
