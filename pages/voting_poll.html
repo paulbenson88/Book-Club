@@ -497,8 +497,23 @@ function renderWinner(book){
     setPollOptionsVisible(false);
     const status = document.getElementById('poll-status');
     if(!status) return;
-    const safeBook = String(book||'').replace(/</g,'&lt;');
-  status.innerHTML = `<div class="card shadow-sm" style="padding:12px;"><h2 style="margin:0 0 6px 0">Winner 🎉</h2><div class="small text-muted">The club lead has announced the winner:</div><div style="font-size:1.1rem;font-weight:700;margin-top:8px;">${safeBook}</div></div>`;
+    const rawBook = String(book||'');
+    const safeBook = rawBook.replace(/</g,'&lt;');
+    const searchQuery = rawBook.split(' - ')[0].trim();
+    const encoded = encodeURIComponent(searchQuery);
+    status.innerHTML = `
+      <div style="display:flex; justify-content:center;">
+        <div class="card shadow-sm" style="padding:16px; text-align:center; max-width:520px; width:100%;">
+          <h2 style="margin:0 0 6px 0; font-size:1.4rem;">Winner 🎉</h2>
+          <div class="small text-muted">The club lead has announced the winner:</div>
+          <div style="font-size:1.15rem; font-weight:700; margin-top:10px;">${safeBook}</div>
+          <div class="small text-muted" style="margin-top:14px;">Find this book:</div>
+          <div class="winner-links" style="margin-top:8px; display:flex; flex-wrap:wrap; gap:10px; justify-content:center;">
+            <a class="btn btn-sm btn-outline-primary" style="min-width:120px;" href="https://www.amazon.com/s?k=${encoded}" target="_blank" rel="noopener noreferrer">Amazon</a>
+            <a class="btn btn-sm btn-outline-warning" style="min-width:120px;" href="https://www.audible.com/search?keywords=${encoded}" target="_blank" rel="noopener noreferrer">Audible</a>
+          </div>
+        </div>
+      </div>`;
     // remove outdated pollChoices to avoid reappearance
     try{ localStorage.removeItem('pollChoices'); }catch(e){}
   // Hide any name flow / prompt (issue #31)
