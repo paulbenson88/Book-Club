@@ -132,12 +132,10 @@
   <div id="poll-loading" class="d-none"></div>
   <div id="poll-ready" class="mb-3 d-none"></div>
 
-        <div class="section">
-  <!-- Header and explanatory text removed (leftover box) -->
+  <!-- Removed empty .section wrapper that caused a small gray box (fixes #30) -->
   <!-- Name input so voters can identify themselves and enable voting (hidden until poll is published) -->
   <div class="mb-3" style="display:none;">
     <input type="text" id="nameInput" placeholder="Enter your name" />
-  </div>
   <div class="mb-3 flex-gap name-actions" style="display:none;">
     <button id="submitNameBtn" class="cta-primary">Submit Name</button>
     <button id="editNameBtn" class="main-page-btn" style="display:none;">Edit Name</button>
