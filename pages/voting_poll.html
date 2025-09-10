@@ -97,6 +97,8 @@
   }
   /* Dim and disable poll area until voter submits name */
   .poll-needs-name { opacity: 0.6; pointer-events: none; }
+  /* Center the poll title (scoped to this page) */
+  .poll-title { text-align:center; }
   </style>
   <link rel="stylesheet" href="../css/styles.css">
   <style>
@@ -126,7 +128,7 @@
     <div class="card">
       <div class="card-body">
         <!-- Poll updates are published by admin; viewers will react to storage events -->
-  <h1 class="card-title">📚 Voting Poll</h1>
+  <h1 class="card-title poll-title">📚 Voting Poll</h1>
 
   <div id="poll-status" class="mb-3"></div>
   <div id="poll-loading" class="d-none"></div>
