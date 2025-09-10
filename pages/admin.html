@@ -181,9 +181,8 @@
           <div id="slotResult" class="slot-result"></div>
           <div style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
             <button id="forcePublishBtn" class="btn btn-success">Submit choices / Create Vote</button>
-            <button id="forceClearBtn" class="btn btn-outline-secondary">Clear Poll (admin)</button>
+            <button id="forceClearBtn" class="btn btn-outline-secondary">Clear Poll</button>
             <button id="announceWinnerBtn" class="btn btn-warning">All votes in — Announce Winner</button>
-            <button id="startNewSessionBtn" class="btn btn-outline-primary">Start new book voting session</button>
           </div>
           <div id="slotLoading" class="text-muted text-center mt-2 small">Loading book list...</div>
           
@@ -363,7 +362,6 @@
         const forceBtn = document.getElementById('forcePublishBtn');
         const forceClear = document.getElementById('forceClearBtn');
         const announceBtn = document.getElementById('announceWinnerBtn');
-        const startNewBtn = document.getElementById('startNewSessionBtn');
   if(forceBtn){ forceBtn.addEventListener('click', ()=>{ try{ if(window.adminPublishPoll) window.adminPublishPoll(); console.log('[admin] forcePublish clicked'); try{ if(window.showAdminPollShare) window.showAdminPollShare(); else { const _ps = document.getElementById('poll-share'); if(_ps){ _ps.classList.remove('d-none'); _ps.style.display='block'; try{ if(window.renderAdminPollQR) window.renderAdminPollQR(); }catch(e){} } } }catch(e){} }catch(e){ console.warn(e); } }); }
   if(forceClear){ forceClear.addEventListener('click', ()=>{ try{ if(window.adminClearPoll) window.adminClearPoll(); console.log('[admin] forceClear clicked'); const _pollShare = document.getElementById('poll-share'); if(_pollShare) _pollShare.classList.add('d-none'); }catch(e){ console.warn(e); } }); }
         if(announceBtn){ announceBtn.addEventListener('click', ()=>{
@@ -375,7 +373,6 @@
             if(winner){ if(window.adminAnnounceWinner) window.adminAnnounceWinner(winner); console.log('[admin] announced winner', winner); const _pollShare = document.getElementById('poll-share'); if(_pollShare) _pollShare.classList.add('d-none'); showAdminToast('Winner announced to viewers: '+winner); }
           }catch(e){ console.warn(e); }
         }); }
-  if(startNewBtn){ startNewBtn.addEventListener('click', ()=>{ try{ if(window.adminStartNewSession) window.adminStartNewSession(); console.log('[admin] startNewSession clicked'); const _pollShare = document.getElementById('poll-share'); if(_pollShare) _pollShare.classList.add('d-none'); showAdminToast('Started a new voting session (cleared winner and poll choices).'); }catch(e){ console.warn(e); } }); }
       }catch(e){}
 
       function renderMemberQR(url){
