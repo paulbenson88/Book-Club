@@ -2,3 +2,6 @@
 # temp GH body files
 pr-*.txt
 issue-*.txt
+
+# local scratch issue notes
+tmp_issue*.md
