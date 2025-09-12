@@ -1,7 +1,7 @@
 # PR: Winner cover + celebration + reliability
 
 ## Summary
-Adds winner cover image (async + cached), restores and gates confetti to only fire on live announcements, improves reliability around winner/runoff precedence, and accelerates cover loads via preconnect + prewarm. Includes a readable placeholder when a cover can’t be loaded.
+Adds winner cover image (async + cached), restores and gates confetti to only fire on live announcements, improves reliability around winner/runoff precedence, and accelerates cover loads via preconnect + prewarm. Includes a readable placeholder when a cover can’t be loaded. Also documents and wires optional Firebase sync for poll state, votes, runoff, and winner.
 
 ## Changes
 - Viewer (`pages/voting_poll.html`)
@@ -17,11 +17,18 @@ Adds winner cover image (async + cached), restores and gates confetti to only fi
   - State precedence
     - Winner render clears poll/runoff and unsubscribes runoff listeners.
     - Reduced-motion respected for confetti.
+- Firebase sync (optional, no-op if not configured)
+  - Files: `js/firebase-config.js`, `js/firebase-sync.js` (compat SDK)
+  - State doc: `polls/current` with subcollections `votes` and `runoffVotes`.
+  - APIs: `fbPublishPoll`, `fbClearPoll`, `fbAnnounceWinner`, `fbSubscribe`, `fbGetState`, `fbSetVotes`, `fbSubscribeVotes`, `fbGetVotesSummary`, `fbStartRunoff`, `fbEndRunoff`, `fbSetRunoffVote`, `fbSubscribeRunoffVotes`, `fbGetRunoffVotesSummary`.
+  - Viewer subscribes to state and votes; treats Firestore as source of truth for voter lists and “uncheck” propagation.
+  - Admin announce uses freshest state; starts runoff on tie; ends runoff after winner.
 
 ## Rationale
 - Keep winner UI instant by separating image loading from the core UI and fading in when ready.
 - Avoid accidental confetti on initial load; only celebrate on actual new winner announcements.
 - Improve perceived performance with preconnect and proactive prewarming.
+- Provide optional real-time cross-device sync during live sessions.
 
 ## Testing
 - Announce winner on a fresh viewer: confetti only on announce, not at load.
@@ -29,6 +36,10 @@ Adds winner cover image (async + cached), restores and gates confetti to only fi
 - Announce the same book again: cover loads from cache quickly.
 - Tie -> Runoff -> Winner: runoff hidden once winner appears.
 - Reduced-motion preference: no confetti.
+- Firebase: two devices show live state and voter names; unchecking propagates.
+
+## Docs
+- Firebase setup and notes in `docs/firebase.md`.
 
 ## Screenshots / Clips
 - Winner with cover: [attach]
@@ -41,5 +52,6 @@ Adds winner cover image (async + cached), restores and gates confetti to only fi
 - [x] Placeholder present on failure
 - [x] Confetti gated to announcements
 - [x] Runoff cleared on winner
+- [x] Firebase optional sync documented
 
 Fixes: docs/issues/feat-winner-cover-and-confetti.md

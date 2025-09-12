@@ -17,9 +17,24 @@ Viewer (`pages/voting_poll.html`) and Firebase sync bridge:
 - Preconnect/dns-prefetch to Open Library; prewarm covers for current poll books.
 - Improved cover selection (prefer cover_i; fallback to ISBN) and caching.
 - Runoff/winner precedence maintained; fully clear voting UI on winner.
+- Firebase optional sync: real-time poll state, votes, runoff votes, and winner broadcast across devices.
 
-Admin and bridge (context):
-- No direct edits here in this change-set, but existing logic remains: announce winner, start/end runoff, clear poll safeguards.
+## Firebase functionality
+- Files: `js/firebase-config.js`, `js/firebase-sync.js` (compat SDK)
+- Features:
+  - State document: `polls/current` with fields: pollChoices, pollPublishedAt, winner, runoff.
+  - Subcollections: `votes` (per-voter selections) and `runoffVotes` (single-choice per voter).
+  - Real-time subscriptions: state, votes, runoffVotes.
+  - Helper API (window-bound):
+    - Poll/state: `fbPublishPoll`, `fbClearPoll`, `fbAnnounceWinner`, `fbSubscribe`, `fbGetState`.
+    - Votes: `fbSetVotes`, `fbSubscribeVotes`, `fbGetVotesSummary`.
+    - Runoff: `fbStartRunoff`, `fbEndRunoff`, `fbSetRunoffVote`, `fbSubscribeRunoffVotes`, `fbGetRunoffVotesSummary`.
+  - Anonymous auth supported (optional) with permissive dev rules.
+- Viewer integration:
+  - Subscribes to state, winner-first logic, treats Firestore votes as source of truth.
+  - Live “Voted by” for both poll and runoff.
+- Admin integration:
+  - Announce winner computes totals; starts runoff on tie; ends runoff after final winner.
 
 ## Detailed Changes
 - Winner UI
@@ -33,6 +48,9 @@ Admin and bridge (context):
 - Robustness
   - Guarded winner-first render path: winner overrides runoff/poll and unsubscribes live listeners.
   - Respect reduced-motion.
+- Firebase sync
+  - Optional bridge that no-ops if config not present; allows cross-device sync of state and votes.
+  - Treats Firestore as source of truth for votes to propagate unchecks across devices.
 
 ## Acceptance Criteria
 - Winner card always renders instantly (text/links) and never blocks.
@@ -40,6 +58,7 @@ Admin and bridge (context):
 - If no cover is found or loading fails, a clear placeholder shows.
 - Confetti does not run on initial load/refresh; it runs only when a new winner gets announced.
 - Runoff UI disappears as soon as the winner appears.
+- Multi-device viewers stay in sync for poll, votes, runoff, and winner.
 
 ## Test Plan
 - Announce winner on a fresh viewer session: verify no confetti until the announce event; then confetti plays.
@@ -47,10 +66,12 @@ Admin and bridge (context):
 - Re-announce the same book: confirm cached cover appears faster.
 - Tie -> runoff -> winner flow: verify runoff clears and winner overrides promptly.
 - Reduced-motion: set OS reduced-motion and confirm confetti doesn’t run.
+- Multi-device: open two devices; verify live updates for selections and “Voted by” lists.
 
 ## Risks / Mitigations
 - External API may be slow/unavailable: we timeout quickly and fallback gracefully.
 - False cover matches: we prefer cover_i, fallback to ISBN; further tuning possible with author parsing if needed.
+- Firestore rules: dev-open rules acceptable for testing; production rules should be restricted.
 
 ## Related
 - Viewer polish and reliability improvements across prior issues (name gating, stale poll prevention, clear poll safety).
