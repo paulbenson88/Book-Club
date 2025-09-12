@@ -183,7 +183,7 @@
           <div id="slotResult" class="slot-result"></div>
           <div class="poll-action-bar">
             <button id="forcePublishBtn" class="btn btn-success">Submit choices / Create Vote</button>
-            <button id="forceClearBtn" class="btn btn-outline-secondary">Clear Poll</button>
+            <button id="forceClearBtn" class="btn btn-outline-danger btn-sm" title="Clears current poll choices and votes after confirmation">Clear Poll</button>
             <button id="announceWinnerBtn" class="btn btn-warning">All votes in — Announce Winner</button>
           </div>
           <div id="slotLoading" class="text-muted text-center mt-2 small">Loading book list...</div>
@@ -231,6 +231,10 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <!-- Firebase config: provided in ../js/firebase-config.js -->
+  <script src="../js/firebase-config.js"></script>
+  <!-- Bridge uses window.FIREBASE_CONFIG -->
+  <script src="../js/firebase-sync.js"></script>
   <!-- Slot confirmation modal (shown before Spin or Reset) -->
   <div id="slotConfirmModal" class="modal-overlay d-none" aria-hidden="true">
     <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="slotConfirmTitle">
@@ -365,14 +369,82 @@
         const forceClear = document.getElementById('forceClearBtn');
         const announceBtn = document.getElementById('announceWinnerBtn');
   if(forceBtn){ forceBtn.addEventListener('click', ()=>{ try{ if(window.adminPublishPoll) window.adminPublishPoll(); console.log('[admin] forcePublish clicked'); try{ if(window.showAdminPollShare) window.showAdminPollShare(); else { const _ps = document.getElementById('poll-share'); if(_ps){ _ps.classList.remove('d-none'); _ps.style.display='block'; try{ if(window.renderAdminPollQR) window.renderAdminPollQR(); }catch(e){} } } }catch(e){} }catch(e){ console.warn(e); } }); }
-  if(forceClear){ forceClear.addEventListener('click', ()=>{ try{ if(window.adminClearPoll) window.adminClearPoll(); console.log('[admin] forceClear clicked'); const _pollShare = document.getElementById('poll-share'); if(_pollShare) _pollShare.classList.add('d-none'); }catch(e){ console.warn(e); } }); }
-        if(announceBtn){ announceBtn.addEventListener('click', ()=>{
+        // Make Clear Poll harder to press accidentally: two-step confirm with timeout
+        if(forceClear){
+          let __clearConfirm = 0; let __clearTimer = 0;
+          const resetClearBtn = ()=>{ try{ __clearConfirm = 0; forceClear.textContent = 'Clear Poll'; forceClear.classList.remove('btn-danger'); forceClear.classList.add('btn-outline-danger','btn-sm'); }catch(e){} };
+          forceClear.addEventListener('click', ()=>{
+            try{
+              if(__clearConfirm === 0){
+                __clearConfirm = 1;
+                forceClear.textContent = 'Confirm Clear';
+                forceClear.classList.remove('btn-outline-danger','btn-sm');
+                forceClear.classList.add('btn-danger');
+                clearTimeout(__clearTimer);
+                __clearTimer = setTimeout(resetClearBtn, 3000);
+                return;
+              }
+              clearTimeout(__clearTimer);
+              resetClearBtn();
+              if(window.adminClearPoll) window.adminClearPoll();
+              console.log('[admin] forceClear confirmed');
+              const _pollShare = document.getElementById('poll-share'); if(_pollShare) _pollShare.classList.add('d-none');
+              try{ showAdminToast('Poll cleared'); }catch(e){}
+            }catch(e){ console.warn(e); }
+          });
+          // If the button loses focus, reset the confirm state
+          forceClear.addEventListener('blur', resetClearBtn);
+        }
+        if(announceBtn){ announceBtn.addEventListener('click', async ()=>{
           try{
-            // If there is a finalized selection UI, prefer that; otherwise pick top choice from pollChoices
-            let winner = null;
-            try{ const pcs = JSON.parse(localStorage.getItem('pollChoices')||'[]'); if(Array.isArray(pcs) && pcs.length>0) winner = pcs[0] && (pcs[0].book||pcs[0]); }catch(e){}
-            if(!winner){ winner = prompt('Enter the winning book title to announce:'); }
-            if(winner){ if(window.adminAnnounceWinner) window.adminAnnounceWinner(winner); console.log('[admin] announced winner', winner); const _pollShare = document.getElementById('poll-share'); if(_pollShare) _pollShare.classList.add('d-none'); showAdminToast('Winner announced to viewers: '+winner); }
+            // If Firebase is available, compute from votes; handle runoff ties
+            if(window.fbSyncAvailable && typeof window.fbGetVotesSummary === 'function'){
+              // Load latest state to check if a runoff is active
+              let state = null;
+              try{ if(typeof window.fbGetState === 'function') state = await window.fbGetState(); }catch(e){}
+              let counts = null;
+              if(state && state.runoff && state.runoff.active){
+                if(typeof window.fbGetRunoffVotesSummary === 'function') counts = await window.fbGetRunoffVotesSummary();
+              } else {
+                counts = await window.fbGetVotesSummary();
+              }
+              const entries = Object.entries(counts||{});
+              if(entries.length===0){
+                // No votes yet; fall back to prompt
+                const manual = prompt('No votes found. Enter the winning book title to announce:');
+                if(manual){ if(window.adminAnnounceWinner) window.adminAnnounceWinner(manual); showAdminToast('Winner announced: '+manual); }
+                return;
+              }
+              // Find top count and potential ties
+              let top = 0; entries.forEach(([_,c])=>{ if(c>top) top=c; });
+              const leaders = entries.filter(([_,c])=> c===top).map(([b,_])=> b);
+               if(leaders.length===1){
+                 const win = leaders[0]; if(window.adminAnnounceWinner) window.adminAnnounceWinner(win); showAdminToast('Winner announced: '+win);
+                 // If a runoff was active, end it now to clear the UI state
+                 try{ if(state && state.runoff && state.runoff.active && typeof window.fbEndRunoff === 'function') await window.fbEndRunoff(); }catch(e){}
+              } else {
+                // Tie — start a runoff with the leaders
+                // Prefer current Firestore pollChoices if available
+                let choices = [];
+                try{
+                  if(state && Array.isArray(state.pollChoices)) choices = state.pollChoices;
+                  else choices = JSON.parse(localStorage.getItem('pollChoices')||'[]')||[];
+                }catch(e){}
+                const pcs = choices.filter(p=> leaders.includes(p.book));
+                if(typeof window.fbStartRunoff === 'function'){
+                  await window.fbStartRunoff(pcs, null, true);
+                  showAdminToast('Runoff started for tied books');
+                } else {
+                  const manual = prompt('Tie detected. Enter the winning book:');
+                  if(manual){ if(window.adminAnnounceWinner) window.adminAnnounceWinner(manual); showAdminToast('Winner announced: '+manual); }
+                }
+              }
+              const _pollShare = document.getElementById('poll-share'); if(_pollShare) _pollShare.classList.add('d-none');
+              return;
+            }
+            // Fallback: prompt
+            let winner = prompt('Enter the winning book title to announce:');
+            if(winner){ if(window.adminAnnounceWinner) window.adminAnnounceWinner(winner); const _pollShare = document.getElementById('poll-share'); if(_pollShare) _pollShare.classList.add('d-none'); showAdminToast('Winner announced to viewers: '+winner); }
           }catch(e){ console.warn(e); }
         }); }
       }catch(e){}

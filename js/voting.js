@@ -23,9 +23,11 @@
         if(idx == null) return null;
         return { book: slotBooks[idx] || '', name: slotNames[idx] || '' };
       }).filter(Boolean);
-  localStorage.setItem('pollChoices', JSON.stringify(pollChoices));
-  try{ localStorage.setItem('pollPublishedAt', (new Date()).toISOString()); }catch(e){}
-  console.log('[voting] publishPoll called, pollChoices=', pollChoices);
+      localStorage.setItem('pollChoices', JSON.stringify(pollChoices));
+      try{ localStorage.setItem('pollPublishedAt', (new Date()).toISOString()); }catch(e){}
+      console.log('[voting] publishPoll called, pollChoices=', pollChoices);
+      // Push to Firestore if bridge available
+      try{ if(window.fbSyncAvailable && typeof window.fbPublishPoll === 'function') window.fbPublishPoll(pollChoices); }catch(e){}
       // Notify same-window listeners via custom event
       try{ window.dispatchEvent(new CustomEvent('pollPublished', { detail: { pollChoices, publishedAt: localStorage.getItem('pollPublishedAt') } })); }catch(e){}
       // Broadcast the published pollChoices for cross-tab delivery
@@ -36,8 +38,10 @@
   }
 
   function clearPoll(){
-  try{ localStorage.removeItem('pollChoices'); }catch(e){}
-  try{ localStorage.removeItem('pollPublishedAt'); }catch(e){}
+    try{ localStorage.removeItem('pollChoices'); }catch(e){}
+    try{ localStorage.removeItem('pollPublishedAt'); }catch(e){}
+    // Clear remote as well
+    try{ if(window.fbSyncAvailable && typeof window.fbClearPoll === 'function') window.fbClearPoll(); }catch(e){}
     try{ window.dispatchEvent(new Event('pollCleared')); }catch(e){}
     try{ if(_bc) _bc.postMessage({ type: 'pollCleared' }); }catch(e){}
   }
@@ -50,8 +54,10 @@
     try{
       const payload = { book: String(book||'').trim(), when: (new Date()).toISOString() };
       try{ localStorage.setItem('pollWinner', JSON.stringify(payload)); }catch(e){}
-  try{ localStorage.removeItem('pollChoices'); }catch(e){}
-  try{ localStorage.removeItem('pollPublishedAt'); }catch(e){}
+      try{ localStorage.removeItem('pollChoices'); }catch(e){}
+      try{ localStorage.removeItem('pollPublishedAt'); }catch(e){}
+      // Push to Firestore
+      try{ if(window.fbSyncAvailable && typeof window.fbAnnounceWinner === 'function') window.fbAnnounceWinner(payload.book); }catch(e){}
       try{ window.dispatchEvent(new CustomEvent('pollWinner', { detail: payload })); }catch(e){}
       try{ if(_bc) _bc.postMessage({ type: 'pollWinner', winner: payload }); }catch(e){}
       // also notify same-window listeners that pollChoices were cleared
@@ -64,8 +70,10 @@
   function startNewSession(){
     try{
       try{ localStorage.removeItem('pollWinner'); }catch(e){}
-  try{ localStorage.removeItem('pollChoices'); }catch(e){}
-  try{ localStorage.removeItem('pollPublishedAt'); }catch(e){}
+      try{ localStorage.removeItem('pollChoices'); }catch(e){}
+      try{ localStorage.removeItem('pollPublishedAt'); }catch(e){}
+      // Clear remote as well
+      try{ if(window.fbSyncAvailable && typeof window.fbClearPoll === 'function') window.fbClearPoll(); }catch(e){}
       try{ localStorage.removeItem('finalized'); }catch(e){}
       try{ window.dispatchEvent(new Event('pollCleared')); }catch(e){}
       try{ if(_bc) _bc.postMessage({ type: 'pollCleared' }); }catch(e){}
