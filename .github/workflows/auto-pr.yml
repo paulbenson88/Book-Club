@@ -1,0 +1,45 @@
+name: Auto PR to main
+
+on:
+  push:
+    branches-ignore:
+      - main
+
+jobs:
+  auto-pr:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Create or update PR to main
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const branch = process.env.GITHUB_REF_NAME;
+            if (!branch || branch === 'main') {
+              core.info('No PR needed for main');
+              return;
+            }
+            const { owner, repo } = context.repo;
+            const title = `Auto PR: ${branch} -> main`;
+            const body = `This PR was automatically opened for branch **${branch}** to merge into main.`;
+
+            // Look for an open PR from this branch to main
+            const prs = await github.paginate(github.rest.pulls.list, {
+              owner, repo, state: 'open', head: `${owner}:${branch}`, base: 'main', per_page: 100
+            });
+
+            if (prs.length > 0) {
+              core.info(`PR already open: #${prs[0].number}`);
+              // Optionally update title/body
+              await github.rest.pulls.update({ owner, repo, pull_number: prs[0].number, title, body });
+              return;
+            }
+
+            // Create the PR
+            const pr = await github.rest.pulls.create({ owner, repo, head: branch, base: 'main', title, body });
+            core.info(`Opened PR #${pr.data.number}`);
