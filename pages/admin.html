@@ -268,6 +268,13 @@
       </div>
     </div>
   </div>
+  <!-- Winner announced confirmation (auto-dismiss) -->
+  <div id="winnerConfirmModal" class="modal-overlay d-none" aria-hidden="true">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="winnerConfirmTitle">
+      <h3 id="winnerConfirmTitle">Winner announced!</h3>
+      <p id="winnerConfirmMessage" class="small text-muted">Your announcement was sent to viewers.</p>
+    </div>
+  </div>
   <!-- Admin toast container -->
   <div id="adminToast" class="admin-toast" aria-live="polite" role="status" style="display:none;"></div>
   <script>
@@ -430,14 +437,14 @@
               if(entries.length===0){
                 // No votes yet; fall back to prompt
                 const manual = prompt('No votes found. Enter the winning book title to announce:');
-                if(manual){ if(window.adminAnnounceWinner) window.adminAnnounceWinner(manual); showAdminToast('Winner announced: '+manual); }
+                if(manual){ if(window.adminAnnounceWinner) window.adminAnnounceWinner(manual); showAdminToast('Winner announced: '+manual); try{ if(window.showWinnerConfirm) window.showWinnerConfirm(); }catch(e){} }
                 return;
               }
               // Find top count and potential ties
               let top = 0; entries.forEach(([_,c])=>{ if(c>top) top=c; });
               const leaders = entries.filter(([_,c])=> c===top).map(([b,_])=> b);
                if(leaders.length===1){
-                 const win = leaders[0]; if(window.adminAnnounceWinner) window.adminAnnounceWinner(win); showAdminToast('Winner announced: '+win);
+                 const win = leaders[0]; if(window.adminAnnounceWinner) window.adminAnnounceWinner(win); showAdminToast('Winner announced: '+win); try{ if(window.showWinnerConfirm) window.showWinnerConfirm(); }catch(e){}
                  // If a runoff was active, end it now to clear the UI state
                  try{ if(state && state.runoff && state.runoff.active && typeof window.fbEndRunoff === 'function') await window.fbEndRunoff(); }catch(e){}
               } else {
@@ -454,7 +461,7 @@
                   showAdminToast('Runoff started for tied books');
                 } else {
                   const manual = prompt('Tie detected. Enter the winning book:');
-                  if(manual){ if(window.adminAnnounceWinner) window.adminAnnounceWinner(manual); showAdminToast('Winner announced: '+manual); }
+                  if(manual){ if(window.adminAnnounceWinner) window.adminAnnounceWinner(manual); showAdminToast('Winner announced: '+manual); try{ if(window.showWinnerConfirm) window.showWinnerConfirm(); }catch(e){} }
                 }
               }
               const _pollShare = document.getElementById('poll-share'); if(_pollShare) _pollShare.classList.add('d-none');
@@ -462,7 +469,7 @@
             }
             // Fallback: prompt
             let winner = prompt('Enter the winning book title to announce:');
-            if(winner){ if(window.adminAnnounceWinner) window.adminAnnounceWinner(winner); const _pollShare = document.getElementById('poll-share'); if(_pollShare) _pollShare.classList.add('d-none'); showAdminToast('Winner announced to viewers: '+winner); }
+            if(winner){ if(window.adminAnnounceWinner) window.adminAnnounceWinner(winner); const _pollShare = document.getElementById('poll-share'); if(_pollShare) _pollShare.classList.add('d-none'); showAdminToast('Winner announced to viewers: '+winner); try{ if(window.showWinnerConfirm) window.showWinnerConfirm(); }catch(e){} }
           }catch(e){ console.warn(e); }
         }); }
       }catch(e){}
@@ -540,6 +547,21 @@
       cancelBtn && cancelBtn.addEventListener('click', hide);
       modal && modal.addEventListener('click', (ev)=>{ if(ev.target === modal) hide(); });
       window.showOpenPollConfirm = show;
+    })();
+
+    // Temporary center confirmation for winner announced
+    (function(){
+      const modal = document.getElementById('winnerConfirmModal');
+      let hideTimer = 0;
+      function show(){
+        try{
+          modal.classList.remove('d-none');
+          requestAnimationFrame(()=> modal.classList.add('show'));
+          clearTimeout(hideTimer);
+          hideTimer = setTimeout(()=>{ try{ modal.classList.remove('show'); setTimeout(()=> modal.classList.add('d-none'), 200); }catch(e){} }, 1600);
+        }catch(e){}
+      }
+      window.showWinnerConfirm = show;
     })();
 
   // Legacy manual admin poll controls removed (functionality replaced by searchable dropdowns/edit UI in slot machine)
