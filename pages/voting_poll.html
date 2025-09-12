@@ -1063,10 +1063,11 @@ function htmlEscape(s){ try{ return String(s||'').replace(/&/g,'&amp;').replace(
   window.addEventListener('pollPublished', (ev)=>{ try{ renderPollOrWaiting(); }catch(e){} });
   window.addEventListener('pollCleared', (ev)=>{ try{ renderPollOrWaiting(); }catch(e){} });
     // Listen for winner announcements from admin and broadcast channel
-    window.addEventListener('pollWinner', (ev)=>{
+  window.addEventListener('pollWinner', (ev)=>{
       try{
         const payload = (ev && ev.detail) || JSON.parse(localStorage.getItem('pollWinner')||'null');
         if(payload && payload.book){
+      try{ window.__celebrateWinnerNext = true; }catch(e){}
           // clear any persisted pollChoices so stale polls can't reappear
           try{ localStorage.removeItem('pollChoices'); }catch(e){}
           try{ debugBanner.textContent = 'Winner announced: '+payload.book; }catch(e){}
@@ -1099,7 +1100,7 @@ function htmlEscape(s){ try{ return String(s||'').replace(/&/g,'&amp;').replace(
     // Ignore pollWinner storage events during the boot window to avoid rendering stale winners
     if(window.__viewerBlockApply){ try{ console.log('[voting_poll] storage(pollWinner) ignored due to boot block'); }catch(e){} return; }
       if(ev.key === 'pollWinner' && ev.newValue){
-        try{ const p = JSON.parse(ev.newValue); if(p && p.book){ try{ localStorage.removeItem('pollChoices'); }catch(e){} renderWinner(p.book); } }catch(e){}
+        try{ const p = JSON.parse(ev.newValue); if(p && p.book){ try{ window.__celebrateWinnerNext = true; }catch(e){} try{ localStorage.removeItem('pollChoices'); }catch(e){} renderWinner(p.book); } }catch(e){}
       }
     }catch(e){ console.warn('[voting_poll] storage pollWinner handler', e); }
   });
