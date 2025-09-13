@@ -5,3 +5,7 @@ issue-*.txt
 
 # local scratch issue notes
 tmp_issue*.md
+
+# local tunnel binaries
+cloudflared.exe
+ngrok.exe

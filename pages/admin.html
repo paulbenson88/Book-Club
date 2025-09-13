@@ -391,7 +391,10 @@
             try{
               const inp = document.getElementById('pollLink');
               const url = (inp && inp.value) || (window.adminPollUrl || 'pages/voting_poll.html');
-              if(window.showOpenPollConfirm) window.showOpenPollConfirm(url);
+              if(window.showOpenPollConfirm) window.showOpenPollConfirm(url); else {
+                const want = confirm('Open the voting poll in a new tab now?');
+                if(want){ const w = window.open(url, '_blank'); try{ if(w) w.opener = null; }catch(_e){} }
+              }
             }catch(_e){}
           }catch(e){ console.warn(e); } }); }
         // Make Clear Poll harder to press accidentally: two-step confirm with timeout
@@ -539,7 +542,8 @@
       }
       okBtn && okBtn.addEventListener('click', ()=>{
         try{
-          const w = window.open(_targetUrl || (window.adminPollUrl || 'pages/voting_poll.html'), '_blank');
+          const url = _targetUrl || (window.adminPollUrl || 'pages/voting_poll.html');
+          const w = window.open(url, '_blank');
           try{ if(w) w.opener = null; }catch(_e){}
           hide(); try{ showAdminToast('Opened voting poll in a new tab'); }catch(_e){}
         }catch(e){ hide(); }
