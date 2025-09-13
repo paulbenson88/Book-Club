@@ -8,6 +8,8 @@
   let offsets = [0,0,0];
   let chosenSet = new Set();
   let localStateSpun = false;
+  // If user taps SPIN before books finish loading, remember and start as soon as ready
+  let pendingSpin = false;
   // BroadcastChannel for reliable same-origin cross-tab messaging (fallbacks to storage events remain)
   let _bc = null;
   try { _bc = new BroadcastChannel('book-club'); } catch(e) { _bc = null; }
@@ -214,7 +216,7 @@
     const btn = slotStopBtns[reelIdx]; if(btn){ btn.classList.add('d-none'); btn.disabled = true; btn.setAttribute('disabled',''); btn.classList.add('disabled'); btn.style.pointerEvents = 'none'; btn.tabIndex = -1; }
     renderScrollList(reelIdx, chosenOriginal, true);
 
-    const resp = document.querySelector(`.reel-respin[data-reel="${reelIdx}"]`);
+  const resp = document.querySelector(`.reel-respin[data-reel="${reelIdx}"]`);
     if(resp){ resp.classList.remove('d-none'); resp.disabled = false; }
 
     // Reveal the Edit button for this reel now that it has stopped
@@ -263,9 +265,25 @@
     }
     body.appendChild(list);
     const actions = document.createElement('div'); actions.className = 'd-flex gap-2';
-  const publishBtn = document.createElement('button'); publishBtn.className = 'btn btn-success'; publishBtn.textContent = 'Submit choices and create poll';
-  publishBtn.addEventListener('click', ()=>{ try{ publishPoll(); }catch(e){} try{ clearPublishPreview(); }catch(e){} });
-    const cancelBtn = document.createElement('button'); cancelBtn.className = 'btn btn-outline-secondary'; cancelBtn.textContent = 'Cancel';
+  const publishBtn = document.createElement('button'); publishBtn.type = 'button'; publishBtn.className = 'btn btn-success'; publishBtn.textContent = 'Submit choices and create poll';
+  publishBtn.addEventListener('click', ()=>{
+    try{ publishPoll(); }catch(e){}
+    try{ clearPublishPreview(); }catch(e){}
+    try{
+      // Prefer the site-styled modal if available (on admin page); otherwise fallback to native confirm
+      let url = '';
+      try{ const inp = document.getElementById('pollLink'); if(inp && inp.value) url = inp.value; }catch(e){}
+      if(!url){ try{ url = window.adminPollUrl || ''; }catch(e){} }
+      if(!url) url = 'pages/voting_poll.html';
+      if(typeof window.showOpenPollConfirm === 'function'){
+        window.showOpenPollConfirm(url);
+      } else {
+        const want = confirm('Open the voting poll in a new tab now?');
+        if(want){ const w = window.open(url, '_blank'); try{ if(w) w.opener = null; }catch(_e){} }
+      }
+    }catch(_e){}
+  });
+    const cancelBtn = document.createElement('button'); cancelBtn.type = 'button'; cancelBtn.className = 'btn btn-outline-secondary'; cancelBtn.textContent = 'Cancel';
     cancelBtn.addEventListener('click', ()=>{ try{ clearPublishPreview(); }catch(e){} });
     actions.appendChild(publishBtn); actions.appendChild(cancelBtn);
     body.appendChild(actions);
@@ -312,7 +330,7 @@
     offsets[reelIdx] = Math.floor(Math.random() * Math.max(1, available.length));
     spinning[reelIdx] = true;
 
-    const stop = slotStopBtns[reelIdx];
+  const stop = slotStopBtns[reelIdx];
     if(stop){ stop.classList.remove('d-none'); stop.disabled = false; stop.removeAttribute('disabled'); stop.classList.remove('disabled'); stop.style.pointerEvents = 'auto'; stop.tabIndex = 0; }
 
     if(intervals[reelIdx]){ clearInterval(intervals[reelIdx]); intervals[reelIdx] = null; }
@@ -380,6 +398,8 @@
           slotReels.forEach((r,i)=>{ r.classList.remove('winner'); slotScrolls[i].innerHTML=`<div class="slot-scroll-list"><div class="slot-scroll-item">No books!</div></div>`; });
           slotStopBtns.forEach(b=>b.disabled=true); if(slotSpinBtn) slotSpinBtn.disabled=true;
         } else {
+          // If the user tapped SPIN while loading, honor it now that we can
+          if(pendingSpin && !localStateSpun){ pendingSpin = false; try{ startSpin(); }catch(e){} }
           slotReels.forEach((r,i)=>{
             r.classList.remove('winner');
             if(chosenIdxs[i] != null && typeof chosenIdxs[i] === 'number' && slotBooks[chosenIdxs[i]]){
@@ -438,7 +458,18 @@
 
     if(slotSpinBtn){
       slotSpinBtn.addEventListener('click', function(){
-        if(localStateSpun){ if(!slotSpinBtn.disabled) resetMachine(); } else { slotSpinBtn.style.transform='translateY(3px)'; setTimeout(()=>{ slotSpinBtn.style.transform=''; startSpin(); },120); }
+        if(localStateSpun){
+          if(!slotSpinBtn.disabled) resetMachine();
+        } else {
+          // If books not yet loaded, queue a spin so first tap counts when ready
+          if(slotBooks.length < 3){
+            pendingSpin = true;
+            try{ if(typeof showAdminToast === 'function') showAdminToast('Still loading… will spin as soon as ready'); }catch(e){}
+            return;
+          }
+          slotSpinBtn.style.transform='translateY(3px)';
+          setTimeout(()=>{ slotSpinBtn.style.transform=''; startSpin(); },120);
+        }
       });
     }
 

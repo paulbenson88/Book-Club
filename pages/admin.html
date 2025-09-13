@@ -99,7 +99,7 @@
         <h1 class="h4">Admin: Book Slot Machine</h1>
         <p class="small text-muted">This page is for the club lead to control the SPIN / RESET actions for choosing next month's book. Only one person should be in control at a time.</p>
         <div class="my-3">
-          <button id="topStartNewSessionBtn" class="btn btn-primary w-100" style="font-size:1.15rem;padding:14px;">Start new book voting session</button>
+          <button id="topStartNewSessionBtn" type="button" class="btn btn-primary w-100" style="font-size:1.15rem;padding:14px;">Start new book voting session</button>
         </div>
   <div id="admin-msg" class="mt-2"><small id="qr-status" class="text-muted"></small></div>
         <div class="mt-3">
@@ -138,13 +138,13 @@
           <div id="slot-container" class="d-none">
             <div class="slot-machine-frame">
           <div class="slot-machine-title">BOOK SLOT MACHINE</div>
-          <div class="d-flex justify-content-center my-3"><button id="slotSpinBtn" class="btn spin-center-btn">SPIN</button></div>
+          <div class="d-flex justify-content-center my-3"><button id="slotSpinBtn" type="button" class="btn spin-center-btn">SPIN</button></div>
           <div class="slot-reels">
             <div class="slot-reel" id="slot1">
               <div class="slot-scroll" id="slotScroll1"><div class="slot-scroll-list"></div></div>
-              <button id="slotStopBtn1" class="btn stop-btn mt-2" disabled>Stop</button>
-              <button class="btn reel-respin mt-2 d-none" data-reel="0" disabled>⟲ Respin</button>
-              <button class="btn btn-outline-secondary edit-choice mt-2 d-none" data-reel="0">Edit Choice</button>
+              <button id="slotStopBtn1" type="button" class="btn stop-btn mt-2" disabled>Stop</button>
+              <button class="btn reel-respin mt-2 d-none" type="button" data-reel="0" disabled>⟲ Respin</button>
+              <button class="btn btn-outline-secondary edit-choice mt-2 d-none" type="button" data-reel="0">Edit Choice</button>
               <div class="edit-choice-panel mt-2 d-none" data-reel="0">
                 <input type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" class="form-control edit-choice-input" placeholder="Search or choose a book..." aria-label="Search or choose a book" />
                 <datalist id="edit-choice-list-0" class="edit-choice-datalist"></datalist>
@@ -155,9 +155,9 @@
             </div>
             <div class="slot-reel" id="slot2">
               <div class="slot-scroll" id="slotScroll2"><div class="slot-scroll-list"></div></div>
-              <button id="slotStopBtn2" class="btn stop-btn mt-2" disabled>Stop</button>
-              <button class="btn reel-respin mt-2 d-none" data-reel="1" disabled>⟲ Respin</button>
-              <button class="btn btn-outline-secondary edit-choice mt-2 d-none" data-reel="1">Edit Choice</button>
+              <button id="slotStopBtn2" type="button" class="btn stop-btn mt-2" disabled>Stop</button>
+              <button class="btn reel-respin mt-2 d-none" type="button" data-reel="1" disabled>⟲ Respin</button>
+              <button class="btn btn-outline-secondary edit-choice mt-2 d-none" type="button" data-reel="1">Edit Choice</button>
               <div class="edit-choice-panel mt-2 d-none" data-reel="1">
                 <input type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" class="form-control edit-choice-input" placeholder="Search or choose a book..." aria-label="Search or choose a book" />
                 <datalist id="edit-choice-list-1" class="edit-choice-datalist"></datalist>
@@ -168,9 +168,9 @@
             </div>
             <div class="slot-reel" id="slot3">
               <div class="slot-scroll" id="slotScroll3"><div class="slot-scroll-list"></div></div>
-              <button id="slotStopBtn3" class="btn stop-btn mt-2" disabled>Stop</button>
-              <button class="btn reel-respin mt-2 d-none" data-reel="2" disabled>⟲ Respin</button>
-              <button class="btn btn-outline-secondary edit-choice mt-2 d-none" data-reel="2">Edit Choice</button>
+              <button id="slotStopBtn3" type="button" class="btn stop-btn mt-2" disabled>Stop</button>
+              <button class="btn reel-respin mt-2 d-none" type="button" data-reel="2" disabled>⟲ Respin</button>
+              <button class="btn btn-outline-secondary edit-choice mt-2 d-none" type="button" data-reel="2">Edit Choice</button>
               <div class="edit-choice-panel mt-2 d-none" data-reel="2">
                 <input type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" class="form-control edit-choice-input" placeholder="Search or choose a book..." aria-label="Search or choose a book" />
                 <datalist id="edit-choice-list-2" class="edit-choice-datalist"></datalist>
@@ -182,9 +182,9 @@
           </div>
           <div id="slotResult" class="slot-result"></div>
           <div class="poll-action-bar">
-            <button id="forcePublishBtn" class="btn btn-success">Submit choices / Create Vote</button>
-            <button id="forceClearBtn" class="btn btn-outline-danger btn-sm" title="Clears current poll choices and votes after confirmation">Clear Poll</button>
-            <button id="announceWinnerBtn" class="btn btn-warning">All votes in — Announce Winner</button>
+            <button id="forcePublishBtn" type="button" class="btn btn-success">Submit choices / Create Vote</button>
+            <button id="forceClearBtn" type="button" class="btn btn-outline-danger btn-sm" title="Clears current poll choices and votes after confirmation">Clear Poll</button>
+            <button id="announceWinnerBtn" type="button" class="btn btn-warning">All votes in — Announce Winner</button>
           </div>
           <div id="slotLoading" class="text-muted text-center mt-2 small">Loading book list...</div>
           
@@ -241,8 +241,8 @@
       <h3 id="slotConfirmTitle">Confirm slot operation</h3>
       <p id="slotConfirmMessage">Only proceed if you're the designated spinner — this will overwrite someone else's results.</p>
       <div class="modal-actions">
-        <button id="slotConfirmCancel" class="btn btn-outline-secondary">Cancel</button>
-        <button id="slotConfirmOk" class="btn btn-primary">Proceed</button>
+  <button id="slotConfirmCancel" type="button" class="btn btn-outline-secondary">Cancel</button>
+  <button id="slotConfirmOk" type="button" class="btn btn-primary">Proceed</button>
       </div>
     </div>
   </div>
@@ -252,9 +252,27 @@
       <h3 id="startPollTitle">Preview poll choices</h3>
       <div id="startPollList" style="margin-top:8px;"></div>
       <div class="modal-actions">
-        <button id="startPollCancel" class="btn btn-outline-secondary">Cancel</button>
-        <button id="startPollConfirm" class="btn btn-success">Publish Poll</button>
+  <button id="startPollCancel" type="button" class="btn btn-outline-secondary">Cancel</button>
+  <button id="startPollConfirm" type="button" class="btn btn-success">Publish Poll</button>
       </div>
+    </div>
+  </div>
+  <!-- Confirm open poll modal -->
+  <div id="openPollConfirmModal" class="modal-overlay d-none" aria-hidden="true">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="openPollConfirmTitle">
+      <h3 id="openPollConfirmTitle">Poll published — open the poll?</h3>
+      <p id="openPollConfirmMessage" class="small text-muted">Your poll has been published. Open it in a new tab now to share or monitor votes. Choosing “Stay here” won’t undo publishing — it just keeps you on this page.</p>
+      <div class="modal-actions">
+        <button id="openPollCancel" type="button" class="btn btn-outline-secondary">Stay here</button>
+        <button id="openPollOk" type="button" class="btn btn-primary">Open Poll</button>
+      </div>
+    </div>
+  </div>
+  <!-- Winner announced confirmation (auto-dismiss) -->
+  <div id="winnerConfirmModal" class="modal-overlay d-none" aria-hidden="true">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="winnerConfirmTitle">
+      <h3 id="winnerConfirmTitle">Winner announced!</h3>
+      <p id="winnerConfirmMessage" class="small text-muted">Your announcement was sent to viewers.</p>
     </div>
   </div>
   <!-- Admin toast container -->
@@ -368,7 +386,17 @@
         const forceBtn = document.getElementById('forcePublishBtn');
         const forceClear = document.getElementById('forceClearBtn');
         const announceBtn = document.getElementById('announceWinnerBtn');
-  if(forceBtn){ forceBtn.addEventListener('click', ()=>{ try{ if(window.adminPublishPoll) window.adminPublishPoll(); console.log('[admin] forcePublish clicked'); try{ if(window.showAdminPollShare) window.showAdminPollShare(); else { const _ps = document.getElementById('poll-share'); if(_ps){ _ps.classList.remove('d-none'); _ps.style.display='block'; try{ if(window.renderAdminPollQR) window.renderAdminPollQR(); }catch(e){} } } }catch(e){} }catch(e){ console.warn(e); } }); }
+  if(forceBtn){ forceBtn.addEventListener('click', (ev)=>{ try{ ev && ev.preventDefault && ev.preventDefault(); if(window.adminPublishPoll) window.adminPublishPoll(); try{ showAdminToast('Poll published'); }catch(_e){} console.log('[admin] forcePublish clicked'); try{ if(window.showAdminPollShare) window.showAdminPollShare(); else { const _ps = document.getElementById('poll-share'); if(_ps){ _ps.classList.remove('d-none'); _ps.style.display='block'; try{ if(window.renderAdminPollQR) window.renderAdminPollQR(); }catch(e){} } } }catch(e){}
+            // Use branded modal to confirm opening in a new tab
+            try{
+              const inp = document.getElementById('pollLink');
+              const url = (inp && inp.value) || (window.adminPollUrl || 'pages/voting_poll.html');
+              if(window.showOpenPollConfirm) window.showOpenPollConfirm(url); else {
+                const want = confirm('Open the voting poll in a new tab now?');
+                if(want){ const w = window.open(url, '_blank'); try{ if(w) w.opener = null; }catch(_e){} }
+              }
+            }catch(_e){}
+          }catch(e){ console.warn(e); } }); }
         // Make Clear Poll harder to press accidentally: two-step confirm with timeout
         if(forceClear){
           let __clearConfirm = 0; let __clearTimer = 0;
@@ -412,14 +440,14 @@
               if(entries.length===0){
                 // No votes yet; fall back to prompt
                 const manual = prompt('No votes found. Enter the winning book title to announce:');
-                if(manual){ if(window.adminAnnounceWinner) window.adminAnnounceWinner(manual); showAdminToast('Winner announced: '+manual); }
+                if(manual){ if(window.adminAnnounceWinner) window.adminAnnounceWinner(manual); showAdminToast('Winner announced: '+manual); try{ if(window.showWinnerConfirm) window.showWinnerConfirm(); }catch(e){} }
                 return;
               }
               // Find top count and potential ties
               let top = 0; entries.forEach(([_,c])=>{ if(c>top) top=c; });
               const leaders = entries.filter(([_,c])=> c===top).map(([b,_])=> b);
                if(leaders.length===1){
-                 const win = leaders[0]; if(window.adminAnnounceWinner) window.adminAnnounceWinner(win); showAdminToast('Winner announced: '+win);
+                 const win = leaders[0]; if(window.adminAnnounceWinner) window.adminAnnounceWinner(win); showAdminToast('Winner announced: '+win); try{ if(window.showWinnerConfirm) window.showWinnerConfirm(); }catch(e){}
                  // If a runoff was active, end it now to clear the UI state
                  try{ if(state && state.runoff && state.runoff.active && typeof window.fbEndRunoff === 'function') await window.fbEndRunoff(); }catch(e){}
               } else {
@@ -436,7 +464,7 @@
                   showAdminToast('Runoff started for tied books');
                 } else {
                   const manual = prompt('Tie detected. Enter the winning book:');
-                  if(manual){ if(window.adminAnnounceWinner) window.adminAnnounceWinner(manual); showAdminToast('Winner announced: '+manual); }
+                  if(manual){ if(window.adminAnnounceWinner) window.adminAnnounceWinner(manual); showAdminToast('Winner announced: '+manual); try{ if(window.showWinnerConfirm) window.showWinnerConfirm(); }catch(e){} }
                 }
               }
               const _pollShare = document.getElementById('poll-share'); if(_pollShare) _pollShare.classList.add('d-none');
@@ -444,7 +472,7 @@
             }
             // Fallback: prompt
             let winner = prompt('Enter the winning book title to announce:');
-            if(winner){ if(window.adminAnnounceWinner) window.adminAnnounceWinner(winner); const _pollShare = document.getElementById('poll-share'); if(_pollShare) _pollShare.classList.add('d-none'); showAdminToast('Winner announced to viewers: '+winner); }
+            if(winner){ if(window.adminAnnounceWinner) window.adminAnnounceWinner(winner); const _pollShare = document.getElementById('poll-share'); if(_pollShare) _pollShare.classList.add('d-none'); showAdminToast('Winner announced to viewers: '+winner); try{ if(window.showWinnerConfirm) window.showWinnerConfirm(); }catch(e){} }
           }catch(e){ console.warn(e); }
         }); }
       }catch(e){}
@@ -500,6 +528,45 @@
         t._hideTimer = setTimeout(()=>{ try{ t.classList.remove('show'); setTimeout(()=>{ t.style.display='none'; },240); }catch(e){} }, ms);
       }catch(e){ console.warn('showAdminToast failed', e); }
     }
+
+    // Open-poll confirmation modal helper
+    (function(){
+      const modal = document.getElementById('openPollConfirmModal');
+      const okBtn = document.getElementById('openPollOk');
+      const cancelBtn = document.getElementById('openPollCancel');
+      let _targetUrl = '';
+      function hide(){ try{ modal.classList.add('d-none'); document.body.classList.remove('modal-open'); }catch(e){} }
+      function show(url){
+        _targetUrl = url || '';
+        try{ modal.classList.remove('d-none'); requestAnimationFrame(()=> modal.classList.add('show')); document.body.classList.add('modal-open'); }catch(e){}
+      }
+      okBtn && okBtn.addEventListener('click', ()=>{
+        try{
+          const url = _targetUrl || (window.adminPollUrl || 'pages/voting_poll.html');
+          const w = window.open(url, '_blank');
+          try{ if(w) w.opener = null; }catch(_e){}
+          hide(); try{ showAdminToast('Opened voting poll in a new tab'); }catch(_e){}
+        }catch(e){ hide(); }
+      });
+      cancelBtn && cancelBtn.addEventListener('click', hide);
+      modal && modal.addEventListener('click', (ev)=>{ if(ev.target === modal) hide(); });
+      window.showOpenPollConfirm = show;
+    })();
+
+    // Temporary center confirmation for winner announced
+    (function(){
+      const modal = document.getElementById('winnerConfirmModal');
+      let hideTimer = 0;
+      function show(){
+        try{
+          modal.classList.remove('d-none');
+          requestAnimationFrame(()=> modal.classList.add('show'));
+          clearTimeout(hideTimer);
+          hideTimer = setTimeout(()=>{ try{ modal.classList.remove('show'); setTimeout(()=> modal.classList.add('d-none'), 200); }catch(e){} }, 1600);
+        }catch(e){}
+      }
+      window.showWinnerConfirm = show;
+    })();
 
   // Legacy manual admin poll controls removed (functionality replaced by searchable dropdowns/edit UI in slot machine)
 

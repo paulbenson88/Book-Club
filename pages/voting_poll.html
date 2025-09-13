@@ -503,8 +503,8 @@ function htmlEscape(s){ try{ return String(s||'').replace(/&/g,'&amp;').replace(
           setPollOptionsVisible(false);
     showWaitingMessage('Wait until the lead has randomly chosen all three books with the slot machine.');
     // Allow entering name ahead of time even while waiting/ignoring
-    try{ initNameControlsFromSaved(); }catch(e){}
-          return;
+  try{ initNameControlsFromSaved(); }catch(e){}
+      return;
         }
     // Defensive: finished viewers must not render persisted pollChoices; allow render to continue only if pollChoices are present and were written in this session
     // (We already removed persisted pollChoices on load.)
@@ -512,20 +512,27 @@ function htmlEscape(s){ try{ return String(s||'').replace(/&/g,'&amp;').replace(
     const pollChoices = getPollChoices();
     // Only render a poll if admin explicitly published it (pollPublishedAt set)
     try{ const publishedAt = localStorage.getItem('pollPublishedAt'); if(!publishedAt){ setPollOptionsVisible(false); showWaitingMessage('Wait until the lead has randomly chosen all three books with the slot machine.'); try{ initNameControlsFromSaved(); }catch(e){} return; } }catch(e){}
-    // If the poll is published but the viewer hasn't opted into the name flow, show prompt instead of poll
+    // If the poll is published, require a submitted name before showing any poll UI
     try{
-      const saved = localStorage.getItem('voterName');
+      const saved = (localStorage.getItem('voterName')||'').trim();
       const publishedAtDebug = localStorage.getItem('pollPublishedAt');
-      console.log('[voting_poll] prompt decision:', 'viewerHasEnteredNameFlow=', !!viewerHasEnteredNameFlow, 'saved=', saved ? ('"'+saved+'"') : 'null', 'publishedAt=', publishedAtDebug);
-      // Show the poll-ready prompt whenever the poll is published and the viewer hasn't entered the name flow yet.
-      if(!viewerHasEnteredNameFlow){
-        console.log('[voting_poll] prompt decision -> SHOW poll-ready prompt (viewerHasEnteredNameFlow false)');
-        showPollEntryPrompt(); setPollOptionsVisible(false); try{ updateDebugBanner(); }catch(e){} return;
+      console.log('[voting_poll] name gating:', 'savedName=', saved ? 'yes' : 'no', 'publishedAt=', publishedAtDebug);
+      if(!saved){
+        // Force name entry view only
+        try{ hidePollEntryPrompt(); }catch(e){}
+        try{ setPollOptionsVisible(false); }catch(e){}
+        try{ const ro = document.getElementById('runoff-options'); if(ro){ ro.style.display='none'; ro.innerHTML=''; } }catch(e){}
+        try{ const status = document.getElementById('poll-status'); if(status){ status.innerHTML=''; } }catch(e){}
+        try{ setNameControlsVisible(true); if(nameInput){ nameInput.disabled=false; nameInput.focus(); } if(submitNameBtn){ submitNameBtn.style.display='inline-block'; } if(editNameBtn){ editNameBtn.style.display='none'; } }catch(e){}
+        // Ensure the poll area remains dimmed/inactive until name is submitted
+        try{ if(pollOptions) pollOptions.classList.add('poll-needs-name'); }catch(e){}
+        return;
       } else {
-        console.log('[voting_poll] prompt decision -> HIDE poll-ready prompt');
-        hidePollEntryPrompt(); try{ updateDebugBanner(); }catch(e){}
+        // We have a saved name: hide any prompt and proceed
+        try{ hidePollEntryPrompt(); }catch(e){}
       }
     }catch(e){}
+  // (name already required above)
     console.log('[voting_poll] renderPollOrWaiting pollChoices:', pollChoices);
     if (!Array.isArray(pollChoices) || pollChoices.length < 3) {
       // Defensive: if stored pollChoices are present but malformed, clear them so viewers show waiting UI
@@ -682,11 +689,29 @@ function htmlEscape(s){ try{ return String(s||'').replace(/&/g,'&amp;').replace(
     const labels = document.querySelectorAll('.vote-label');
     checkboxes.forEach(checkbox => checkbox.disabled = true);
     labels.forEach(label => label.classList.remove('bold'));
+  // Hide poll and runoff entirely until a new name is submitted
+  try{ setPollOptionsVisible(false); }catch(e){}
+  try{ const ro = document.getElementById('runoff-options'); if(ro){ ro.style.display='none'; ro.innerHTML=''; } }catch(e){}
+  try{ const status = document.getElementById('poll-status'); if(status){ status.innerHTML=''; } }catch(e){}
+  try{ setNameControlsVisible(true); if(nameInput){ nameInput.focus(); } }catch(e){}
   }
   submitNameBtn.addEventListener("click", submitName);
   editNameBtn.addEventListener("click", editName);
-  // Allow pressing Enter in the name field to submit
-  try{ if(nameInput){ nameInput.addEventListener('keydown', function(ev){ if(ev.key === 'Enter'){ ev.preventDefault(); submitName(); } }); } }catch(e){}
+  // Allow pressing Enter in the name field to submit; also hide poll when input becomes empty
+  try{ if(nameInput){
+    nameInput.addEventListener('keydown', function(ev){ if(ev.key === 'Enter'){ ev.preventDefault(); submitName(); } });
+    nameInput.addEventListener('input', function(){
+      try{
+        const publishedAt = localStorage.getItem('pollPublishedAt');
+        const v = (nameInput.value||'').trim();
+        if(publishedAt && v.length === 0){
+          // Treat as no name: hide poll and runoff
+          setPollOptionsVisible(false);
+          const ro = document.getElementById('runoff-options'); if(ro){ ro.style.display='none'; ro.innerHTML=''; }
+        }
+      }catch(e){}
+    });
+  } }catch(e){}
 
   // Initial render on page load
   renderPollOrWaiting();
@@ -868,35 +893,53 @@ function htmlEscape(s){ try{ return String(s||'').replace(/&/g,'&amp;').replace(
         return;
       }
       const controller = new AbortController();
-      const to = setTimeout(()=>{ try{ controller.abort(); }catch(e){} }, 3000);
       const q = encodeURIComponent(titlePart);
+      const searchTimeout = setTimeout(()=>{ try{ controller.abort(); }catch(e){} }, 2500);
       fetch('https://openlibrary.org/search.json?title='+q, { signal: controller.signal })
         .then(r=> r.ok ? r.json() : Promise.reject(new Error('http '+r.status)))
         .then(data=>{
           const docs = (data && Array.isArray(data.docs)) ? data.docs : [];
-          let picked = null;
-          for(const d of docs){ if(d && d.cover_i){ picked = d; break; } }
-          if(!picked){ for(const d of docs){ if(d && Array.isArray(d.isbn) && d.isbn.length){ picked = d; break; } } }
-          if(!picked) throw new Error('no cover');
-          let url = '';
-          if(picked.cover_i){
-            url = `https://covers.openlibrary.org/b/id/${picked.cover_i}-L.jpg`;
-          } else {
-            const isbn = picked.isbn[0];
-            url = `https://covers.openlibrary.org/b/isbn/${isbn}-L.jpg`;
+          // Build a small set of candidate cover URLs (prefer cover_i; fallback to first ISBN)
+          const candidates = [];
+          for(const d of docs){
+            if(!d) continue;
+            if(d.cover_i){ candidates.push(`https://covers.openlibrary.org/b/id/${d.cover_i}-L.jpg`); }
+            else if(Array.isArray(d.isbn) && d.isbn.length){ candidates.push(`https://covers.openlibrary.org/b/isbn/${d.isbn[0]}-L.jpg`); }
+            if(candidates.length >= 5) break;
           }
-          img.onload = ()=>{
-            try{ img.classList.add('ready'); }catch(e){}
-            try{
-              cache[normKey] = { url, ts: Date.now() };
-              localStorage.setItem(cacheNs, JSON.stringify(cache));
-            }catch(e){}
+          if(candidates.length === 0) throw new Error('no candidates');
+          // Deduplicate
+          const uniq = Array.from(new Set(candidates));
+          let resolved = false;
+          const finishWith = (url)=>{
+            if(resolved) return; resolved = true;
+            img.onload = ()=>{
+              try{ img.classList.add('ready'); }catch(e){}
+              try{ cache[normKey] = { url, ts: Date.now() }; localStorage.setItem(cacheNs, JSON.stringify(cache)); }catch(e){}
+            };
+            img.onerror = ()=>{ try{ showWinnerCoverPlaceholder(); }catch(e){} };
+            img.src = url;
           };
-          img.onerror = ()=>{ try{ showWinnerCoverPlaceholder(); }catch(e){} };
-          img.src = url;
+          // Fallback timer to show placeholder if none succeed quickly
+          const overallTo = setTimeout(()=>{ if(!resolved){ try{ showWinnerCoverPlaceholder(); }catch(e){} } }, 2200);
+          // Try candidates concurrently; first to load wins
+          uniq.forEach((u, idx)=>{
+            try{
+              const probe = new Image();
+              probe.decoding = 'async';
+              probe.loading = 'eager';
+              probe.referrerPolicy = 'no-referrer';
+              // Slight stagger to avoid burst
+              setTimeout(()=>{
+                probe.onload = ()=>{ try{ clearTimeout(overallTo); }catch(e){} finishWith(u); };
+                probe.onerror = ()=>{ /* try others */ };
+                probe.src = u;
+              }, idx * 60);
+            }catch(e){}
+          });
         })
         .catch(()=>{ try{ showWinnerCoverPlaceholder(); }catch(e){} })
-        .finally(()=>{ try{ clearTimeout(to); }catch(e){} });
+        .finally(()=>{ try{ clearTimeout(searchTimeout); }catch(e){} });
     }catch(e){ try{ showWinnerCoverPlaceholder(); }catch(_){} }
   }
 
@@ -914,6 +957,71 @@ function htmlEscape(s){ try{ return String(s||'').replace(/&/g,'&amp;').replace(
       wrap.appendChild(ph);
     }catch(e){}
   }
+
+  // Proactive prewarm: fetch likely cover URLs for current poll choices so winner loads instantly
+  (function(){
+    // Set of normalized titles already prewarmed in this session
+    const prewarmed = new Set();
+    const cacheNs = 'winnerCoverCache_v1';
+    function normalizeTitle(raw){
+      try{ return String(raw||'').split(' - ')[0].split(' — ')[0].trim().toLowerCase(); }catch(e){ return String(raw||'').toLowerCase(); }
+    }
+    function prefetchImage(url){
+      try{ const img = new Image(); img.decoding = 'async'; img.loading = 'eager'; img.referrerPolicy = 'no-referrer'; img.src = url; }catch(e){}
+      try{
+        // Hint browser to prefetch as image
+        const l = document.createElement('link'); l.rel = 'prefetch'; l.as = 'image'; l.href = url; document.head.appendChild(l);
+      }catch(e){}
+    }
+    async function prewarmCoverForTitle(rawBook){
+      try{
+        const titlePart = String(rawBook||'').split(' - ')[0].split(' — ')[0].trim();
+        const normKey = titlePart.toLowerCase();
+        if(!titlePart || prewarmed.has(normKey)) return; prewarmed.add(normKey);
+        let cache = {};
+        try{ cache = JSON.parse(localStorage.getItem(cacheNs)||'{}')||{}; }catch(e){}
+        const now = Date.now();
+        const hit = cache[normKey];
+        if(hit && hit.url && (now - (hit.ts||0) < 14*24*60*60*1000)){
+          // Already cached recently; just ensure the image is in memory/disk cache
+          prefetchImage(hit.url);
+          return;
+        }
+        const controller = new AbortController();
+        const to = setTimeout(()=>{ try{ controller.abort(); }catch(e){} }, 1800);
+        const q = encodeURIComponent(titlePart);
+        const resp = await fetch('https://openlibrary.org/search.json?title='+q, { signal: controller.signal });
+        if(!resp.ok) throw new Error('http '+resp.status);
+        const data = await resp.json();
+        const docs = (data && Array.isArray(data.docs)) ? data.docs : [];
+        let picked = null;
+        for(const d of docs){ if(d && d.cover_i){ picked = d; break; } }
+        if(!picked){ for(const d of docs){ if(d && Array.isArray(d.isbn) && d.isbn.length){ picked = d; break; } } }
+        if(!picked) return;
+        let url = '';
+        if(picked.cover_i){ url = `https://covers.openlibrary.org/b/id/${picked.cover_i}-L.jpg`; }
+        else { const isbn = picked.isbn[0]; url = `https://covers.openlibrary.org/b/isbn/${isbn}-L.jpg`; }
+        if(url){
+          prefetchImage(url);
+          try{ cache[normKey] = { url, ts: Date.now() }; localStorage.setItem(cacheNs, JSON.stringify(cache)); }catch(e){}
+        }
+        try{ clearTimeout(to); }catch(e){}
+      }catch(e){ /* silent prewarm */ }
+    }
+    // Expose a scheduler the poll renderer can call after showing choices
+    window.schedulePrewarmPollCovers = function(){
+      try{
+        const choices = getPollChoices();
+        if(!Array.isArray(choices) || !choices.length) return;
+        // Stagger requests slightly to stay friendly; limit to first 5
+        choices.slice(0,5).forEach((c, i)=>{
+          const t = c && (c.book||c.title||c.display||'');
+          if(!t) return;
+          setTimeout(()=>{ prewarmCoverForTitle(t); }, 80*i);
+        });
+      }catch(e){}
+    };
+  })();
 
   // Lightweight confetti animation (restored)
   function startConfetti(durationMs){
@@ -1063,10 +1171,11 @@ function htmlEscape(s){ try{ return String(s||'').replace(/&/g,'&amp;').replace(
   window.addEventListener('pollPublished', (ev)=>{ try{ renderPollOrWaiting(); }catch(e){} });
   window.addEventListener('pollCleared', (ev)=>{ try{ renderPollOrWaiting(); }catch(e){} });
     // Listen for winner announcements from admin and broadcast channel
-    window.addEventListener('pollWinner', (ev)=>{
+  window.addEventListener('pollWinner', (ev)=>{
       try{
         const payload = (ev && ev.detail) || JSON.parse(localStorage.getItem('pollWinner')||'null');
         if(payload && payload.book){
+      try{ window.__celebrateWinnerNext = true; }catch(e){}
           // clear any persisted pollChoices so stale polls can't reappear
           try{ localStorage.removeItem('pollChoices'); }catch(e){}
           try{ debugBanner.textContent = 'Winner announced: '+payload.book; }catch(e){}
@@ -1099,7 +1208,7 @@ function htmlEscape(s){ try{ return String(s||'').replace(/&/g,'&amp;').replace(
     // Ignore pollWinner storage events during the boot window to avoid rendering stale winners
     if(window.__viewerBlockApply){ try{ console.log('[voting_poll] storage(pollWinner) ignored due to boot block'); }catch(e){} return; }
       if(ev.key === 'pollWinner' && ev.newValue){
-        try{ const p = JSON.parse(ev.newValue); if(p && p.book){ try{ localStorage.removeItem('pollChoices'); }catch(e){} renderWinner(p.book); } }catch(e){}
+        try{ const p = JSON.parse(ev.newValue); if(p && p.book){ try{ window.__celebrateWinnerNext = true; }catch(e){} try{ localStorage.removeItem('pollChoices'); }catch(e){} renderWinner(p.book); } }catch(e){}
       }
     }catch(e){ console.warn('[voting_poll] storage pollWinner handler', e); }
   });
@@ -1163,4 +1272,42 @@ function htmlEscape(s){ try{ return String(s||'').replace(/&/g,'&amp;').replace(
   </div>
 </body>
 </html>
+
+<script>
+// Failsafe: on some mobile refreshes, scripts may race and render nothing; ensure a waiting UI appears.
+(function(){
+  function hasContent(el){ try{ return !!(el && String(el.textContent||'').trim().length); }catch(e){ return false; } }
+  function ensureNotBlank(){
+    try{
+      const status = document.getElementById('poll-status');
+      const ready = document.getElementById('poll-ready');
+      const options = document.getElementById('poll-options');
+      const runoff = document.getElementById('runoff-options');
+      const winnerEl = document.querySelector('.winner-cover-wrap');
+      const nothingShown = !winnerEl && (
+        !options || options.style.display==='none' || options.children.length===0
+      ) && (
+        !runoff || runoff.style.display==='none' || runoff.children.length===0
+      ) && (
+        !ready || ready.classList.contains('d-none') || ready.style.display==='none' || !hasContent(ready)
+      ) && (
+        !status || !hasContent(status)
+      );
+      if(nothingShown && status){
+        status.innerHTML = '<div class="wait-box">\
+          <img class="wait-dog dog-bob" src="../images/Merc.jpg" alt="Merc the dog" loading="lazy" />\
+          <div class="wait-text">Please wait patiently with Merc — the lead will randomly choose all three books with the slot machine.</div>\
+          <div class="wait-sub">We\'ll let you know when voting starts.</div>\
+          <div class="spinner" aria-hidden="true"></div>\
+        </div>';
+      }
+    }catch(e){}
+  }
+  window.addEventListener('load', function(){
+    setTimeout(ensureNotBlank, 120);
+    setTimeout(ensureNotBlank, 800);
+    setTimeout(ensureNotBlank, 2200);
+  });
+})();
+</script>
 
