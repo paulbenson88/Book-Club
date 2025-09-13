@@ -1,10 +1,11 @@
-```markdown
-// filepath: c:\Users\Paul\book-club\.github\PULL_REQUEST_TEMPLATE.md
 ## Summary
-What does this PR do?
+Describe the change and why it’s needed.
 
 ## Related issues
-- Fixes #<issue-number> / relates to...
+- Closes #<issue-number>
+
+## Changes
+- 
 
 ## Implementation notes
 Short notes on approach and decisions.
@@ -18,4 +19,3 @@ Short notes on approach and decisions.
 
 ## Screenshots / Loom link
 (attach)
-```
