@@ -14,7 +14,7 @@
   <link rel="manifest" href="../favicon/site.webmanifest" />
   <meta name="theme-color" content="#ffffff">
   <style>
-    /* Local responsive helpers in case Bootstrap classes fail to load */
+    /* Local responsive helpers in case Bootstrap fails to load */
     .desktop-only { display: block; }
     .mobile-only { display: none; }
     @media (max-width: 767px) {
@@ -23,13 +23,13 @@
     }
     /* Center table content */
     .books-read-table th, .books-read-table td { text-align:center; vertical-align:middle; }
-    .mobile-only .list-group-item .d-flex { text-align:center; justify-content:center !important; }
-    .mobile-only .list-group-item small { text-align:center; }
+    /* Prevent any body/page horizontal scroll */
+    html, body { max-width: 100%; overflow-x: hidden; }
   </style>
 </head>
 <body>
-  <header style="text-align:center; margin:1rem 0;">
-    <a href="../index.html" class="btn btn-secondary">🏠 Main Page</a>
+  <header class="site-nav" role="navigation" aria-label="Site">
+    <a href="../index.html" class="main-page-btn">🏠 Main Page</a>
   </header>
 
   <main id="books-read-root" class="container">
@@ -68,96 +68,86 @@
         </div>
 
   <!-- Mobile/card view -->
-  <div class="mobile-only">
+  <div class="mobile-only" role="list" aria-label="Books read list (sorted by date, newest first)">
           <div class="list-group">
-            <div class="list-group-item">
-              <div class="d-flex w-100 flex-column flex-sm-row justify-content-between">
-                <div>
-                  <h5 class="mb-1">Perfect Son</h5>
-                  <div class="small text-muted">Author: Freida McFadden</div>
-                </div>
-                <small class="text-muted align-self-start align-self-sm-center">October 2024<br/>Suggested by: Maria</small>
+            <div class="list-group-item" role="listitem">
+              <div class="d-flex w-100 flex-column">
+                <div class="small text-muted">July 2025</div>
+                <h5 class="mb-1 mt-1">Pet Sematary</h5>
+                <div class="small text-muted">Author: Stephen King</div>
+                <div class="small text-muted"><em>Suggested by:</em> Maria</div>
               </div>
             </div>
-            <div class="list-group-item">
-              <div class="d-flex w-100 flex-column flex-sm-row justify-content-between">
-                <div>
-                  <h5 class="mb-1">The Lost Bookshop</h5>
-                  <div class="small text-muted">Author: Evie Woods</div>
-                </div>
-                <small class="text-muted align-self-start align-self-sm-center">November 2024<br/>Suggested by: Aubrey</small>
+            <div class="list-group-item" role="listitem">
+              <div class="d-flex w-100 flex-column">
+                <div class="small text-muted">June 2025</div>
+                <h5 class="mb-1 mt-1">Sign Here</h5>
+                <div class="small text-muted">Author: Claudia Lux</div>
+                <div class="small text-muted"><em>Suggested by:</em> Hannah</div>
               </div>
             </div>
-            <div class="list-group-item">
-              <div class="d-flex w-100 flex-column flex-sm-row justify-content-between">
-                <div>
-                  <h5 class="mb-1">Cloud Cuckoo Land</h5>
-                  <div class="small text-muted">Author: Anthony Doerr</div>
-                </div>
-                <small class="text-muted align-self-start align-self-sm-center">December 2024<br/>Suggested by: Josh</small>
+            <div class="list-group-item" role="listitem">
+              <div class="d-flex w-100 flex-column">
+                <div class="small text-muted">May 2025</div>
+                <h5 class="mb-1 mt-1">The Wedding People</h5>
+                <div class="small text-muted">Author: Alison Espach</div>
+                <div class="small text-muted"><em>Suggested by:</em> Taylor</div>
               </div>
             </div>
-            <div class="list-group-item">
-              <div class="d-flex w-100 flex-column flex-sm-row justify-content-between">
-                <div>
-                  <h5 class="mb-1">Billy Summers</h5>
-                  <div class="small text-muted">Author: Stephen King</div>
-                </div>
-                <small class="text-muted align-self-start align-self-sm-center">January 2025<br/>Suggested by: Maria</small>
+            <div class="list-group-item" role="listitem">
+              <div class="d-flex w-100 flex-column">
+                <div class="small text-muted">April 2025</div>
+                <h5 class="mb-1 mt-1">The Paris Apartment</h5>
+                <div class="small text-muted">Author: Lucy Foley</div>
+                <div class="small text-muted"><em>Suggested by:</em> Hannah</div>
               </div>
             </div>
-            <div class="list-group-item">
-              <div class="d-flex w-100 flex-column flex-sm-row justify-content-between">
-                <div>
-                  <h5 class="mb-1">Listen for the Lie</h5>
-                  <div class="small text-muted">Author: Amy Tintera</div>
-                </div>
-                <small class="text-muted align-self-start align-self-sm-center">February 2025<br/>Suggested by: —</small>
+            <div class="list-group-item" role="listitem">
+              <div class="d-flex w-100 flex-column">
+                <div class="small text-muted">March 2025</div>
+                <h5 class="mb-1 mt-1">Wrong Place, Wrong Time</h5>
+                <div class="small text-muted">Author: Gillian McAllister</div>
+                <div class="small text-muted">Suggested by: Hannah</div>
               </div>
             </div>
-            <div class="list-group-item">
-              <div class="d-flex w-100 flex-column flex-sm-row justify-content-between">
-                <div>
-                  <h5 class="mb-1">Wrong Place, Wrong Time</h5>
-                  <div class="small text-muted">Author: Gillian McAllister</div>
-                </div>
-                <small class="text-muted align-self-start align-self-sm-center">March 2025<br/>Suggested by: Hannah</small>
+            <div class="list-group-item" role="listitem">
+              <div class="d-flex w-100 flex-column">
+                <div class="small text-muted">February 2025</div>
+                <h5 class="mb-1 mt-1">Listen for the Lie</h5>
+                <div class="small text-muted">Author: Amy Tintera</div>
+                <div class="small text-muted"><em>Suggested by:</em> —</div>
               </div>
             </div>
-            <div class="list-group-item">
-              <div class="d-flex w-100 flex-column flex-sm-row justify-content-between">
-                <div>
-                  <h5 class="mb-1">The Paris Apartment</h5>
-                  <div class="small text-muted">Author: Lucy Foley</div>
-                </div>
-                <small class="text-muted align-self-start align-self-sm-center">April 2025<br/>Suggested by: Hannah</small>
+            <div class="list-group-item" role="listitem">
+              <div class="d-flex w-100 flex-column">
+                <div class="small text-muted">January 2025</div>
+                <h5 class="mb-1 mt-1">Billy Summers</h5>
+                <div class="small text-muted">Author: Stephen King</div>
+                <div class="small text-muted"><em>Suggested by:</em> Maria</div>
               </div>
             </div>
-            <div class="list-group-item">
-              <div class="d-flex w-100 flex-column flex-sm-row justify-content-between">
-                <div>
-                  <h5 class="mb-1">The Wedding People</h5>
-                  <div class="small text-muted">Author: Alison Espach</div>
-                </div>
-                <small class="text-muted align-self-start align-self-sm-center">May 2025<br/>Suggested by: Taylor</small>
+            <div class="list-group-item" role="listitem">
+              <div class="d-flex w-100 flex-column">
+                <div class="small text-muted">December 2024</div>
+                <h5 class="mb-1 mt-1">Cloud Cuckoo Land</h5>
+                <div class="small text-muted">Author: Anthony Doerr</div>
+                <div class="small text-muted"><em>Suggested by:</em> Josh</div>
               </div>
             </div>
-            <div class="list-group-item">
-              <div class="d-flex w-100 flex-column flex-sm-row justify-content-between">
-                <div>
-                  <h5 class="mb-1">Sign Here</h5>
-                  <div class="small text-muted">Author: Claudia Lux</div>
-                </div>
-                <small class="text-muted align-self-start align-self-sm-center">June 2025<br/>Suggested by: Hannah</small>
+            <div class="list-group-item" role="listitem">
+              <div class="d-flex w-100 flex-column">
+                <div class="small text-muted">November 2024</div>
+                <h5 class="mb-1 mt-1">The Lost Bookshop</h5>
+                <div class="small text-muted">Author: Evie Woods</div>
+                <div class="small text-muted"><em>Suggested by:</em> Aubrey</div>
               </div>
             </div>
-            <div class="list-group-item">
-              <div class="d-flex w-100 flex-column flex-sm-row justify-content-between">
-                <div>
-                  <h5 class="mb-1">Pet Sematary</h5>
-                  <div class="small text-muted">Author: Stephen King</div>
-                </div>
-                <small class="text-muted align-self-start align-self-sm-center">July 2025<br/>Suggested by: Maria</small>
+            <div class="list-group-item" role="listitem">
+              <div class="d-flex w-100 flex-column">
+                <div class="small text-muted">October 2024</div>
+                <h5 class="mb-1 mt-1">Perfect Son</h5>
+                <div class="small text-muted">Author: Freida McFadden</div>
+                <div class="small text-muted"><em>Suggested by:</em> Maria</div>
               </div>
             </div>
           </div>

@@ -170,3 +170,45 @@ img.qr {
 @media (prefers-reduced-motion: reduce) {
   .start-poll-card.animate-ready { animation: none; }
 }
+
+/* ------------------------------
+   Books Read page mobile polish
+   ------------------------------ */
+/* Ensure long titles/authors wrap nicely in both table and cards */
+.books-read-table th,
+.books-read-table td {
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+/* Mobile card layout: consistent spacing and no overflow */
+.mobile-only .list-group {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  padding: 0;
+  margin: 0;
+}
+.mobile-only .list-group-item {
+  border: 1px solid #e6e6e6;
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin: 0; /* avoid horizontal overflow within container */
+  background: #fff;
+}
+.mobile-only .list-group-item h5 {
+  font-size: 1.05rem;
+  margin: 0 0 4px 0;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+.mobile-only .list-group-item .small {
+  font-size: 0.95rem;
+}
+.mobile-only .list-group-item .d-flex {
+  gap: 8px;
+}
+@media (max-width: 480px) {
+  .mobile-only .list-group-item { padding: 12px; }
+}
