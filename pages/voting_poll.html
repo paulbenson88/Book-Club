@@ -35,6 +35,115 @@
     }
   }catch(e){ /* ignore */ }
 </script>
+  <!-- Diagnostics / Instrumentation (Issue #50) -->
+  <script>
+    (function(){
+      try {
+        if(!window.__pollDiag){
+          window.__pollDiag = {
+            log: function(evt, details){
+              try{
+                const ts = new Date().toISOString();
+                const payload = { ts, evt, ...(details||{}) };
+                let arr = [];
+                try{ arr = JSON.parse(localStorage.getItem('__pollDiagLog')||'[]'); if(!Array.isArray(arr)) arr=[]; }catch(e){}
+                arr.push(payload);
+                if(arr.length>40) arr.splice(0, arr.length-40);
+                try{ localStorage.setItem('__pollDiagLog', JSON.stringify(arr)); }catch(e){}
+                console.log('[poll-diagnostic]', evt, payload);
+              }catch(e){ /* swallow */ }
+            },
+            wrapRemove: function(key, reason){
+              try {
+                const before = localStorage.getItem(key);
+                localStorage.removeItem(key);
+                this.log('ls.remove', { key, hadValue: before!=null, reason });
+              }catch(e){ this.log('ls.remove.error', { key, reason, err: String(e) }); }
+            }
+          };
+        }
+      }catch(e){ /* ignore */ }
+    })();
+  </script>
+<!-- Guard utilities for preventing spurious clears -->
+<script>
+(function(){
+  try{
+    if(!window.__pollGuards){
+      function computeSessionId(pcs, publishedAt){
+        try{
+          if(!Array.isArray(pcs) || pcs.length < 3) return null;
+          const core = (publishedAt||'') + '::' + pcs.map(p=> (p.book||'').trim()).sort().join('|');
+          // simple stable hash (FNV-1a like) then base36
+          let h = 2166136261>>>0; for(let i=0;i<core.length;i++){ h ^= core.charCodeAt(i); h = Math.imul(h,16777619); }
+          return 'ps_'+ (h>>>0).toString(36);
+        }catch(e){ return null; }
+      }
+      function scheduleRestoreCheck(reason){
+        try{
+          if(window.__restoreTimer) clearTimeout(window.__restoreTimer);
+          // Only schedule for empty-type clears (avoid winner / stale)
+          if(!/empty|subscribe-empty|applySnapshot-empty/.test(reason)) return;
+          const backupRaw = localStorage.getItem('__pollBackup');
+          if(!backupRaw) return;
+          window.__restoreTimer = setTimeout(()=>{
+            try{
+              const winner = localStorage.getItem('pollWinner');
+              if(winner) return; // winner legit ends poll
+              const pcsNow = JSON.parse(localStorage.getItem('pollChoices')||'null');
+              if(Array.isArray(pcsNow) && pcsNow.length>=3) return; // already repopulated
+              const backup = JSON.parse(backupRaw||'null');
+              if(backup && Array.isArray(backup.pcs) && backup.pcs.length>=3){
+                localStorage.setItem('pollChoices', JSON.stringify(backup.pcs));
+                if(backup.publishedAt) localStorage.setItem('pollPublishedAt', backup.publishedAt);
+                if(window.__pollDiag) window.__pollDiag.log('auto-restore', { fromReason: reason });
+              }
+            }catch(e){ window.__pollDiag && __pollDiag.log('auto-restore.error',{err:String(e)}); }
+          }, 1400); // 1.4s confirmation window
+        }catch(e){ }
+      }
+      function clearPoll(reason){
+        try{
+          const winner = localStorage.getItem('pollWinner');
+          const pcs = JSON.parse(localStorage.getItem('pollChoices')||'null');
+          const hadValid = Array.isArray(pcs) && pcs.length>=3;
+          if(!winner && hadValid && /empty/.test(reason)){
+            // strike logic: require 2 consecutive empties
+            const strikes = (parseInt(localStorage.getItem('__emptyStrikes')||'0',10) || 0) + 1;
+            localStorage.setItem('__emptyStrikes', String(strikes));
+            if(strikes < 2){
+              window.__pollDiag && __pollDiag.log('defer-clear', { reason, strikes });
+              scheduleRestoreCheck(reason); // still schedule restore in case nothing arrives
+              return false;
+            }
+          } else if(!/empty/.test(reason)) {
+            // reset strike counter on non-empty reasons
+            localStorage.setItem('__emptyStrikes','0');
+          }
+          // backup before destructive clear
+          try{
+            const backup = { pcs, votes: JSON.parse(localStorage.getItem('votes')||'{}'), publishedAt: localStorage.getItem('pollPublishedAt'), reason, at: Date.now() };
+            localStorage.setItem('__pollBackup', JSON.stringify(backup));
+          }catch(e){}
+          if(window.__pollDiag) window.__pollDiag.log('clearPoll', { reason, hadValid });
+          if(window.__pollDiag){
+            __pollDiag.wrapRemove('pollChoices', reason);
+            __pollDiag.wrapRemove('pollPublishedAt', reason);
+          } else {
+            localStorage.removeItem('pollChoices');
+            localStorage.removeItem('pollPublishedAt');
+          }
+          localStorage.setItem('lastClearReason', reason);
+          localStorage.setItem('lastClearAt', Date.now().toString());
+          scheduleRestoreCheck(reason);
+          return true;
+        }catch(e){ window.__pollDiag && __pollDiag.log('clearPoll.error',{reason,err:String(e)}); }
+      }
+      window.__pollGuards = { computeSessionId, clearPoll };
+    }
+  }catch(e){ }
+})();
+</script>
 <!-- Conditional staleness clearing: only purge obviously old or winner-completed data -->
 <script>
   try {
@@ -52,7 +161,10 @@
       isStale = true;
     }
     if (isStale) {
-      try{ localStorage.removeItem('pollChoices'); localStorage.removeItem('pollPublishedAt'); console.log('[voting_poll] cleared stale poll cache'); }catch(e){}
+      try{ window.__pollDiag && __pollDiag.log('stale.clear.begin', { publishedAt, winner }); }catch(e){}
+      try{ window.__pollDiag ? __pollDiag.wrapRemove('pollChoices','stale-clear') : localStorage.removeItem('pollChoices'); }catch(e){}
+      try{ window.__pollDiag ? __pollDiag.wrapRemove('pollPublishedAt','stale-clear') : localStorage.removeItem('pollPublishedAt'); }catch(e){}
+      console.log('[voting_poll] cleared stale poll cache');
     } else {
       console.log('[voting_poll] preserved existing poll cache for potential late join');
     }
@@ -242,7 +354,8 @@ function __applyPollSnapshot(state){
       window.__lastWinnerBook = book;
       try{ localStorage.setItem('pollWinner', JSON.stringify(state.winner)); }catch(e){}
       // Clear poll-only keys (don't clear winner)
-      try{ localStorage.removeItem('pollChoices'); localStorage.removeItem('pollPublishedAt'); }catch(e){}
+  try{ window.__pollDiag ? __pollDiag.wrapRemove('pollChoices','applySnapshot-winner') : localStorage.removeItem('pollChoices'); }catch(e){}
+  try{ window.__pollDiag ? __pollDiag.wrapRemove('pollPublishedAt','applySnapshot-winner') : localStorage.removeItem('pollPublishedAt'); }catch(e){}
       try{ renderWinner(book); }catch(e){}
       window.__fbStateInited = true;
       return;
@@ -260,10 +373,11 @@ function __applyPollSnapshot(state){
     if(publishedAt && pcs.length >= 3){
       try{ localStorage.setItem('pollChoices', JSON.stringify(pcs)); }catch(e){}
       try{ localStorage.setItem('pollPublishedAt', publishedAt); }catch(e){}
+      try{ const sid = window.__pollGuards && __pollGuards.computeSessionId(pcs, publishedAt); if(sid) localStorage.setItem('pollSessionId', sid); }catch(e){}
       try{ renderPollOrWaiting(); }catch(e){}
     } else {
-      // Consider this a cleared poll
-      try{ localStorage.removeItem('pollChoices'); localStorage.removeItem('pollPublishedAt'); }catch(e){}
+      // Consider this a cleared poll (guarded)
+      try{ if(window.__pollGuards){ __pollGuards.clearPoll('applySnapshot-empty'); } else { window.__pollDiag ? __pollDiag.wrapRemove('pollChoices','applySnapshot-empty') : localStorage.removeItem('pollChoices'); window.__pollDiag ? __pollDiag.wrapRemove('pollPublishedAt','applySnapshot-empty') : localStorage.removeItem('pollPublishedAt'); } }catch(e){}
       try{ renderPollOrWaiting(); }catch(e){}
     }
     window.__fbStateInited = true;
@@ -329,7 +443,8 @@ function htmlEscape(s){ try{ return String(s||'').replace(/&/g,'&amp;').replace(
             window.__celebrateWinnerNext = !!isNewWinner;
             window.__lastWinnerBook = book;
             try{ localStorage.setItem('pollWinner', JSON.stringify(state.winner)); }catch(e){}
-            try{ localStorage.removeItem('pollChoices'); localStorage.removeItem('pollPublishedAt'); }catch(e){}
+            try{ window.__pollDiag ? __pollDiag.wrapRemove('pollChoices','subscribe-winner') : localStorage.removeItem('pollChoices'); }catch(e){}
+            try{ window.__pollDiag ? __pollDiag.wrapRemove('pollPublishedAt','subscribe-winner') : localStorage.removeItem('pollPublishedAt'); }catch(e){}
             try{ renderWinner(book); }catch(e){}
             // Stop any runoff listeners when a winner is announced
             try{ if(window.__unsubRunoffVotes){ window.__unsubRunoffVotes(); window.__unsubRunoffVotes = null; } }catch(e){}
@@ -351,10 +466,11 @@ function htmlEscape(s){ try{ return String(s||'').replace(/&/g,'&amp;').replace(
           if(publishedAt && pcs.length >= 3){
             try{ localStorage.setItem('pollChoices', JSON.stringify(pcs)); }catch(e){}
             try{ localStorage.setItem('pollPublishedAt', publishedAt); }catch(e){}
+            try{ const sid = window.__pollGuards && __pollGuards.computeSessionId(pcs, publishedAt); if(sid) localStorage.setItem('pollSessionId', sid); }catch(e){}
             try{ renderPollOrWaiting(); }catch(e){}
           } else {
-            // Clear poll locally
-            try{ localStorage.removeItem('pollChoices'); localStorage.removeItem('pollPublishedAt'); }catch(e){}
+            // Clear poll locally (guarded)
+            try{ if(window.__pollGuards){ __pollGuards.clearPoll('subscribe-empty'); } else { window.__pollDiag ? __pollDiag.wrapRemove('pollChoices','subscribe-empty') : localStorage.removeItem('pollChoices'); window.__pollDiag ? __pollDiag.wrapRemove('pollPublishedAt','subscribe-empty') : localStorage.removeItem('pollPublishedAt'); } }catch(e){}
             try{ renderPollOrWaiting(); }catch(e){}
           }
           window.__fbStateInited = true;
