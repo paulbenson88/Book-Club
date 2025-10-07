@@ -677,6 +677,8 @@ function htmlEscape(s){ try{ return String(s||'').replace(/&/g,'&amp;').replace(
       Array.from(ro.querySelectorAll('input[type="radio"][name="runoff"]')).forEach(r=> r.disabled = false);
     }
   }catch(e){}
+  // Late join enhancement: if user submits name after poll already began, reveal poll with fade-in
+  try{ lateJoinRevealIfPollActive(); }catch(e){}
   }
   function editName() {
     nameInput.disabled = false;
@@ -715,6 +717,41 @@ function htmlEscape(s){ try{ return String(s||'').replace(/&/g,'&amp;').replace(
 
   // Initial render on page load
   renderPollOrWaiting();
+
+  // Helper: when a viewer arrives after poll start and only now submits a name, force-paint poll immediately
+  function lateJoinRevealIfPollActive(){
+    try{
+      const publishedAt = localStorage.getItem('pollPublishedAt');
+      const winnerRaw = localStorage.getItem('pollWinner');
+      if(winnerRaw){
+        try{ const w = JSON.parse(winnerRaw); if(w && w.book){ renderWinner(w.book); return; } }catch(e){}
+      }
+      if(!publishedAt) return; // no active poll
+      const choicesRaw = localStorage.getItem('pollChoices');
+      if(choicesRaw){
+        // Ensure poll options container visible with fade-in
+        try{
+          if(pollOptions){
+            setPollOptionsVisible(true);
+            pollOptions.classList.remove('fade-in');
+            // Trigger reflow hack then add fade-in
+            void pollOptions.offsetWidth;
+            pollOptions.classList.add('fade-in');
+          }
+        }catch(e){}
+        try{ renderPollOrWaiting(); }catch(e){}
+      } else {
+        // Race: pollChoices not yet in localStorage; retry shortly
+        setTimeout(()=>{
+          const again = localStorage.getItem('pollChoices');
+          if(again){
+            try{ setPollOptionsVisible(true); if(pollOptions){ pollOptions.classList.add('fade-in'); } }catch(e){}
+            try{ renderPollOrWaiting(); }catch(e){}
+          }
+        }, 250);
+      }
+    }catch(e){ console.warn('[late-join] reveal failed', e); }
+  }
 
   function showPollChoicesAnimated(){
     const target = pollOptions || document.getElementById('poll-options');
