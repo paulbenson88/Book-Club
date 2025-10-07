@@ -549,7 +549,25 @@ function htmlEscape(s){ try{ return String(s||'').replace(/&/g,'&amp;').replace(
     }catch(e){}
     const pollChoices = getPollChoices();
     // Only render a poll if admin explicitly published it (pollPublishedAt set)
-    try{ const publishedAt = localStorage.getItem('pollPublishedAt'); if(!publishedAt){ setPollOptionsVisible(false); showWaitingMessage('Wait until the lead has randomly chosen all three books with the slot machine.'); try{ initNameControlsFromSaved(); }catch(e){} return; } }catch(e){}
+    try{ 
+      const publishedAt = localStorage.getItem('pollPublishedAt'); 
+      const savedName = (localStorage.getItem('voterName')||'').trim();
+      if(!publishedAt){ 
+        // Poll not started yet
+        if(!savedName){
+          // Show ONLY name UI (no Merc waiting yet)
+          setPollOptionsVisible(false);
+          try{ const status = document.getElementById('poll-status'); if(status) status.innerHTML=''; }catch(e){}
+          try{ setNameControlsVisible(true); if(nameInput){ nameInput.disabled=false; nameInput.focus(); } if(submitNameBtn){ submitNameBtn.style.display='inline-block'; } if(editNameBtn){ editNameBtn.style.display='none'; } }catch(e){}
+          return; 
+        } else {
+          // Name submitted but poll not yet published: now show Merc waiting UI
+          setPollOptionsVisible(false);
+          showWaitingMessage('Wait until the lead has randomly chosen all three books with the slot machine.');
+          return;
+        }
+      } 
+    }catch(e){}
     // If the poll is published, require a submitted name before showing any poll UI
     try{
       const saved = (localStorage.getItem('voterName')||'').trim();
