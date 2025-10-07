@@ -644,6 +644,30 @@ function htmlEscape(s){ try{ return String(s||'').replace(/&/g,'&amp;').replace(
       if(voterName){ voteLabel.classList.add('bold'); } else { voteLabel.classList.remove('bold'); }
       checkbox.addEventListener("change", () => toggleVote(choice.book));
     });
+    // Add multi-select caption at top (not shown in runoff or winner states)
+    try {
+      const existingCaption = document.getElementById('multi-choice-caption');
+      if(existingCaption) existingCaption.remove();
+      const winner = localStorage.getItem('pollWinner');
+      const runoffActive = !!document.getElementById('runoff-options') && document.getElementById('runoff-options').style.display !== 'none';
+      if(!winner && !runoffActive){
+        const cap = document.createElement('div');
+        cap.id = 'multi-choice-caption';
+        cap.className = 'text-muted small';
+  cap.style.fontSize = '0.75rem';
+  cap.style.marginTop = '12px'; // a bit more breathing room now that border removed
+  cap.style.marginBottom = '6px';
+  cap.style.paddingTop = '0';
+  cap.style.fontWeight = '400';
+        cap.textContent = 'Multiple choices allowed';
+        // Insert before first poll item (top of list)
+        if(pollOptions.firstChild){
+          pollOptions.insertBefore(cap, pollOptions.firstChild);
+        } else {
+          pollOptions.appendChild(cap);
+        }
+      }
+    } catch(e){}
     setPollOptionsVisible(true);
     try{ updateDebugBanner(); }catch(e){}
     // Prewarm covers for current poll choices (quietly), so winner is instant
