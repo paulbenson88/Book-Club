@@ -1418,6 +1418,11 @@ function htmlEscape(s){ try{ return String(s||'').replace(/&/g,'&amp;').replace(
       const options = document.getElementById('poll-options');
       const runoff = document.getElementById('runoff-options');
       const winnerEl = document.querySelector('.winner-cover-wrap');
+      // Respect name gating: don't auto-insert Merc waiting box if user hasn't submitted a name yet
+      let savedName = '';
+      let publishedAt = '';
+      try { savedName = (localStorage.getItem('voterName')||'').trim(); } catch(e){}
+      try { publishedAt = localStorage.getItem('pollPublishedAt')||''; } catch(e){}
       const nothingShown = !winnerEl && (
         !options || options.style.display==='none' || options.children.length===0
       ) && (
@@ -1428,12 +1433,18 @@ function htmlEscape(s){ try{ return String(s||'').replace(/&/g,'&amp;').replace(
         !status || !hasContent(status)
       );
       if(nothingShown && status){
-        status.innerHTML = '<div class="wait-box">\
-          <img class="wait-dog dog-bob" src="../images/Merc.jpg" alt="Merc the dog" loading="lazy" />\
-          <div class="wait-text">Please wait patiently with Merc — the lead will randomly choose all three books with the slot machine.</div>\
-          <div class="wait-sub">We\'ll let you know when voting starts.</div>\
-          <div class="spinner" aria-hidden="true"></div>\
-        </div>';
+        // Only show Merc failsafe if they have already entered a name OR the poll has been published.
+        if(savedName || publishedAt){
+          status.innerHTML = '<div class="wait-box" data-src="failsafe">\
+            <img class="wait-dog dog-bob" src="../images/Merc.jpg" alt="Merc the dog" loading="lazy" />\
+            <div class="wait-text">Please wait patiently with Merc — the lead will randomly choose all three books with the slot machine.</div>\
+            <div class="wait-sub">We\'ll let you know when voting starts.</div>\
+            <div class="spinner" aria-hidden="true"></div>\
+          </div>';
+        } else {
+          // Clear any accidental content so only the name input (prompt) area can be shown by main render function.
+          status.innerHTML = '';
+        }
       }
     }catch(e){}
   }
