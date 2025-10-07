@@ -857,6 +857,15 @@ function htmlEscape(s){ try{ return String(s||'').replace(/&/g,'&amp;').replace(
     if(!target) return;
     // update debug banner with raw storage for visibility
     try{ debugBanner.textContent = 'local pollChoices: '+ (localStorage.getItem('pollChoices')||'null'); }catch(e){}
+    // NEW: If no poll has been published yet AND user has not submitted a name, suppress Merc waiting UI.
+    try {
+      const publishedAt = localStorage.getItem('pollPublishedAt');
+      const savedName = (localStorage.getItem('voterName')||'').trim();
+      if(!publishedAt && !savedName){
+        target.innerHTML = '';
+        return; // defer showing waiting UI until after name is submitted
+      }
+    } catch(e){}
     if(msg && msg.indexOf && msg.indexOf('Wait until')===0){
       const dogHtml = `
           <div class="wait-box">
