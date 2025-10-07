@@ -35,18 +35,47 @@
     }
   }catch(e){ /* ignore */ }
 </script>
-<!-- Defensive: ensure any persisted pollChoices are removed on load to avoid showing stale results */ -->
+<!-- Conditional staleness clearing: only purge obviously old or winner-completed data -->
 <script>
-  try{ if(localStorage.getItem('pollChoices')){ localStorage.removeItem('pollChoices'); console.log('[voting_poll] removed persisted pollChoices on load to avoid stale display'); } }catch(e){}
+  try {
+    const publishedAt = localStorage.getItem('pollPublishedAt');
+    const winner = localStorage.getItem('pollWinner');
+    let isStale = false;
+    if (publishedAt) {
+      const ageMs = Date.now() - Date.parse(publishedAt);
+      if (isNaN(ageMs) || ageMs > 1000*60*60*6) { // older than 6h
+        isStale = true;
+      }
+    }
+    if (winner) {
+      // After a winner we shouldn't preserve old pollChoices/publishedAt for a new session
+      isStale = true;
+    }
+    if (isStale) {
+      try{ localStorage.removeItem('pollChoices'); localStorage.removeItem('pollPublishedAt'); console.log('[voting_poll] cleared stale poll cache'); }catch(e){}
+    } else {
+      console.log('[voting_poll] preserved existing poll cache for potential late join');
+    }
+  } catch(e) { }
 </script>
-<!-- Boot-time guard: prevent any incoming snapshot/BC/storage write from re-populating pollChoices until we've cleared and rendered waiting UI -->
+<!-- Boot-time snapshot queue: queue first snapshot during initial rendering instead of discarding -->
 <script>
-  try{
-    // Block applying server-sent pollChoices for a short window after page load to avoid race conditions
+  try {
     window.__viewerBlockApply = true;
-    console.log('[voting_poll] boot block set');
-    setTimeout(()=>{ try{ window.__viewerBlockApply = false; console.log('[voting_poll] boot block cleared'); }catch(e){} }, 600);
-  }catch(e){}
+    window.__queuedSnapshot = null;
+    console.log('[voting_poll] boot block set (queue mode)');
+    setTimeout(()=>{
+      try {
+        window.__viewerBlockApply = false;
+        console.log('[voting_poll] boot block cleared');
+        if(window.__queuedSnapshot){
+          console.log('[voting_poll] applying queued snapshot now');
+          try{ window.__applyPollSnapshot(window.__queuedSnapshot); }catch(e){ console.warn('[voting_poll] queued snapshot apply failed', e); }
+          window.__queuedSnapshot = null;
+        }
+      } catch(e){}
+    }, 600);
+  } catch(e){}
 </script>
   <!-- Firebase compat SDK (CDN). Define window.FIREBASE_CONFIG separately to enable cross-device sync. -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -196,58 +225,67 @@ function slugifyId(text){
 }
 function htmlEscape(s){ try{ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }catch(e){ return String(s||''); } }
 
+// Unified snapshot apply function so we can queue during boot
+function __applyPollSnapshot(state){
+  try{
+    if(!state) return;
+    // Respect ignore flag
+    if(localStorage.getItem('viewerIgnoreServerPolls') || sessionStorage.getItem('viewerIgnoreServerPolls')){
+      try{ debugBanner && (debugBanner.textContent = 'Viewer is ignoring server polls'); }catch(e){}
+      return;
+    }
+    // Winner path
+    if(state && state.winner && state.winner.book){
+      const book = state.winner.book;
+      const isNewWinner = window.__fbStateInited && window.__lastWinnerBook !== book;
+      window.__celebrateWinnerNext = !!isNewWinner;
+      window.__lastWinnerBook = book;
+      try{ localStorage.setItem('pollWinner', JSON.stringify(state.winner)); }catch(e){}
+      // Clear poll-only keys (don't clear winner)
+      try{ localStorage.removeItem('pollChoices'); localStorage.removeItem('pollPublishedAt'); }catch(e){}
+      try{ renderWinner(book); }catch(e){}
+      window.__fbStateInited = true;
+      return;
+    }
+    // Runoff path
+    if(state && state.runoff && state.runoff.active){
+      const pcs = Array.isArray(state.runoff.choices) ? state.runoff.choices : [];
+      try{ renderRunoff(pcs); }catch(e){}
+      window.__fbStateInited = true;
+      return;
+    }
+    // Normal poll
+    const pcs = Array.isArray(state && state.pollChoices) ? state.pollChoices : [];
+    const publishedAt = state && state.pollPublishedAt ? String(state.pollPublishedAt) : null;
+    if(publishedAt && pcs.length >= 3){
+      try{ localStorage.setItem('pollChoices', JSON.stringify(pcs)); }catch(e){}
+      try{ localStorage.setItem('pollPublishedAt', publishedAt); }catch(e){}
+      try{ renderPollOrWaiting(); }catch(e){}
+    } else {
+      // Consider this a cleared poll
+      try{ localStorage.removeItem('pollChoices'); localStorage.removeItem('pollPublishedAt'); }catch(e){}
+      try{ renderPollOrWaiting(); }catch(e){}
+    }
+    window.__fbStateInited = true;
+  }catch(e){ console.warn('[voting_poll] snapshot apply failed', e); }
+}
 (function(){
   try{
     if(window.fbSyncAvailable && typeof window.fbSubscribe === 'function'){
       window.fbSubscribe(function(state){
         try{
-          // Respect viewer ignore flag: don't apply remote state
-          if(localStorage.getItem('viewerIgnoreServerPolls') || sessionStorage.getItem('viewerIgnoreServerPolls')){
-            try{ debugBanner && (debugBanner.textContent = 'Viewer is ignoring server polls'); }catch(e){}
+          console.log('[voting_poll] snapshot received', state);
+          if(window.__viewerBlockApply){
+            window.__queuedSnapshot = state;
+            console.log('[voting_poll] snapshot queued (boot block)');
             return;
           }
-          // Apply winner first; if set, it should override any active runoff UI
-          if(state && state.winner && state.winner.book){
-            const book = state.winner.book;
-            // Celebrate only if this winner is newly observed after initial snapshot
-            const isNewWinner = window.__fbStateInited && window.__lastWinnerBook !== book;
-            window.__celebrateWinnerNext = !!isNewWinner;
-            window.__lastWinnerBook = book;
-            try{ localStorage.setItem('pollWinner', JSON.stringify(state.winner)); }catch(e){}
-            try{ localStorage.removeItem('pollChoices'); localStorage.removeItem('pollPublishedAt'); }catch(e){}
-            try{ renderWinner(book); }catch(e){}
-            // Stop any runoff listeners when a winner is announced
-            try{ if(window.__unsubRunoffVotes){ window.__unsubRunoffVotes(); window.__unsubRunoffVotes = null; } }catch(e){}
-            window.__fbStateInited = true;
-            return;
-          }
-          // If a tiebreaker runoff is active, render it and return
-          if(state && state.runoff && state.runoff.active){
-            const pcs = Array.isArray(state.runoff.choices) ? state.runoff.choices : [];
-            try{ renderRunoff(pcs); }catch(e){}
-            window.__fbStateInited = true;
-            return;
-          }
-          // No winner — apply poll state
-          const pcs = Array.isArray(state && state.pollChoices) ? state.pollChoices : [];
-          // Ensure any runoff listener is removed when showing normal poll
-          try{ if(window.__unsubRunoffVotes){ window.__unsubRunoffVotes(); window.__unsubRunoffVotes = null; } }catch(e){}
-          const publishedAt = state && state.pollPublishedAt ? String(state.pollPublishedAt) : null;
-          if(publishedAt && pcs.length >= 3){
-            try{ localStorage.setItem('pollChoices', JSON.stringify(pcs)); }catch(e){}
-            try{ localStorage.setItem('pollPublishedAt', publishedAt); }catch(e){}
-            try{ renderPollOrWaiting(); }catch(e){}
-          } else {
-            // Clear poll locally
-            try{ localStorage.removeItem('pollChoices'); localStorage.removeItem('pollPublishedAt'); }catch(e){}
-            try{ renderPollOrWaiting(); }catch(e){}
-          }
-          window.__fbStateInited = true;
-        }catch(e){ console.warn('[voting_poll] fbSubscribe apply failed', e); }
+          __applyPollSnapshot(state);
+        }catch(e){ console.warn('[voting_poll] fbSubscribe handler error', e); }
       });
-      try{ console.log('[voting_poll] Firebase subscription active'); }catch(e){}
+      console.log('[voting_poll] Firebase subscription active');
     } else {
-      try{ console.log('[voting_poll] Firebase not configured; viewer falls back to localStorage/storage events only'); }catch(e){}
+      console.log('[voting_poll] Firebase not configured; viewer falls back to localStorage/storage events only');
     }
   }catch(e){ console.warn('[voting_poll] fb subscribe setup error', e); }
 })();
@@ -741,14 +779,46 @@ function htmlEscape(s){ try{ return String(s||'').replace(/&/g,'&amp;').replace(
         }catch(e){}
         try{ renderPollOrWaiting(); }catch(e){}
       } else {
-        // Race: pollChoices not yet in localStorage; retry shortly
-        setTimeout(()=>{
+        // Race: pollChoices not yet in localStorage; run staged retries
+        let attempts = 0;
+        const schedule = [120, 350, 800, 1500];
+        const statusElId = 'late-join-status';
+        try{
+          let st = document.getElementById(statusElId);
+          if(!st){
+            st = document.createElement('div');
+            st.id = statusElId;
+            st.style.fontSize='0.8rem'; st.style.color='#555'; st.style.margin='6px 0 4px';
+            st.textContent = 'Loading current poll…';
+            const ps = document.getElementById('poll-status'); if(ps) ps.appendChild(st);
+          } else { st.textContent = 'Loading current poll…'; }
+        }catch(e){}
+        function tryLoad(){
           const again = localStorage.getItem('pollChoices');
-          if(again){
-            try{ setPollOptionsVisible(true); if(pollOptions){ pollOptions.classList.add('fade-in'); } }catch(e){}
-            try{ renderPollOrWaiting(); }catch(e){}
-          }
-        }, 250);
+            if(again){
+              try{ const st = document.getElementById(statusElId); if(st) st.textContent=''; }catch(e){}
+              try{ setPollOptionsVisible(true); if(pollOptions){ pollOptions.classList.add('fade-in'); } }catch(e){}
+              try{ renderPollOrWaiting(); }catch(e){}
+              console.log('[late-join] success after attempt', attempts);
+              return;
+            }
+            if(attempts < schedule.length){
+              const delay = schedule[attempts++];
+              console.log('[late-join] retry in', delay,'ms');
+              setTimeout(tryLoad, delay);
+            } else {
+              console.warn('[late-join] pollChoices still missing after retries');
+              try{
+                let st = document.getElementById(statusElId);
+                if(st){
+                  st.innerHTML = 'Poll started but choices not received yet. <button id="lateJoinRetryBtn" style="margin-left:6px;">Retry</button>';
+                  const btn = document.getElementById('lateJoinRetryBtn');
+                  if(btn){ btn.onclick = ()=>{ st.textContent='Retrying…'; attempts=0; setTimeout(tryLoad, 50); }; }
+                }
+              }catch(e){}
+            }
+        }
+        setTimeout(tryLoad, schedule[attempts++]);
       }
     }catch(e){ console.warn('[late-join] reveal failed', e); }
   }
