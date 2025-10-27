@@ -301,10 +301,8 @@
   <div id="name-flow" class="mb-3" style="display:none;">
     <div class="name-panel">
       <div class="name-title">Enter your name to join the vote</div>
-      <div class="name-hint">We use your name so your selections count. You can edit it later.</div>
-      <input type="text" id="nameInput" placeholder="Your name" aria-describedby="nameHint nameError" />
+      <input type="text" id="nameInput" placeholder="Your name" aria-describedby="nameError" />
       <div id="nameError" class="invalid-feedback" role="alert">Please enter your name.</div>
-      <div id="nameHint" class="visually-hidden">Submitting your name enables voting.</div>
       <div class="mb-3 flex-gap name-actions" style="display:none;">
         <button id="submitNameBtn" class="btn cta-primary">Submit Name</button>
         <button id="editNameBtn" class="main-page-btn" style="display:none;">Edit Name</button>
@@ -696,6 +694,14 @@ function htmlEscape(s){ try{ return String(s||'').replace(/&/g,'&amp;').replace(
           // Name submitted but poll not yet published: now show Merc waiting UI
           setPollOptionsVisible(false);
           showWaitingMessage('Wait until the lead has randomly chosen all three books with the slot machine.');
+          // Ensure the Edit Name button remains visible so they can adjust before the vote starts
+          try{
+            setNameControlsVisible(true);
+            if(nameInput){ nameInput.disabled = true; }
+            if(submitNameBtn){ submitNameBtn.style.display='none'; }
+            if(editNameBtn){ editNameBtn.style.display='inline-block'; }
+            if(pollOptions){ pollOptions.classList.remove('poll-needs-name'); }
+          }catch(e){}
           return;
         }
       } 
@@ -891,8 +897,8 @@ function htmlEscape(s){ try{ return String(s||'').replace(/&/g,'&amp;').replace(
     voterName = name;
     nameInput.disabled = true;
     nameInput.style.width = `${name.length + 2}ch`;
-    submitNameBtn.style.display = "none";
-    editNameBtn.style.display = "inline-block";
+  submitNameBtn.style.display = "none";
+  editNameBtn.style.display = "inline-block";
     try{ sessionStorage.setItem('voterName', voterName); }catch(e){}
 
       const checkboxes = document.querySelectorAll('input[type="checkbox"]');
@@ -903,6 +909,10 @@ function htmlEscape(s){ try{ return String(s||'').replace(/&/g,'&amp;').replace(
     // Undim and re-enable poll interactions now that a name is submitted
   try{ if(pollOptions) pollOptions.classList.remove('poll-needs-name'); }catch(e){}
   try{ const ro = document.getElementById('runoff-options'); if(ro) ro.classList.remove('poll-needs-name'); }catch(e){}
+  // Subtle feedback: trigger the same single fade-in used by Merc (no fade-out)
+  try{ const panel = document.querySelector('.name-panel'); if(panel){ panel.classList.remove('fade-in'); void panel.offsetWidth; panel.classList.add('fade-in'); } }catch(e){}
+  // Render waiting or poll UI immediately after name submit
+  try{ renderPollOrWaiting(); }catch(e){}
   // After name is set, push current selections (if any) so other devices reflect them
   try{
     if(window.fbSyncAvailable && typeof window.fbSetVotes === 'function'){
@@ -934,6 +944,8 @@ function htmlEscape(s){ try{ return String(s||'').replace(/&/g,'&amp;').replace(
     submitNameBtn.style.display = "inline-block";
     editNameBtn.style.display = "none";
     voterName = "";
+  // Trigger the same single fade-in used by Merc when entering edit mode
+  try{ const panel = document.querySelector('.name-panel'); if(panel){ panel.classList.remove('fade-in'); void panel.offsetWidth; panel.classList.add('fade-in'); } }catch(e){}
     try{ localStorage.removeItem('voterName'); }catch(e){}
     const checkboxes = document.querySelectorAll('input[type="checkbox"]');
     const labels = document.querySelectorAll('.vote-label');
@@ -1067,9 +1079,16 @@ function htmlEscape(s){ try{ return String(s||'').replace(/&/g,'&amp;').replace(
             <div class="spinner" aria-hidden="true"></div>
           </div>`;
       target.innerHTML = dogHtml;
+      // Animate waiting area with a simple fade-in
+      try{
+        target.classList.remove('fade-in'); void target.offsetWidth; target.classList.add('fade-in');
+      }catch(e){}
       return;
     }
     target.innerHTML = '<div class="text-muted small">'+(msg||'')+'</div>';
+    try{ 
+      target.classList.remove('fade-in'); void target.offsetWidth; target.classList.add('fade-in');
+    }catch(e){}
   }
 
   // Render a tiebreaker runoff with single-choice (radio) voting
@@ -1080,6 +1099,7 @@ function htmlEscape(s){ try{ return String(s||'').replace(/&/g,'&amp;').replace(
       // Hide normal poll UI and waiting status
       setPollOptionsVisible(false);
       const status = document.getElementById('poll-status'); if(status) status.innerHTML='';
+  // Waiting area cleared; no slide transform adjustments needed
       ro.innerHTML = '';
       // Ensure name controls are visible and gating applies
       try{ initNameControlsFromSaved(); }catch(e){}
@@ -1176,6 +1196,7 @@ function htmlEscape(s){ try{ return String(s||'').replace(/&/g,'&amp;').replace(
         if(ro){ ro.style.display='none'; ro.innerHTML=''; }
         if(window.__unsubRunoffVotes){ try{ window.__unsubRunoffVotes(); }catch(e){} window.__unsubRunoffVotes = null; }
       }catch(e){}
+  // Waiting area replaced by winner
       const status = document.getElementById('poll-status');
       if(!status) return;
       const rawBook = String(book||'');
