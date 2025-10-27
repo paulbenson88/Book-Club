@@ -270,6 +270,14 @@
   .confetti-canvas { position: fixed; inset: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 9999; }
   /* Total votes label under the voters list */
   .vote-total { color:#555; font-size:0.85rem; margin-top: 2px; }
+  /* Prominent name entry panel */
+  .name-panel { background:#fff; border:1px solid #e6e6e6; border-radius:10px; padding:12px; box-shadow:0 4px 14px rgba(0,0,0,0.06); max-width:560px; margin:0 auto; }
+  .name-title { font-weight:600; margin-bottom:6px; }
+  .name-hint { color:#666; font-size:0.9rem; margin-bottom:8px; }
+  #nameInput.is-invalid { border-color:#dc3545; box-shadow: 0 0 0 .2rem rgba(220,53,69,.075); }
+  .invalid-feedback { color:#dc3545; font-size:0.85rem; margin-top:6px; display:none; }
+  .invalid-feedback.show { display:block; }
+  @media(max-width:600px){ .name-panel{ padding:10px; } .name-actions .btn{ width:100%; } }
   </style>
 </head>
 
@@ -291,10 +299,16 @@
   <!-- Removed empty .section wrapper that caused a small gray box (fixes #30) -->
   <!-- Name input so voters can identify themselves and enable voting (hidden until poll is published) -->
   <div id="name-flow" class="mb-3" style="display:none;">
-    <input type="text" id="nameInput" placeholder="Enter your name" />
-    <div class="mb-3 flex-gap name-actions" style="display:none;">
-      <button id="submitNameBtn" class="cta-primary">Submit Name</button>
-      <button id="editNameBtn" class="main-page-btn" style="display:none;">Edit Name</button>
+    <div class="name-panel">
+      <div class="name-title">Enter your name to join the vote</div>
+      <div class="name-hint">We use your name so your selections count. You can edit it later.</div>
+      <input type="text" id="nameInput" placeholder="Your name" aria-describedby="nameHint nameError" />
+      <div id="nameError" class="invalid-feedback" role="alert">Please enter your name.</div>
+      <div id="nameHint" class="visually-hidden">Submitting your name enables voting.</div>
+      <div class="mb-3 flex-gap name-actions" style="display:none;">
+        <button id="submitNameBtn" class="btn cta-primary">Submit Name</button>
+        <button id="editNameBtn" class="main-page-btn" style="display:none;">Edit Name</button>
+      </div>
     </div>
   </div>
   <div id="poll-reset-banner" class="poll-reset-banner"></div>
@@ -869,9 +883,11 @@ function htmlEscape(s){ try{ return String(s||'').replace(/&/g,'&amp;').replace(
   function submitName() {
     const name = nameInput.value.trim();
     if (!name) {
-      alert("Please enter your name!");
+      try{ nameInput.classList.add('is-invalid'); const err = document.getElementById('nameError'); if(err){ err.textContent='Please enter your name.'; err.classList.add('show'); } }catch(e){}
+      try{ nameInput.focus(); nameInput.select && nameInput.select(); }catch(e){}
       return;
     }
+    try{ nameInput.classList.remove('is-invalid'); const err = document.getElementById('nameError'); if(err) err.classList.remove('show'); }catch(e){}
     voterName = name;
     nameInput.disabled = true;
     nameInput.style.width = `${name.length + 2}ch`;
@@ -903,6 +919,14 @@ function htmlEscape(s){ try{ return String(s||'').replace(/&/g,'&amp;').replace(
   }catch(e){}
   // Late join enhancement: if user submits name after poll already began, reveal poll with fade-in
   try{ lateJoinRevealIfPollActive(); }catch(e){}
+  // Shift focus to first actionable control (checkbox) or status region for accessibility
+  try{
+    const cb = document.querySelector('#poll-options input[type="checkbox"]');
+    if(cb){ cb.focus(); }
+    else {
+      const st = document.getElementById('poll-status'); if(st){ st.setAttribute('tabindex','-1'); st.focus(); setTimeout(()=> st.removeAttribute('tabindex'), 1000); }
+    }
+  }catch(e){}
   }
   function editName() {
     nameInput.disabled = false;
