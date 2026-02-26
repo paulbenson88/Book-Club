@@ -63,6 +63,13 @@
   }
   .edit-choice-results .list-group-item{ cursor: pointer; padding: 8px 10px; font-size: 0.95rem; }
   .edit-choice-results .list-group-item:hover{ background:#f1f7fb; }
+  /* Prevent unintended capitalization in titles */
+  .slot-machine-title,
+  .slot-scroll-item,
+  .suggested-by,
+  .winner-title {
+    text-transform: none;
+  }
   </style>
   <style>
     /* Admin toast */
@@ -135,7 +142,7 @@
 
   <div id="slot-area">
       <div id="slot-host" class="mt-3">
-          <div id="slot-container" class="d-none">
+          <div id="slot-container">
             <div class="slot-machine-frame">
           <div class="slot-machine-title">BOOK SLOT MACHINE</div>
           <div class="d-flex justify-content-center my-3"><button id="slotSpinBtn" type="button" class="btn spin-center-btn">SPIN</button></div>
@@ -273,6 +280,34 @@
     <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="winnerConfirmTitle">
       <h3 id="winnerConfirmTitle">Winner announced!</h3>
       <p id="winnerConfirmMessage" class="small text-muted">Your announcement was sent to viewers.</p>
+    </div>
+  </div>
+  <!-- Winner follow-up actions modal -->
+  <div id="winnerActionsModal" class="modal-overlay d-none" aria-hidden="true">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="winnerActionsTitle">
+      <h3 id="winnerActionsTitle">Winner follow-up</h3>
+      <p class="small text-muted" style="margin:4px 0 10px 0;">Confirm winner and handle clean-up actions.</p>
+      <div class="small" style="margin-bottom:8px;">Winning book: <strong id="winnerActionsBook">—</strong></div>
+      <div class="form-check mb-2">
+        <input class="form-check-input" type="checkbox" id="winnerActionsRemove" checked>
+        <label class="form-check-label" for="winnerActionsRemove">Delete this winner from the submissions sheet (for everyone)</label>
+      </div>
+      <div class="form-check mb-2">
+        <input class="form-check-input" type="checkbox" id="winnerActionsAdd" checked>
+        <label class="form-check-label" for="winnerActionsAdd">Update “Books Read” (for everyone)</label>
+      </div>
+      <div id="winnerActionsFields" style="margin:10px 0 0 0;">
+        <label class="small text-muted" for="winnerActionsMonth">Month chosen</label>
+        <input id="winnerActionsMonth" type="text" class="form-control" placeholder="February 2026" />
+        <label class="small text-muted" for="winnerActionsSuggested" style="margin-top:8px;">Suggested by (optional)</label>
+        <input id="winnerActionsSuggested" type="text" class="form-control" placeholder="Name" />
+      </div>
+      <div id="winnerActionsError" class="small text-danger" style="display:none;margin-top:8px;">Please enter a month.</div>
+      <div class="modal-actions" style="margin-top:12px;">
+        <button id="winnerActionsCancel" type="button" class="btn btn-outline-secondary">Cancel</button>
+        <button id="winnerActionsConfirm" type="button" class="btn btn-primary">Confirm Winner</button>
+      </div>
+      <p class="small text-muted" style="margin-top:10px;">Requires a Sheets-enabled backend endpoint.</p>
     </div>
   </div>
   <!-- Admin toast container -->
@@ -440,16 +475,14 @@
               if(entries.length===0){
                 // No votes yet; fall back to prompt
                 const manual = prompt('No votes found. Enter the winning book title to announce:');
-                if(manual){ if(window.adminAnnounceWinner) window.adminAnnounceWinner(manual); showAdminToast('Winner announced: '+manual); try{ if(window.showWinnerConfirm) window.showWinnerConfirm(); }catch(e){} }
+                if(manual){ openWinnerActionsModal(manual, state); }
                 return;
               }
               // Find top count and potential ties
               let top = 0; entries.forEach(([_,c])=>{ if(c>top) top=c; });
               const leaders = entries.filter(([_,c])=> c===top).map(([b,_])=> b);
                if(leaders.length===1){
-                 const win = leaders[0]; if(window.adminAnnounceWinner) window.adminAnnounceWinner(win); showAdminToast('Winner announced: '+win); try{ if(window.showWinnerConfirm) window.showWinnerConfirm(); }catch(e){}
-                 // If a runoff was active, end it now to clear the UI state
-                 try{ if(state && state.runoff && state.runoff.active && typeof window.fbEndRunoff === 'function') await window.fbEndRunoff(); }catch(e){}
+                 const win = leaders[0]; openWinnerActionsModal(win, state);
               } else {
                 // Tie — start a runoff with the leaders
                 // Prefer current Firestore pollChoices if available
@@ -464,7 +497,7 @@
                   showAdminToast('Runoff started for tied books');
                 } else {
                   const manual = prompt('Tie detected. Enter the winning book:');
-                  if(manual){ if(window.adminAnnounceWinner) window.adminAnnounceWinner(manual); showAdminToast('Winner announced: '+manual); try{ if(window.showWinnerConfirm) window.showWinnerConfirm(); }catch(e){} }
+                  if(manual){ openWinnerActionsModal(manual, state); }
                 }
               }
               const _pollShare = document.getElementById('poll-share'); if(_pollShare) _pollShare.classList.add('d-none');
@@ -472,7 +505,7 @@
             }
             // Fallback: prompt
             let winner = prompt('Enter the winning book title to announce:');
-            if(winner){ if(window.adminAnnounceWinner) window.adminAnnounceWinner(winner); const _pollShare = document.getElementById('poll-share'); if(_pollShare) _pollShare.classList.add('d-none'); showAdminToast('Winner announced to viewers: '+winner); try{ if(window.showWinnerConfirm) window.showWinnerConfirm(); }catch(e){} }
+            if(winner){ openWinnerActionsModal(winner, null); }
           }catch(e){ console.warn(e); }
         }); }
       }catch(e){}
@@ -540,7 +573,7 @@
         _targetUrl = url || '';
         try{ modal.classList.remove('d-none'); requestAnimationFrame(()=> modal.classList.add('show')); document.body.classList.add('modal-open'); }catch(e){}
       }
-      okBtn && okBtn.addEventListener('click', ()=>{
+      okBtn && okBtn.addEventListener('click', async ()=>{
         try{
           const url = _targetUrl || (window.adminPollUrl || 'pages/voting_poll.html');
           const w = window.open(url, '_blank');
@@ -566,6 +599,154 @@
         }catch(e){}
       }
       window.showWinnerConfirm = show;
+    })();
+
+    // Winner follow-up actions modal
+    (function(){
+      const modal = document.getElementById('winnerActionsModal');
+      const bookEl = document.getElementById('winnerActionsBook');
+      const removeEl = document.getElementById('winnerActionsRemove');
+      const addEl = document.getElementById('winnerActionsAdd');
+      const monthEl = document.getElementById('winnerActionsMonth');
+      const suggEl = document.getElementById('winnerActionsSuggested');
+      const fieldsWrap = document.getElementById('winnerActionsFields');
+      const errEl = document.getElementById('winnerActionsError');
+      const okBtn = document.getElementById('winnerActionsConfirm');
+      const cancelBtn = document.getElementById('winnerActionsCancel');
+      const submissionsUrl = 'https://docs.google.com/spreadsheets/d/1VCHJO67_pYjNWEceSRwb4jotF7GO3L8uFaLo3HUJmnk/edit';
+      let _pendingWinner = '';
+      let _pendingState = null;
+
+      function parseBookParts(raw){
+        const s = String(raw||'').trim();
+        if(s.includes(' - ')){
+          const parts = s.split(' - ');
+          return { title: parts[0].trim(), author: parts.slice(1).join(' - ').trim() };
+        }
+        const idx = s.lastIndexOf('-');
+        if(idx > 0) return { title: s.slice(0, idx).trim(), author: s.slice(idx+1).trim() };
+        return { title: s, author: '' };
+      }
+      function monthLabelNow(){
+        try{ return new Date().toLocaleString('en-US', { month: 'long', year: 'numeric' }); }catch(e){ return ''; }
+      }
+      function formatMonthLabel(value){
+        try{
+          const v = String(value||'').trim();
+          if(!v) return '';
+          // Accept "YYYY-MM" from month input
+          if(/^[0-9]{4}-[0-9]{2}$/.test(v)){
+            const [y,m] = v.split('-');
+            const d = new Date(Number(y), Number(m)-1, 1);
+            return d.toLocaleString('en-US', { month: 'long', year: 'numeric' });
+          }
+          return v;
+        }catch(e){ return String(value||''); }
+      }
+      function normalizeBookKey(s){ return String(s||'').trim().toLowerCase(); }
+      function getSuggestedBy(winner){
+        try{
+          const wKey = normalizeBookKey(winner);
+          let choices = [];
+          try{ choices = JSON.parse(localStorage.getItem('pollChoices')||'[]')||[]; }catch(e){}
+          if(_pendingState && Array.isArray(_pendingState.pollChoices)) choices = _pendingState.pollChoices;
+          const hit = (choices||[]).find(p=> normalizeBookKey(p && p.book) === wKey);
+          return hit && hit.name ? String(hit.name).trim() : '';
+        }catch(e){ return ''; }
+      }
+      function setFieldsEnabled(){
+        const on = !!(addEl && addEl.checked);
+        if(fieldsWrap) fieldsWrap.style.display = on ? 'block' : 'none';
+        if(monthEl) monthEl.disabled = !on;
+        if(suggEl) suggEl.disabled = !on;
+        if(errEl) errEl.style.display = 'none';
+      }
+      function show(){
+        try{ modal.classList.remove('d-none'); requestAnimationFrame(()=> modal.classList.add('show')); document.body.classList.add('modal-open'); }catch(e){}
+      }
+      function hide(){
+        try{ modal.classList.add('d-none'); modal.classList.remove('show'); document.body.classList.remove('modal-open'); }catch(e){}
+      }
+      function getFinalizeWinnerUrl(){
+        try{
+          if(window.FINALIZE_WINNER_URL) return window.FINALIZE_WINNER_URL;
+          const ls = localStorage.getItem('finalizeWinnerUrl');
+          if(ls) return ls;
+          const pid = window.FIREBASE_CONFIG && window.FIREBASE_CONFIG.projectId;
+          if(pid) return `https://us-central1-${pid}.cloudfunctions.net/finalizeWinner`;
+        }catch(e){}
+        return '';
+      }
+      async function finalizeWinnerApi(payload){
+        const url = getFinalizeWinnerUrl();
+        if(!url) throw new Error('Missing finalizeWinner URL');
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        let data = null;
+        try{ data = await res.json(); }catch(e){}
+        if(!res.ok){
+          const msg = (data && (data.detail || data.error)) ? String(data.detail || data.error) : 'Finalize failed';
+          throw new Error(msg);
+        }
+        return data || {};
+      }
+
+      okBtn && okBtn.addEventListener('click', async ()=>{
+        try{
+          if(addEl && addEl.checked){
+            const m = formatMonthLabel(monthEl && monthEl.value);
+            if(!m){ if(errEl) errEl.style.display='block'; return; }
+          }
+          const winner = _pendingWinner;
+          if(winner){
+            const sugg = String(suggEl && suggEl.value || '').trim();
+            if(window.adminAnnounceWinner) window.adminAnnounceWinner(winner, sugg);
+            const _pollShare = document.getElementById('poll-share'); if(_pollShare) _pollShare.classList.add('d-none');
+            showAdminToast('Winner announced: '+winner);
+            try{ if(window.showWinnerConfirm) window.showWinnerConfirm(); }catch(e){}
+            try{ if(_pendingState && _pendingState.runoff && _pendingState.runoff.active && typeof window.fbEndRunoff === 'function') window.fbEndRunoff(); }catch(e){}
+          }
+          try{
+            const parts = parseBookParts(winner);
+            const payload = {
+              winnerTitle: winner,
+              author: parts.author || '',
+              month: formatMonthLabel(monthEl && monthEl.value),
+              suggestedBy: String(suggEl && suggEl.value || '').trim(),
+              removeFromSubmissions: !!(removeEl && removeEl.checked),
+              addToBooksRead: !!(addEl && addEl.checked)
+            };
+            if(payload.addToBooksRead && !payload.month){ if(errEl) errEl.style.display='block'; return; }
+            const resp = await finalizeWinnerApi(payload);
+            showAdminToast(`Sheet updated (deleted ${resp.deletedRows || 0})`);
+          }catch(e){
+            console.warn(e);
+            showAdminToast('Sheet update failed: ' + (e && e.message ? e.message : 'error'));
+          }
+          hide();
+        }catch(e){ console.warn(e); }
+      });
+      cancelBtn && cancelBtn.addEventListener('click', hide);
+      modal && modal.addEventListener('click', (ev)=>{ if(ev.target === modal) hide(); });
+      addEl && addEl.addEventListener('change', setFieldsEnabled);
+
+      window.openWinnerActionsModal = function(winnerTitle, state){
+        _pendingWinner = String(winnerTitle||'').trim();
+        _pendingState = state || null;
+        if(bookEl) bookEl.textContent = _pendingWinner || '—';
+        if(monthEl) monthEl.value = monthLabelNow();
+        if(suggEl){
+          const sugg = getSuggestedBy(_pendingWinner);
+          suggEl.value = sugg || '';
+        }
+        if(removeEl) removeEl.checked = true;
+        if(addEl) addEl.checked = true;
+        setFieldsEnabled();
+        show();
+      };
     })();
 
   // Legacy manual admin poll controls removed (functionality replaced by searchable dropdowns/edit UI in slot machine)

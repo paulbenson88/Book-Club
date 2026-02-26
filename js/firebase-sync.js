@@ -80,8 +80,13 @@
       }catch(e){ warn('clear failed', e); }
     };
 
-    w.fbAnnounceWinner = async function(book){
-      try{ await ensureAuth(); const payload = { winner: { book: String(book||'').trim(), when: new Date().toISOString() } }; await docRef.set(payload, { merge: true }); log('winner', payload); }catch(e){ warn('winner failed', e); }
+    w.fbAnnounceWinner = async function(book, suggestedBy){
+      try{
+        await ensureAuth();
+        const payload = { winner: { book: String(book||'').trim(), suggestedBy: String(suggestedBy||'').trim(), when: new Date().toISOString() } };
+        await docRef.set(payload, { merge: true });
+        log('winner', payload);
+      }catch(e){ warn('winner failed', e); }
     };
 
     w.fbSubscribe = function(onChange){

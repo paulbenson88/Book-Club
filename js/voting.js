@@ -52,14 +52,14 @@
   try{ window.adminPublishPoll = publishPoll; window.adminClearPoll = clearPoll; }catch(e){}
 
   // Announce a final winner to viewers, clear the poll choices, and broadcast the event
-  function announceWinner(book){
+  function announceWinner(book, suggestedBy){
     try{
-      const payload = { book: String(book||'').trim(), when: (new Date()).toISOString() };
+      const payload = { book: String(book||'').trim(), suggestedBy: String(suggestedBy||'').trim(), when: (new Date()).toISOString() };
       try{ localStorage.setItem('pollWinner', JSON.stringify(payload)); }catch(e){}
       try{ localStorage.removeItem('pollChoices'); }catch(e){}
       try{ localStorage.removeItem('pollPublishedAt'); }catch(e){}
       // Push to Firestore
-      try{ if(window.fbSyncAvailable && typeof window.fbAnnounceWinner === 'function') window.fbAnnounceWinner(payload.book); }catch(e){}
+      try{ if(window.fbSyncAvailable && typeof window.fbAnnounceWinner === 'function') window.fbAnnounceWinner(payload.book, payload.suggestedBy); }catch(e){}
       try{ window.dispatchEvent(new CustomEvent('pollWinner', { detail: payload })); }catch(e){}
       try{ if(_bc) _bc.postMessage({ type: 'pollWinner', winner: payload }); }catch(e){}
       // also notify same-window listeners that pollChoices were cleared
@@ -348,11 +348,36 @@
   }
 
   function loadBooksAndRestore(){
-    const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSLdPdPu4pwIwsAjADiCQOXYUJ8ACgWXaJn0DUVgNEy8ZZfc06EUGz2G9imE4gQ9FRs_zoDamhYTHhQ/pub?output=csv";
-    fetch(CSV_URL)
-      .then(r=>r.text()).then(csv=>{
+    const DEFAULT_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSLdPdPu4pwIwsAjADiCQOXYUJ8ACgWXaJn0DUVgNEy8ZZfc06EUGz2G9imE4gQ9FRs_zoDamhYTHhQ/pub?output=csv";
+    const candidates = [
+      (window.sheetCsvUrl || '').trim(),
+      DEFAULT_CSV_URL,
+      '../sheet.csv'
+    ].filter(Boolean);
+
+    function tryFetch(i){
+      if(i >= candidates.length) return Promise.reject(new Error('no csv sources'));
+      return fetch(candidates[i]).then(r=>{
+        if(!r.ok) throw new Error('http '+r.status);
+        return r.text();
+      }).catch(()=> tryFetch(i+1));
+    }
+
+    tryFetch(0)
+      .then(csv=>{
         const parsed = parseCSV(csv);
-        const data = parsed.length>0 ? parsed.slice(1) : [];
+        if(!parsed || parsed.length === 0) throw new Error('empty csv');
+        const header = parsed[0].map(c=> String(c||'').toLowerCase());
+        const hasHeader = header.some(c=> c.includes('book') || c.includes('title') || c.includes('author') || c.includes('suggest') || c.includes('name'));
+        let start = hasHeader ? 1 : 0;
+        let titleIdx = 1, nameIdx = 2;
+        if(hasHeader){
+          const t = header.findIndex(h=> h.includes('book') || h.includes('title'));
+          const n = header.findIndex(h=> h.includes('suggest') || h.includes('name'));
+          titleIdx = t >= 0 ? t : titleIdx;
+          nameIdx = n >= 0 ? n : nameIdx;
+        }
+        const data = parsed.length>start ? parsed.slice(start) : [];
         slotBooks = []; slotNames = [];
         function splitTitleAndAuthor(rawTitle, rawAuthor){
           let title = (rawTitle || '').trim();
@@ -378,8 +403,8 @@
         }
 
         data.forEach(cols => {
-          const rawBook = (cols[1] || '').trim();
-          const rawName = (cols[2] || '').trim();
+          const rawBook = (cols[titleIdx] || '').trim();
+          const rawName = (cols[nameIdx] || '').trim();
           const parsed = splitTitleAndAuthor(rawBook, rawName);
           if(parsed.title){ slotBooks.push(parsed.title); slotNames.push(parsed.author); }
         });
@@ -429,7 +454,7 @@
           }
           updateResetState();
         }
-      }).catch(()=>{ if(slotLoadingDiv) slotLoadingDiv.textContent="Failed to load book list."; slotReels.forEach((r,i)=>{ r.classList.remove('winner'); slotScrolls[i].innerHTML=`<div class="slot-scroll-list"><div class="slot-scroll-item">Error</div></div>`; }); slotStopBtns.forEach(b=>b.disabled=true); if(slotSpinBtn) slotSpinBtn.disabled=true; });
+        }).catch(()=>{ if(slotLoadingDiv) slotLoadingDiv.textContent="Failed to load book list."; slotReels.forEach((r,i)=>{ r.classList.remove('winner'); slotScrolls[i].innerHTML=`<div class=\"slot-scroll-list\"><div class=\"slot-scroll-item\">Error</div></div>`; }); slotStopBtns.forEach(b=>b.disabled=true); if(slotSpinBtn) slotSpinBtn.disabled=true; });
   }
 
   function initAfterDom(){

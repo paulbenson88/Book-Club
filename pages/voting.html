@@ -136,6 +136,13 @@
       color: #28a745;
       animation: winnerPop 0.7s;
     }
+    /* Prevent unintended capitalization in titles */
+    .slot-machine-title,
+    .slot-scroll-item,
+    .suggested-by,
+    .winner-title {
+      text-transform: none;
+    }
     @keyframes winnerPop { 0%{transform:scale(1)}50%{transform:scale(1.08)}100%{transform:scale(1)} }
 
     /* Spin button centered style */

@@ -278,6 +278,8 @@
   .book-links { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
   .book-links a { font-size:0.85rem; }
   .book-links .see-more { color:#0d6efd; text-decoration:underline; cursor:pointer; font-size:0.85rem; }
+  .poll-content label,
+  .winner-title { text-transform: none; }
   /* Prominent name entry panel */
   .name-panel { background:#fff; border:1px solid #e6e6e6; border-radius:10px; padding:12px; box-shadow:0 4px 14px rgba(0,0,0,0.06); max-width:560px; margin:0 auto; }
   .name-title { font-weight:600; margin-bottom:6px; }
@@ -663,6 +665,48 @@ async function resolveAndApplyGoodreads(bookStr, container){
     }
   }catch(_e){}
 }
+function scheduleDescriptionRetry(bookStr, mountEl){
+  try{
+    if(!mountEl) return;
+    const maxAttempts = 3;
+    const attempts = parseInt(mountEl.dataset.descAttempts || '0', 10) || 0;
+    if(attempts >= maxAttempts) return;
+    const delays = [1500, 3500, 8000];
+    const delay = delays[Math.min(attempts, delays.length - 1)];
+    mountEl.dataset.descAttempts = String(attempts + 1);
+    setTimeout(function(){
+      try{
+        if(!mountEl) return;
+        if(mountEl.dataset && mountEl.dataset.full && String(mountEl.dataset.full).trim().length) return;
+        if(mountEl.textContent && mountEl.textContent.trim().length) return;
+        loadBookDescription(bookStr, mountEl);
+      }catch(e){}
+    }, delay);
+  }catch(e){}
+}
+function scheduleDescriptionSweep(rootEl){
+  try{
+    const root = rootEl || document;
+    if(!root) return;
+    const runSweep = function(){
+      try{
+        const descEls = root.querySelectorAll('.book-desc[data-book]');
+        descEls.forEach(function(el){
+          try{
+            const hasFull = el.dataset && el.dataset.full && String(el.dataset.full).trim().length;
+            const hasText = el.textContent && el.textContent.trim().length;
+            if(hasFull || hasText) return;
+            const bk = el.getAttribute('data-book') || '';
+            if(bk) loadBookDescription(bk, el);
+          }catch(_){ }
+        });
+      }catch(e){}
+    };
+    setTimeout(runSweep, 3000);
+    setTimeout(runSweep, 9000);
+    setTimeout(runSweep, 20000);
+  }catch(e){}
+}
 async function loadBookDescription(bookStr, mountEl){
   try{
     if(!mountEl) return;
@@ -716,6 +760,7 @@ async function loadBookDescription(bookStr, mountEl){
     } else {
       // No description available; leave empty to avoid noise
       mountEl.textContent = '';
+      scheduleDescriptionRetry(bookStr, mountEl);
     }
   }catch(e){ try{ mountEl && (mountEl.textContent=''); }catch(_){} }
 }
@@ -1279,6 +1324,17 @@ function htmlEscape(s){ try{ return String(s||'').replace(/&/g,'&amp;').replace(
     try{ updateDebugBanner(); }catch(e){}
     // Prewarm covers for current poll choices (quietly), so winner is instant
     try{ schedulePrewarmPollCovers(); }catch(e){}
+    // Sweep any missing descriptions after render (handles delayed resolver availability)
+    try{
+      const sid = localStorage.getItem('pollSessionId') || '';
+      const lastSid = pollOptions && pollOptions.dataset ? (pollOptions.dataset.descSweepSession||'') : '';
+      if(pollOptions && pollOptions.dataset && sid !== lastSid){
+        pollOptions.dataset.descSweepSession = sid;
+        scheduleDescriptionSweep(pollOptions);
+      } else if(pollOptions){
+        scheduleDescriptionSweep(pollOptions);
+      }
+    }catch(e){}
   }
 
   function isUserVoted(book) {
@@ -1677,6 +1733,12 @@ function htmlEscape(s){ try{ return String(s||'').replace(/&/g,'&amp;').replace(
       if(!status) return;
       const rawBook = String(book||'');
       const safeBook = rawBook.replace(/</g,'&lt;');
+      let safeSuggester = '';
+      try{
+        const w = JSON.parse(localStorage.getItem('pollWinner')||'null');
+        const sugg = w && (w.suggestedBy || w.name || w.suggested_by);
+        if(sugg) safeSuggester = String(sugg).replace(/</g,'&lt;');
+      }catch(e){}
       const searchQuery = rawBook.split(' - ')[0].trim();
       const encoded = encodeURIComponent(searchQuery);
       status.innerHTML = `
@@ -1684,7 +1746,8 @@ function htmlEscape(s){ try{ return String(s||'').replace(/&/g,'&amp;').replace(
           <div class="card shadow-sm" style="padding:16px; text-align:center; max-width:520px; width:100%;">
             <h2 style="margin:0 0 6px 0; font-size:1.4rem;">Winner 🎉</h2>
             <div class="small text-muted">This month's book is:</div>
-            <div style="font-size:1.15rem; font-weight:700; margin-top:10px;">${safeBook}</div>
+            <div class="winner-title" style="font-size:1.15rem; font-weight:700; margin-top:10px;">${safeBook}</div>
+            ${safeSuggester ? `<div class="small text-muted" style="margin-top:6px;">Suggested by: ${safeSuggester}</div>` : ''}
             <div class="winner-cover-wrap"><img id="winner-cover" class="winner-cover" alt="Book cover" width="180" height="270" decoding="async" loading="eager" fetchpriority="high" referrerpolicy="no-referrer" /></div>
             <div class="small text-muted" style="margin-top:14px;">Find this book:</div>
             <div class="winner-links" style="margin-top:8px; display:flex; flex-wrap:wrap; gap:10px; justify-content:center;">
@@ -1795,7 +1858,7 @@ function htmlEscape(s){ try{ return String(s||'').replace(/&/g,'&amp;').replace(
       if(wrap.querySelector('.winner-cover--placeholder')) return;
       const ph = document.createElement('div');
       ph.className = 'winner-cover winner-cover--placeholder ready';
-      ph.innerHTML = '<div class="ph"><span class="ph-line ph-title">This Broke</span><span class="ph-line ph-title">Blame Alice</span></div>';
+      ph.innerHTML = '<div class="ph"><span class="ph-line ph-title">Cover</span><span class="ph-line ph-title">Unavailable</span></div>';
       wrap.appendChild(ph);
     }catch(e){}
   }
