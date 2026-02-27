@@ -74,10 +74,9 @@ exports.resolveGoodreads = onRequest(async (req, res) => {
     }
 
     const resolved = await resolveFromOpenLibrary(q);
-    if (resolved && (resolved.url || resolved.description)) {
-      await saveBookMeta(key, resolved);
-    }
-    return json(res, 200, resolved || { url: '', description: '' });
+    const payload = resolved || { url: '', description: '', source: 'openlibrary' };
+    await saveBookMeta(key, payload, { query: q });
+    return json(res, 200, payload);
   } catch (e) {
     return json(res, 500, { error: 'server_error', detail: String(e) });
   }
@@ -135,7 +134,7 @@ async function getCachedBookMeta(key) {
   } catch (_) { return null; }
 }
 
-async function saveBookMeta(key, meta) {
+async function saveBookMeta(key, meta, opts) {
   try {
     if (!key) return;
     const db = admin.firestore();
@@ -145,7 +144,8 @@ async function saveBookMeta(key, meta) {
       url: meta.url || '',
       description: meta.description || '',
       source: meta.source || 'openlibrary',
-      updatedAt: Date.now()
+      updatedAt: Date.now(),
+      lastQuery: (opts && opts.query) ? String(opts.query) : ''
     };
     await db.collection(BOOK_META_COLLECTION).doc(docId).set(payload, { merge: true });
   } catch (_) {}
