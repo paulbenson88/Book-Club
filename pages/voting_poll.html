@@ -392,6 +392,9 @@ function buildGoodreadsUrl(bookStr){
   // Fallback search URL; will be replaced with deep link when resolved
   try{ const {title, author} = parseBookParts(bookStr); return 'https://www.goodreads.com/search?q=' + encodeURIComponent(title + (author?(' '+author):'')); }catch(e){ return 'https://www.goodreads.com/'; }
 }
+function normalizeBookKey(s){
+  try{ return String(s||'').toLowerCase().replace(/\s*-[\s\u00A0]*?/g,' - ').replace(/\s+/g,' ').trim(); }catch(e){ return String(s||'').toLowerCase().trim(); }
+}
 function trimToPreview(text, opts){
   try{
     const s0 = String(text||'');
@@ -466,6 +469,28 @@ async function ensureGoodreadsOverridesLoaded(){
       }catch(_){ /* try next */ }
     }
   }catch(e){ window.__grOverrides = window.__grOverrides || {}; }
+}
+// Summary overrides loader (optional JSON in repo)
+async function ensureSummaryOverridesLoaded(){
+  try{
+    if(typeof window.__summaryOverrides !== 'undefined') return;
+    window.__summaryOverrides = {};
+    const candidates = [
+      '../book-summaries.json',
+      '/book-summaries.json',
+      './book-summaries.json'
+    ];
+    for(const url of candidates){
+      try{
+        const res = await fetch(url, {credentials:'omit'});
+        if(res && res.ok){
+          const data = await res.json();
+          if(data && typeof data === 'object'){ window.__summaryOverrides = data; }
+          break;
+        }
+      }catch(_){ /* try next */ }
+    }
+  }catch(e){ window.__summaryOverrides = window.__summaryOverrides || {}; }
 }
 async function tryFetchOpenLibraryDescription(bookStr){
   try{
@@ -720,6 +745,17 @@ function scheduleDescriptionSweep(rootEl){
 async function loadBookDescription(bookStr, mountEl){
   try{
     if(!mountEl) return;
+    // Summary overrides from JSON
+    try{
+      await ensureSummaryOverridesLoaded();
+      const override = window.__summaryOverrides && window.__summaryOverrides[normalizeBookKey(bookStr)];
+      if(override && String(override).trim().length){
+        const full = String(override).trim();
+        applyDescWithToggle(mountEl, full);
+        try{ localStorage.setItem('bookDesc:'+bookStr, JSON.stringify({text: full, at: Date.now()})); }catch(e){}
+        return;
+      }
+    }catch(_){ }
     const key = 'bookDesc:'+bookStr;
     // read-through cache
     let cached = null; let cachedAt = 0;
