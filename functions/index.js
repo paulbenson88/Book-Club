@@ -2,10 +2,14 @@ const { onRequest } = require('firebase-functions/v2/https');
 const { setGlobalOptions } = require('firebase-functions/v2');
 const admin = require('firebase-admin');
 const { google } = require('googleapis');
+const crypto = require('crypto');
 
 try { admin.initializeApp(); } catch (_) {}
 
 setGlobalOptions({ region: 'us-central1', timeoutSeconds: 20, memoryMiB: 256, maxInstances: 2 });
+
+const BOOK_META_TTL_MS = 0; // 0 = no expiry
+const BOOK_META_COLLECTION = 'bookMeta';
 
 exports.finalizeWinner = onRequest(async (req, res) => {
   // CORS
@@ -50,9 +54,183 @@ exports.finalizeWinner = onRequest(async (req, res) => {
   }
 });
 
+// Resolve Goodreads link + description and cache results in Firestore
+exports.resolveGoodreads = onRequest(async (req, res) => {
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Methods', 'GET,OPTIONS');
+  res.set('Access-Control-Allow-Headers', 'Content-Type');
+  res.set('Vary', 'Origin');
+  if (req.method === 'OPTIONS') return res.status(204).send('');
+  if (req.method !== 'GET') return json(res, 405, { error: 'method_not_allowed' });
+
+  try {
+    const q = String(req.query.q || '').trim();
+    if (!q) return json(res, 400, { error: 'missing_query' });
+
+    const key = normalizeBookKey(q);
+    const cached = await getCachedBookMeta(key);
+    if (cached && (cached.url || cached.description)) {
+      return json(res, 200, cached);
+    }
+
+    const resolved = await resolveFromOpenLibrary(q);
+    if (resolved && (resolved.url || resolved.description)) {
+      await saveBookMeta(key, resolved);
+    }
+    return json(res, 200, resolved || { url: '', description: '' });
+  } catch (e) {
+    return json(res, 500, { error: 'server_error', detail: String(e) });
+  }
+});
+
+// Read cached metadata only (fast path for clients)
+exports.getBookMeta = onRequest(async (req, res) => {
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Methods', 'GET,OPTIONS');
+  res.set('Access-Control-Allow-Headers', 'Content-Type');
+  res.set('Vary', 'Origin');
+  if (req.method === 'OPTIONS') return res.status(204).send('');
+  if (req.method !== 'GET') return json(res, 405, { error: 'method_not_allowed' });
+
+  try {
+    const q = String(req.query.q || '').trim();
+    if (!q) return json(res, 400, { error: 'missing_query' });
+    const key = normalizeBookKey(q);
+    const cached = await getCachedBookMeta(key);
+    return json(res, 200, cached || { url: '', description: '' });
+  } catch (e) {
+    return json(res, 500, { error: 'server_error', detail: String(e) });
+  }
+});
+
 function json(res, status, obj) {
   res.set('Content-Type', 'application/json; charset=utf-8');
   return res.status(status || 200).send(JSON.stringify(obj));
+}
+
+function normalizeBookKey(s) {
+  try {
+    const parts = parseBookParts(s);
+    const t = String(parts.title || '').toLowerCase().replace(/\s+/g, ' ').trim();
+    const a = String(parts.author || '').toLowerCase().replace(/\s+/g, ' ').trim();
+    return a ? `${t} - ${a}` : t;
+  } catch (_) { return String(s || '').toLowerCase().trim(); }
+}
+
+function bookMetaDocId(key) {
+  return crypto.createHash('sha1').update(key).digest('hex');
+}
+
+async function getCachedBookMeta(key) {
+  try {
+    if (!key) return null;
+    const db = admin.firestore();
+    const docId = bookMetaDocId(key);
+    const snap = await db.collection(BOOK_META_COLLECTION).doc(docId).get();
+    if (!snap.exists) return null;
+    const data = snap.data() || {};
+    const updatedAt = Number(data.updatedAt || 0);
+    if (BOOK_META_TTL_MS && updatedAt && (Date.now() - updatedAt > BOOK_META_TTL_MS)) return null;
+    return { url: data.url || '', description: data.description || '', source: data.source || 'cache' };
+  } catch (_) { return null; }
+}
+
+async function saveBookMeta(key, meta) {
+  try {
+    if (!key) return;
+    const db = admin.firestore();
+    const docId = bookMetaDocId(key);
+    const payload = {
+      key,
+      url: meta.url || '',
+      description: meta.description || '',
+      source: meta.source || 'openlibrary',
+      updatedAt: Date.now()
+    };
+    await db.collection(BOOK_META_COLLECTION).doc(docId).set(payload, { merge: true });
+  } catch (_) {}
+}
+
+async function fetchWithTimeout(url, timeoutMs) {
+  const ctrl = new AbortController();
+  const id = setTimeout(() => ctrl.abort(), timeoutMs || 4000);
+  try {
+    return await fetch(url, { signal: ctrl.signal, redirect: 'follow' });
+  } finally {
+    clearTimeout(id);
+  }
+}
+
+async function resolveFromOpenLibrary(bookStr) {
+  try {
+    const parts = parseBookParts(bookStr);
+    const title = parts.title || bookStr;
+    const author = parts.author || '';
+    const qs = new URLSearchParams({ title, author, limit: '5' });
+    const searchUrl = `https://openlibrary.org/search.json?${qs.toString()}`;
+    const sres = await fetchWithTimeout(searchUrl, 3500);
+    if (!sres.ok) return { url: '', description: '' };
+    const sj = await sres.json();
+    const docs = Array.isArray(sj && sj.docs) ? sj.docs : [];
+    if (!docs.length) return { url: '', description: '' };
+
+    let description = '';
+    let url = '';
+
+    const doc = docs[0];
+    if (doc) {
+      // Goodreads direct id
+      if (Array.isArray(doc.id_goodreads) && doc.id_goodreads.length) {
+        const id = String(doc.id_goodreads[0]).replace(/[^0-9]/g, '');
+        if (id) url = `https://www.goodreads.com/book/show/${id}`;
+      }
+      // Work description
+      const workKey = (doc.key && String(doc.key).startsWith('/works/')) ? doc.key : (Array.isArray(doc.work_key) && doc.work_key[0] ? (`/works/${doc.work_key[0]}`) : '');
+      if (workKey) {
+        try {
+          const wres = await fetchWithTimeout(`https://openlibrary.org${workKey}.json`, 3500);
+          if (wres.ok) {
+            const wj = await wres.json();
+            let desc = wj && wj.description;
+            if (desc && typeof desc === 'object' && desc.value) desc = desc.value;
+            if (!desc && wj && wj.first_sentence) {
+              desc = typeof wj.first_sentence === 'string' ? wj.first_sentence : (wj.first_sentence && wj.first_sentence.value) || '';
+            }
+            if (desc) description = String(desc);
+            if (!url && Array.isArray(wj && wj.links)) {
+              const gl = wj.links.find(l => l && l.url && /goodreads\.com/i.test(l.url));
+              if (gl && gl.url) url = gl.url;
+            }
+          }
+        } catch (_) {}
+      }
+      // Editions for Goodreads or ISBN fallback
+      if (!url) {
+        const eds = Array.isArray(doc.edition_key) ? doc.edition_key.slice(0, 3) : [];
+        for (const ed of eds) {
+          try {
+            const eres = await fetchWithTimeout(`https://openlibrary.org/books/${ed}.json`, 3000);
+            if (!eres.ok) continue;
+            const ej = await eres.json();
+            const ids = (ej && ej.identifiers) || {};
+            const gr = ids.goodreads || ids['goodreads'];
+            if (Array.isArray(gr) && gr.length) {
+              const id = String(gr[0]).replace(/[^0-9]/g, '');
+              if (id) { url = `https://www.goodreads.com/book/show/${id}`; break; }
+            }
+            const isbn13 = Array.isArray(ids.isbn_13) && ids.isbn_13[0];
+            const isbn10 = Array.isArray(ids.isbn_10) && ids.isbn_10[0];
+            const isbn = (isbn13 || isbn10 || '').toString().replace(/[^0-9Xx]/g, '');
+            if (isbn) { url = `https://www.goodreads.com/book/isbn/${isbn}`; break; }
+          } catch (_) {}
+        }
+      }
+    }
+
+    return { url: url || '', description: description || '', source: 'openlibrary' };
+  } catch (_) {
+    return { url: '', description: '' };
+  }
 }
 
 function getSheetsConfig() {
