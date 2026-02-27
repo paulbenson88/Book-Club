@@ -9,3 +9,7 @@ tmp_issue*.md
 # local tunnel binaries
 cloudflared.exe
 ngrok.exe
+
+# dependencies
+node_modules/
+functions/node_modules/
