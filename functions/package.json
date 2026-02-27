@@ -6,6 +6,9 @@
     "node": ">=20"
   },
   "main": "index.js",
+  "scripts": {
+    "backfill:bookmeta": "node scripts/backfill-book-meta.js"
+  },
   "dependencies": {
     "firebase-admin": "^11.11.1",
     "firebase-functions": "^7.0.6",
