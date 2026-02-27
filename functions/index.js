@@ -74,7 +74,10 @@ exports.resolveGoodreads = onRequest(async (req, res) => {
     }
 
     const resolved = await resolveFromOpenLibrary(q);
-    const payload = resolved || { url: '', description: '', source: 'openlibrary' };
+    const payload = resolved || { url: '', description: '', summary: '', source: 'openlibrary' };
+    if(!payload.summary && payload.description){
+      payload.summary = toOneLiner(payload.description);
+    }
     await saveBookMeta(key, payload, { query: q });
     return json(res, 200, payload);
   } catch (e) {
@@ -130,7 +133,7 @@ async function getCachedBookMeta(key) {
     const data = snap.data() || {};
     const updatedAt = Number(data.updatedAt || 0);
     if (BOOK_META_TTL_MS && updatedAt && (Date.now() - updatedAt > BOOK_META_TTL_MS)) return null;
-    return { url: data.url || '', description: data.description || '', source: data.source || 'cache' };
+    return { url: data.url || '', description: data.description || '', summary: data.summary || '', source: data.source || 'cache' };
   } catch (_) { return null; }
 }
 
@@ -143,6 +146,7 @@ async function saveBookMeta(key, meta, opts) {
       key,
       url: meta.url || '',
       description: meta.description || '',
+      summary: meta.summary || '',
       source: meta.source || 'openlibrary',
       updatedAt: Date.now(),
       lastQuery: (opts && opts.query) ? String(opts.query) : ''
@@ -227,10 +231,22 @@ async function resolveFromOpenLibrary(bookStr) {
       }
     }
 
-    return { url: url || '', description: description || '', source: 'openlibrary' };
+    const summary = description ? toOneLiner(description) : '';
+    return { url: url || '', description: description || '', summary, source: 'openlibrary' };
   } catch (_) {
-    return { url: '', description: '' };
+    return { url: '', description: '', summary: '' };
   }
+}
+
+function toOneLiner(text){
+  try{
+    const s = String(text||'').replace(/\s+/g,' ').trim();
+    if(!s) return '';
+    const parts = s.match(/[^.!?]+[.!?]/g) || [s];
+    let out = parts[0].trim();
+    if(out.length > 200) out = out.slice(0, 199).replace(/[\s,;:]+$/,'') + '…';
+    return out;
+  }catch(_){ return ''; }
 }
 
 function getSheetsConfig() {

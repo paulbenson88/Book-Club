@@ -417,6 +417,16 @@ function trimToPreview(text, opts){
     return out;
   }catch(e){ return ''; }
 }
+function toOneLiner(text){
+  try{
+    const s = String(text||'').replace(/\s+/g,' ').trim();
+    if(!s) return '';
+    const parts = s.match(/[^.!?]+[.!?]/g) || [s];
+    let out = parts[0].trim();
+    if(out.length > 200) out = out.slice(0, 199).replace(/[\s,;:]+$/,'') + '…';
+    return out;
+  }catch(e){ return ''; }
+}
 async function fetchWithTimeout(url, ms){
   const ctrl = new AbortController(); const id = setTimeout(()=>ctrl.abort(), ms||2500);
   try{ const res = await fetch(url, {signal: ctrl.signal, credentials:'omit'}); return res; } finally { clearTimeout(id); }
@@ -431,7 +441,7 @@ async function fetchBookMetaIfAvailable(bookStr){
     const enc = encodeURIComponent(bookStr);
     const url = root + '/getBookMeta?q=' + enc;
     const resp = await fetchWithTimeout(url, 4000);
-    if(resp && resp.ok){ const data = await resp.json().catch(()=>null); if(data && (data.url || data.description)) return data; }
+    if(resp && resp.ok){ const data = await resp.json().catch(()=>null); if(data && (data.url || data.description || data.summary)) return data; }
     return null;
   }catch(_){ return null; }
 }
@@ -710,16 +720,6 @@ function scheduleDescriptionSweep(rootEl){
 async function loadBookDescription(bookStr, mountEl){
   try{
     if(!mountEl) return;
-    // Static overrides for curated blurbs (e.g., Goodreads copy)
-    const BOOK_DESC_OVERRIDES = {
-      "You Shouldn't Have Come Here - Jeneva Rose": "Grace Evans, an overworked New Yorker looking for a total escape from her busy life, books an Airbnb on a ranch in the middle of Wyoming. When she arrives, she's pleasantly surprised to find that the owner is a handsome man by the name of Calvin Wells. But there are things Grace discovers that she's not too pleased about: A lack of cell phone service. A missing woman. And a feeling that something isn't right with the town. Despite her uneasiness and misgivings from Calvin's friends and family, the two grow close and start to fall for one another. However, as her departure date nears, things between them start to change for the worse. Grace grows wary of Calvin as his infatuation for her seems to turn into obsession. Calvin fears that Grace is hiding something from him. Told from dual points of view, You Shouldn't Have Come Here is a thrill ride and a cautionary tale of what can go wrong when you open up your house and your heart to a total stranger."
-    };
-    if(BOOK_DESC_OVERRIDES[bookStr]){
-      const full = String(BOOK_DESC_OVERRIDES[bookStr]||'').trim();
-      applyDescWithToggle(mountEl, full);
-      try{ localStorage.setItem('bookDesc:'+bookStr, JSON.stringify({text: full, at: Date.now()})); }catch(e){}
-      return;
-    }
     const key = 'bookDesc:'+bookStr;
     // read-through cache
     let cached = null; let cachedAt = 0;
@@ -729,12 +729,14 @@ async function loadBookDescription(bookStr, mountEl){
       applyDescWithToggle(mountEl, cached);
       return;
     }
-    // Prepare holder and try Firestore-cached description first (if hosted on Firebase)
+    // Prepare holder and try Firestore-cached summary/description first (if hosted on Firebase)
     let fullText = '';
     try{
       const meta = await fetchBookMetaIfAvailable(bookStr);
-      if(meta && meta.description && String(meta.description).trim().length){
-        fullText = String(meta.description).trim();
+      if(meta && meta.summary && String(meta.summary).trim().length){
+        fullText = String(meta.summary).trim();
+      } else if(meta && meta.description && String(meta.description).trim().length){
+        fullText = toOneLiner(String(meta.description).trim());
       }
     }catch(_){ }
     // Then try server-side Goodreads description (respects CORS)
@@ -747,13 +749,18 @@ async function loadBookDescription(bookStr, mountEl){
         const resp = await fetchWithTimeout(endpoint, 4500);
         if(resp && resp.ok){
           const data = await resp.json().catch(()=>null);
+          const summary = data && data.summary;
           const desc = data && data.description;
-          if(desc && String(desc).trim().length){ fullText = String(desc).trim(); }
+          if(summary && String(summary).trim().length){ fullText = String(summary).trim(); }
+          else if(desc && String(desc).trim().length){ fullText = toOneLiner(String(desc).trim()); }
         }
       }
     }catch(_){ /* fall back */ }
     // Fallback to Open Library description if server couldn't provide one
-    if(!fullText){ fullText = await tryFetchOpenLibraryDescription(bookStr); }
+    if(!fullText){
+      const raw = await tryFetchOpenLibraryDescription(bookStr);
+      fullText = toOneLiner(raw);
+    }
     if(fullText && fullText.length){
       applyDescWithToggle(mountEl, fullText);
       try{ localStorage.setItem(key, JSON.stringify({text: fullText, at: now})); }catch(e){}
