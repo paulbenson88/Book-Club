@@ -160,7 +160,7 @@
                 <input type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" class="form-control edit-choice-input" placeholder="Search or choose a book..." aria-label="Search or choose a book" />
                 <datalist id="edit-choice-list-0" class="edit-choice-datalist"></datalist>
                 <div class="edit-choice-results list-group d-none" aria-hidden="true"></div>
-                <div class="small text-muted mt-1">Select a book to replace this reel.</div>
+                <div class="small text-muted mt-1">Select a book to replace this book.</div>
               </div>
                <div class="suggested-by text-muted small mt-1 text-center">Suggested by: <span id="suggested1-name"></span></div>
             </div>
@@ -173,7 +173,7 @@
                 <input type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" class="form-control edit-choice-input" placeholder="Search or choose a book..." aria-label="Search or choose a book" />
                 <datalist id="edit-choice-list-1" class="edit-choice-datalist"></datalist>
                 <div class="edit-choice-results list-group d-none" aria-hidden="true"></div>
-                <div class="small text-muted mt-1">Select a book to replace this reel.</div>
+                <div class="small text-muted mt-1">Select a book to replace this book.</div>
               </div>
               <div class="suggested-by text-muted small mt-1 text-center">Suggested by: <span id="suggested2-name"></span></div>
             </div>
@@ -186,7 +186,7 @@
                 <input type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" class="form-control edit-choice-input" placeholder="Search or choose a book..." aria-label="Search or choose a book" />
                 <datalist id="edit-choice-list-2" class="edit-choice-datalist"></datalist>
                 <div class="edit-choice-results list-group d-none" aria-hidden="true"></div>
-                <div class="small text-muted mt-1">Select a book to replace this reel.</div>
+                <div class="small text-muted mt-1">Select a book to replace this book.</div>
               </div>
               <div class="suggested-by text-muted small mt-1 text-center">Suggested by: <span id="suggested3-name"></span></div>
             </div>
@@ -194,7 +194,6 @@
           <div id="slotResult" class="slot-result"></div>
           <div class="poll-action-bar">
             <button id="forcePublishBtn" type="button" class="btn btn-success">Submit choices / Create Vote</button>
-            <button id="forceClearBtn" type="button" class="btn btn-outline-danger btn-sm" title="Clears current poll choices and votes after confirmation">Clear Poll</button>
             <button id="announceWinnerBtn" type="button" class="btn btn-warning">All votes in — Announce Winner</button>
           </div>
           <div id="slotLoading" class="text-muted text-center mt-2 small">Loading book list...</div>
@@ -508,7 +507,6 @@
       // Admin force publish button (ensures poll is only published when admin confirms)
       try{
         const forceBtn = document.getElementById('forcePublishBtn');
-        const forceClear = document.getElementById('forceClearBtn');
         const announceBtn = document.getElementById('announceWinnerBtn');
   if(forceBtn){ forceBtn.addEventListener('click', (ev)=>{ try{ ev && ev.preventDefault && ev.preventDefault(); if(window.adminPublishPoll) window.adminPublishPoll(); try{ showAdminToast('Poll published'); }catch(_e){} console.log('[admin] forcePublish clicked'); try{ if(window.showAdminPollShare) window.showAdminPollShare(); else { const _ps = document.getElementById('poll-share'); if(_ps){ _ps.classList.remove('d-none'); _ps.style.display='block'; try{ if(window.renderAdminPollQR) window.renderAdminPollQR(); }catch(e){} } } }catch(e){}
             try{
@@ -519,32 +517,6 @@
                 .catch((err)=>{ console.warn('[admin] sendPollPublished failed', err); try{ if(err && err.code === 'rate_limited'){ showAdminToast('WhatsApp rate-limited: try again later'); } else { showAdminToast('WhatsApp send failed (poll link)'); } setWhatsAppStatus('WhatsApp: last send failed (poll link)', 'err'); }catch(_e){} });
             }catch(_e){}
           }catch(e){ console.warn(e); } }); }
-        // Make Clear Poll harder to press accidentally: two-step confirm with timeout
-        if(forceClear){
-          let __clearConfirm = 0; let __clearTimer = 0;
-          const resetClearBtn = ()=>{ try{ __clearConfirm = 0; forceClear.textContent = 'Clear Poll'; forceClear.classList.remove('btn-danger'); forceClear.classList.add('btn-outline-danger','btn-sm'); }catch(e){} };
-          forceClear.addEventListener('click', ()=>{
-            try{
-              if(__clearConfirm === 0){
-                __clearConfirm = 1;
-                forceClear.textContent = 'Confirm Clear';
-                forceClear.classList.remove('btn-outline-danger','btn-sm');
-                forceClear.classList.add('btn-danger');
-                clearTimeout(__clearTimer);
-                __clearTimer = setTimeout(resetClearBtn, 3000);
-                return;
-              }
-              clearTimeout(__clearTimer);
-              resetClearBtn();
-              if(window.adminClearPoll) window.adminClearPoll();
-              console.log('[admin] forceClear confirmed');
-              const _pollShare = document.getElementById('poll-share'); if(_pollShare) _pollShare.classList.add('d-none');
-              try{ showAdminToast('Poll cleared'); }catch(e){}
-            }catch(e){ console.warn(e); }
-          });
-          // If the button loses focus, reset the confirm state
-          forceClear.addEventListener('blur', resetClearBtn);
-        }
         if(announceBtn){ announceBtn.addEventListener('click', async ()=>{
           try{
             // If Firebase is available, compute from votes; handle runoff ties

@@ -215,6 +215,129 @@
   .wait-dog { width:220px; max-width:90%; border-radius:12px; box-shadow:0 6px 18px rgba(0,0,0,0.12); }
   .wait-text { font-size:1.05em; color:#333; max-width:380px; text-align:center; }
   .wait-sub { color:#666; font-size:0.95em; }
+  .site-nav { margin: 0.02rem 0 0.04rem; display:none !important; }
+  .site-nav .main-page-btn { padding: 0.32rem 0.72rem; font-size: 0.86rem; border-radius: 8px; }
+  .container { margin-top: 0.02rem; }
+  .card { margin-top: 0; }
+  .card-body { padding-top: 0.22rem; }
+  .card-title.poll-title { margin: 0; display:none !important; }
+  #live-slot-preview { margin-top: 0; }
+  .live-slot-preview { margin-bottom: 8px; }
+  .live-slot-machine {
+    background: linear-gradient(180deg, #2f3a52 0%, #1f2738 100%);
+    border: 2px solid #d4af37;
+    border-radius: 14px;
+    padding: 10px;
+    box-shadow: 0 8px 22px rgba(0,0,0,0.22);
+  }
+  .live-slot-title {
+    font-weight: 800;
+    font-size: 1rem;
+    color: #ffe082;
+    text-align: center;
+    letter-spacing: 0.4px;
+    margin-bottom: 8px;
+  }
+  .live-slot-grid { display: grid; grid-template-columns: 1fr; gap: 5px; }
+  .live-slot-reel {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.14);
+    border-radius: 10px;
+    padding: 5px;
+  }
+  .live-slot-slot-label {
+    font-size: 0.74rem;
+    font-weight: 700;
+    color: #d6e2ff;
+    letter-spacing: 0.5px;
+    margin-bottom: 3px;
+    text-transform: uppercase;
+    text-align: center;
+  }
+  .live-slot-window {
+    position: relative;
+    overflow: hidden;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    min-height: 74px;
+    padding: 8px 10px;
+  }
+  .live-slot-item-main { font-size: 1rem; font-weight: 700; color: #1f2937; line-height: 1.25; text-align: center; }
+  .live-slot-item-author { font-size: 0.9rem; font-weight: 600; color: #374151; line-height: 1.2; margin-top: 3px; text-align: center; }
+  .live-slot-item-sub { font-size: 0.84rem; color: #4b5563; margin-top: 2px; text-align: center; }
+  .live-slot-window.live-slot-spinning .live-slot-item-main { color: #0d6efd; }
+  .live-slot-window.live-slot-pending .live-slot-item-main { color: #6b7280; font-weight: 600; }
+  .live-slot-window.live-slot-spinning,
+  .live-slot-window.live-slot-slowing {
+    height: 144px;
+    min-height: 144px;
+    padding: 0;
+    background: #f8fafc;
+  }
+  .live-slot-window.live-slot-stopped {
+    height: 144px;
+    min-height: 144px;
+    padding: 0;
+    background: #f8fafc;
+  }
+  .live-slot-stopped-content {
+    height: 100%;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 8px 10px;
+    box-sizing: border-box;
+  }
+  .live-slot-track {
+    display: flex;
+    flex-direction: column;
+    animation: slotRoll 7.2s linear infinite;
+    will-change: transform;
+  }
+  .live-slot-window.live-slot-slowing .live-slot-track {
+    animation: slotRollSlow 8.4s linear 1 forwards;
+  }
+  .live-slot-track-item {
+    height: 48px;
+    min-height: 48px;
+    padding: 6px 9px;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background: #fff;
+    box-sizing: border-box;
+  }
+  .live-slot-track-item:nth-child(odd) { background: #f9fafb; }
+  .live-slot-track-title { font-size: 0.92rem; font-weight: 700; color: #1f2937; line-height: 1.2; text-align: center; }
+  .live-slot-track-sub { font-size: 0.76rem; color: #4b5563; margin-top: 2px; text-align: center; }
+  .live-slot-window.live-slot-flash {
+    animation: slotFlash 900ms ease-out;
+    box-shadow: 0 0 0 2px rgba(255,193,7,0.5), 0 0 24px rgba(255,193,7,0.35);
+  }
+  @keyframes slotRoll {
+    from { transform: translateY(0); }
+    to { transform: translateY(-50%); }
+  }
+  @keyframes slotRollSlow {
+    0% { transform: translateY(var(--slot-slow-start, 0%)); }
+    20% { transform: translateY(var(--slot-slow-p20, -8.7%)); }
+    40% { transform: translateY(var(--slot-slow-p40, -15.4%)); }
+    60% { transform: translateY(var(--slot-slow-p60, -20.2%)); }
+    80% { transform: translateY(var(--slot-slow-p80, -23.0%)); }
+    92% { transform: translateY(var(--slot-slow-p92, -23.85%)); }
+    100% { transform: translateY(var(--slot-slow-end, -28%)); }
+  }
+  @keyframes slotFlash {
+    0% { transform: scale(1); }
+    22% { transform: scale(1.02); }
+    100% { transform: scale(1); }
+  }
   .spinner { width:48px; height:48px; border:5px solid #eee; border-top-color:#007bff; border-radius:50%; animation:spin 1s linear infinite; }
   @keyframes spin { to { transform:rotate(360deg); } }
   .dog-bob { animation: bob 2s ease-in-out infinite; }
@@ -238,7 +361,7 @@
   /* Dim and disable poll area until voter submits name */
   .poll-needs-name { opacity: 0.6; pointer-events: none; }
   /* Center the poll title (scoped to this page) */
-  .poll-title { text-align:center; }
+  .poll-title { text-align:center; display:none !important; }
   /* Winner cover */
   .winner-cover-wrap { display:flex; justify-content:center; margin-top:12px; }
   .winner-cover { width: 180px; height: 270px; object-fit: cover; border-radius: 6px; box-shadow: 0 6px 18px rgba(0,0,0,0.15); opacity: 0; transition: opacity 280ms ease; background: #f4f4f4; }
@@ -263,13 +386,23 @@
       #poll-options { overflow: visible; }
     }
   /* Make the name input responsive so it can't overflow the card */
-  #nameInput { width:100% !important; max-width:100% !important; box-sizing:border-box !important; display:block; }
+  #nameInput {
+    width:100% !important;
+    max-width:100% !important;
+    box-sizing:border-box !important;
+    display:block;
+    font-size:16px !important;
+    line-height:1.25;
+    -webkit-text-size-adjust:100%;
+  }
   /* Add extra breathing room between the name input and action buttons */
   .name-actions { margin-top:12px !important; gap:12px !important; }
   /* Confetti overlay */
   .confetti-canvas { position: fixed; inset: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 9999; }
   /* Total votes label under the voters list */
   .vote-total { color:#555; font-size:0.85rem; margin-top: 2px; }
+  .poll-top-row { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+  .inline-edit-name-btn { padding:2px 8px !important; font-size:0.74rem !important; line-height:1.15; border-radius:6px; }
 
   /* Book metadata: short description and outward links */
   .book-meta { margin-top: 6px; display: flex; flex-direction: column; gap: 6px; }
@@ -283,6 +416,31 @@
   /* Prominent name entry panel */
   .name-panel { background:#fff; border:1px solid #e6e6e6; border-radius:10px; padding:12px; box-shadow:0 4px 14px rgba(0,0,0,0.06); max-width:560px; margin:0 auto; }
   .name-title { font-weight:600; margin-bottom:6px; }
+  #name-flow.name-saved .name-panel { padding:3px 4px; border-color:#eef2f7; box-shadow:none; max-width:130px; margin-left:auto; margin-right:0; background:transparent; }
+  #name-flow.name-saved .name-title { display:none !important; }
+  #name-flow.name-saved #nameInput { display:none !important; }
+  #name-flow.name-saved .name-actions { display:flex !important; justify-content:flex-end !important; margin-top:0 !important; gap:4px !important; }
+  #name-flow.name-saved #submitNameBtn { display:none !important; }
+  #name-flow.name-saved #editNameBtn { display:inline-block !important; padding:2px 8px !important; font-size:0.74rem !important; line-height:1.15; border-radius:6px; }
+  #name-flow.compact .name-panel { padding:4px 6px; border-color:#eef2f7; box-shadow:none; max-width:220px; margin-left:auto; margin-right:0; background:transparent; }
+  #name-flow.compact .name-title { display:none; }
+  #name-flow.compact #nameInput { display:none !important; }
+  #name-flow.compact .name-actions { margin-top:0 !important; gap:6px !important; justify-content:flex-end; }
+  #name-flow.compact #submitNameBtn { display:none !important; }
+  #name-flow.compact #editNameBtn { display:inline-block !important; padding:2px 8px !important; font-size:0.76rem !important; line-height:1.2; border-radius:6px; }
+  @media (max-width: 700px) {
+    #name-flow .name-title { display: none !important; }
+    #name-flow #nameInput:disabled { display: none !important; }
+    #name-flow #nameInput:disabled ~ .name-actions { justify-content: flex-end !important; margin-top: 0 !important; }
+    #name-flow #nameInput:disabled ~ .name-actions #submitNameBtn { display: none !important; }
+    #name-flow #nameInput:disabled ~ .name-actions #editNameBtn {
+      display: inline-block !important;
+      padding: 2px 8px !important;
+      font-size: 0.76rem !important;
+      line-height: 1.2;
+      border-radius: 6px;
+    }
+  }
   /* Visually gray out the name input when disabled (after submission) */
   #nameInput:disabled {
     background-color: #f5f5f5;
@@ -309,6 +467,7 @@
         <!-- Poll updates are published by admin; viewers will react to storage events -->
   <h1 class="card-title poll-title">📚 Voting Poll</h1>
 
+  <div id="live-slot-preview" class="live-slot-preview d-none" aria-live="polite"></div>
   <div id="poll-status" class="mb-3"></div>
   <div id="poll-loading" class="d-none"></div>
   <div id="poll-ready" class="mb-3 d-none"></div>
@@ -368,6 +527,253 @@ function slugifyId(text){
 }
 function htmlEscape(s){ try{ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }catch(e){ return String(s||''); } }
 
+function applyLiveSlotPreview(preview){
+  try{ window.__liveSlotPreview = (preview && typeof preview === 'object') ? preview : null; }catch(e){}
+  try{ renderLiveSlotPreview(); }catch(e){}
+}
+
+function renderLiveSlotPreview(){
+  const host = document.getElementById('live-slot-preview');
+  const pollTitle = document.querySelector('.poll-title');
+  if(!host) return;
+  const nowTs = Date.now();
+  const preview = window.__liveSlotPreview;
+  const publishedAt = localStorage.getItem('pollPublishedAt');
+  const winnerRaw = localStorage.getItem('pollWinner');
+  const reels = Array.isArray(preview && preview.reels) ? preview.reels.slice(0,3) : [];
+  const poolRaw = Array.isArray(preview && preview.entries) ? preview.entries : [];
+  const entryPool = poolRaw
+    .map(item => ({ book: String((item && item.book) || '').trim(), name: String((item && item.name) || '').trim() }))
+    .filter(item => item.book)
+    .slice(0, 48);
+  const isActive = !!(preview && preview.active && reels.length);
+  if(isActive){
+    try{ window.__liveSlotLastActiveAt = nowTs; }catch(e){}
+    try{ window.__slotSelectionStarted = true; }catch(e){}
+  }
+  const lastActiveAt = Number(window.__liveSlotLastActiveAt || 0);
+  const withinGrace = !isActive && !publishedAt && !winnerRaw && lastActiveAt && ((nowTs - lastActiveAt) < 2500);
+
+  if(withinGrace){
+    if(pollTitle) pollTitle.style.display = 'none';
+    return;
+  }
+
+  if(!isActive || publishedAt || winnerRaw){
+    host.classList.add('d-none');
+    host.style.display = 'none';
+    host.innerHTML = '';
+    if(pollTitle) pollTitle.style.display = '';
+    try{ window.__liveSlotRenderSig = ''; }catch(e){}
+    try{ window.__liveSlotPrevStates = {}; }catch(e){}
+    try{ window.__liveSlotPrevRawStates = {}; }catch(e){}
+    try{ window.__liveSlotSlowUntil = {}; }catch(e){}
+    try{ window.__liveSlotSpinMeta = {}; }catch(e){}
+    return;
+  }
+
+  const prevStates = (window.__liveSlotPrevStates && typeof window.__liveSlotPrevStates === 'object') ? window.__liveSlotPrevStates : {};
+  const prevRawStates = (window.__liveSlotPrevRawStates && typeof window.__liveSlotPrevRawStates === 'object') ? window.__liveSlotPrevRawStates : {};
+  const slowUntil = (window.__liveSlotSlowUntil && typeof window.__liveSlotSlowUntil === 'object') ? window.__liveSlotSlowUntil : {};
+  const spinMeta = (window.__liveSlotSpinMeta && typeof window.__liveSlotSpinMeta === 'object') ? window.__liveSlotSpinMeta : {};
+  const nextStates = {};
+  const nextRawStates = {};
+  const now = Date.now();
+  const rawStates = reels.map(r => String((r && r.state) || 'idle').toLowerCase());
+  const isSettledStopped = (idx)=> (rawStates[idx] === 'stopped') && String(prevRawStates[idx] || 'idle') === 'stopped' && !(slowUntil[idx] > now);
+
+  const cards = reels.map((r, idx)=>{
+    const state = String((r && r.state) || 'idle').toLowerCase();
+    nextRawStates[idx] = state;
+    const book = String((r && r.book) || '').trim();
+    const splitBookAuthor = (text)=>{
+      const raw = String(text || '').trim();
+      if(!raw) return { title: '', author: '' };
+      const delimiters = [' - ', ' — ', ' – '];
+      for(const delim of delimiters){
+        const pos = raw.indexOf(delim);
+        if(pos > 0){
+          const title = raw.slice(0, pos).trim();
+          const author = raw.slice(pos + delim.length).trim();
+          if(title && author) return { title, author };
+        }
+      }
+      return { title: raw, author: 'Unknown author' };
+    };
+    const parsed = splitBookAuthor(book);
+    const name = String((r && r.name) || '').trim();
+    let displayState = 'pending';
+    const prevRaw = String(prevRawStates[idx] || 'idle');
+    const hasUnsettledBefore = (()=>{
+      for(let i=0;i<idx;i++){
+        if(!isSettledStopped(i)) return true;
+      }
+      return false;
+    })();
+
+    const rawJustStopped = (state === 'stopped' && prevRaw !== 'stopped');
+    if(!hasUnsettledBefore && rawJustStopped && !(slowUntil[idx] > now)){
+      slowUntil[idx] = now + 8400;
+      try{ setTimeout(()=>{ try{ renderLiveSlotPreview(); }catch(e){} }, 8480); }catch(e){}
+    }
+    if(state === 'stopped' && !(slowUntil[idx] > now) && !hasUnsettledBefore){
+      try{ delete slowUntil[idx]; }catch(e){}
+    }
+
+    if(hasUnsettledBefore){
+      displayState = 'pending';
+    } else if(state === 'spinning'){
+      displayState = 'spinning';
+    } else if(state === 'stopped' && (slowUntil[idx] > now)){
+      displayState = 'slowing';
+    } else if(state === 'stopped'){
+      displayState = 'stopped';
+    }
+
+    nextStates[idx] = displayState;
+    if(displayState === 'spinning'){
+      const meta = spinMeta[idx] || {};
+      if(meta.phase !== 'spinning'){
+        spinMeta[idx] = { phase: 'spinning', startedAt: now };
+      }
+    }
+    const justStopped = displayState === 'stopped' && prevStates[idx] !== 'stopped';
+
+    if(displayState === 'stopped' && book){
+      const flashClass = justStopped ? ' live-slot-flash' : '';
+      return `
+        <div class="live-slot-reel live-slot-item live-slot-stopped">
+          <div class="live-slot-slot-label">Book ${idx+1}</div>
+          <div class="live-slot-window live-slot-stopped${flashClass}">
+            <div class="live-slot-stopped-content">
+              <div class="live-slot-item-main">${htmlEscape(parsed.title || 'Unknown book')}</div>
+              <div class="live-slot-item-author">${htmlEscape(parsed.author || 'Unknown author')}</div>
+              <div class="live-slot-item-sub">Suggested by ${htmlEscape(name || 'Unknown')}</div>
+            </div>
+          </div>
+        </div>`;
+    }
+      if(displayState === 'spinning' || displayState === 'slowing'){
+        const priorChosenBooks = new Set();
+        for(let j=0;j<idx;j++){
+          if(String(rawStates[j] || '').toLowerCase() === 'stopped'){
+            const prevBook = String((reels[j] && reels[j].book) || '').trim();
+            if(prevBook) priorChosenBooks.add(prevBook.toLowerCase());
+          }
+        }
+        let reelEntries = entryPool.filter(item => !priorChosenBooks.has(String(item.book || '').trim().toLowerCase()));
+        if(!reelEntries.length) reelEntries = entryPool.slice();
+        if(!reelEntries.length) reelEntries = [{ book: 'Loading submissions…', name: '' }];
+
+        if(book){
+          const exists = reelEntries.some(item => String(item.book||'').trim() === book && (!name || String(item.name||'').trim() === name));
+          if(!exists) reelEntries = reelEntries.concat([{ book, name: name || '' }]);
+        }
+
+        const loopEntries = reelEntries.concat(reelEntries, reelEntries, reelEntries);
+      const trackHtml = loopEntries.map(item => `
+        <div class="live-slot-track-item">
+          <div class="live-slot-track-title">${htmlEscape(item.book)}</div>
+          <div class="live-slot-track-sub">${htmlEscape(item.name ? ('Suggested by ' + item.name) : 'Book submission')}</div>
+        </div>`).join('');
+        let trackStyle = '';
+        if(displayState === 'slowing'){
+            const itemHeight = 48;
+          const n = reelEntries.length;
+          let chosenBaseIndex = -1;
+          if(book){
+            chosenBaseIndex = reelEntries.findIndex(item => item.book === book && (name ? item.name === name : true));
+            if(chosenBaseIndex < 0) chosenBaseIndex = reelEntries.findIndex(item => item.book === book);
+          }
+          if(chosenBaseIndex < 0) chosenBaseIndex = 0;
+
+            const spinDurMs = 7200;
+            const prevMeta = spinMeta[idx] || {};
+            const startedAt = Number.isFinite(prevMeta.startedAt) ? prevMeta.startedAt : now;
+            const elapsed = ((now - startedAt) % spinDurMs + spinDurMs) % spinDurMs;
+            const startPct = -50 * (elapsed / spinDurMs);
+
+            const occs = [chosenBaseIndex, n + chosenBaseIndex, (2*n) + chosenBaseIndex, (3*n) + chosenBaseIndex];
+          const totalPx = Math.max(itemHeight, loopEntries.length * itemHeight);
+            const options = occs.map(occ => {
+              const targetPx = -((occ - 1) * itemHeight);
+              const endPct = (targetPx / totalPx) * 100;
+              const delta = endPct - startPct;
+              return { occ, endPct, delta };
+            });
+            const targetDelta = -30;
+            const nearBand = options.filter(o => o.delta <= -18 && o.delta >= -32);
+            const forwardOnly = options.filter(o => o.delta <= -8);
+            const pool = (nearBand.length ? nearBand : (forwardOnly.length ? forwardOnly : options));
+            const chosen = pool.sort((a,b)=> Math.abs(a.delta - targetDelta) - Math.abs(b.delta - targetDelta))[0];
+
+            const endPct = chosen.endPct;
+            const delta = endPct - startPct;
+            const p20 = startPct + (delta * 0.36);
+            const p40 = startPct + (delta * 0.64);
+            const p60 = startPct + (delta * 0.84);
+            const p80 = startPct + (delta * 0.96);
+            const p92 = startPct + (delta * 0.9936);
+            spinMeta[idx] = { phase: 'slowing', startedAt, startPct, endPct };
+            trackStyle = ` style="--slot-slow-start:${startPct.toFixed(4)}%;--slot-slow-end:${endPct.toFixed(4)}%;--slot-slow-p20:${p20.toFixed(4)}%;--slot-slow-p40:${p40.toFixed(4)}%;--slot-slow-p60:${p60.toFixed(4)}%;--slot-slow-p80:${p80.toFixed(4)}%;--slot-slow-p92:${p92.toFixed(4)}%;"`;
+        }
+        const spinClass = displayState === 'slowing' ? 'live-slot-slowing' : 'live-slot-spinning';
+      return `
+        <div class="live-slot-reel live-slot-item live-slot-spinning">
+          <div class="live-slot-slot-label">Book ${idx+1}</div>
+              <div class="live-slot-window ${spinClass}"${trackStyle}>
+            <div class="live-slot-track">${trackHtml}</div>
+          </div>
+        </div>`;
+    }
+    return `
+      <div class="live-slot-reel live-slot-item live-slot-pending">
+        <div class="live-slot-slot-label">Book ${idx+1}</div>
+        <div class="live-slot-window live-slot-pending">
+          <div class="live-slot-item-main">Waiting…</div>
+          <div class="live-slot-item-sub">Not chosen yet</div>
+        </div>
+      </div>`;
+  }).join('');
+
+  try{ window.__liveSlotPrevStates = nextStates; }catch(e){}
+  try{ window.__liveSlotPrevRawStates = nextRawStates; }catch(e){}
+  try{ window.__liveSlotSlowUntil = slowUntil; }catch(e){}
+  try{ window.__liveSlotSpinMeta = spinMeta; }catch(e){}
+
+  const renderSig = JSON.stringify({
+    active: !!isActive,
+    raw: nextRawStates,
+    display: nextStates,
+    reels: reels.map(r => ({
+      state: String((r && r.state) || '').toLowerCase(),
+      book: String((r && r.book) || ''),
+      name: String((r && r.name) || '')
+    }))
+  });
+  if(window.__liveSlotRenderSig === renderSig) return;
+  try{ window.__liveSlotRenderSig = renderSig; }catch(e){}
+
+  host.innerHTML = `
+    <div class="live-slot-machine">
+      <div class="live-slot-title">🎰 Live Book Selection</div>
+      <div class="live-slot-grid">${cards}</div>
+    </div>`;
+  if(pollTitle) pollTitle.style.display = 'none';
+  host.classList.remove('d-none');
+  host.style.display = '';
+}
+
+function isLiveSlotPreviewActive(){
+  try{
+    const preview = window.__liveSlotPreview;
+    const publishedAt = localStorage.getItem('pollPublishedAt');
+    const winnerRaw = localStorage.getItem('pollWinner');
+    const reels = Array.isArray(preview && preview.reels) ? preview.reels.slice(0,3) : [];
+    return !!(preview && preview.active && reels.length && !publishedAt && !winnerRaw);
+  }catch(e){ return false; }
+}
+
 // Book meta helpers: parse "Title - Author" and build links
 function parseBookParts(bookStr){
   try{
@@ -394,6 +800,27 @@ function buildGoodreadsUrl(bookStr){
 }
 function normalizeBookKey(s){
   try{ return String(s||'').toLowerCase().replace(/\s*-[\s\u00A0]*?/g,' - ').replace(/\s+/g,' ').trim(); }catch(e){ return String(s||'').toLowerCase().trim(); }
+}
+function normalizeLooseKey(s){
+  try{
+    return String(s||'')
+      .toLowerCase()
+      .replace(/[’']/g,'')
+      .replace(/[^a-z0-9\s-]/g,' ')
+      .replace(/\s+by\s+/g,' - ')
+      .replace(/\s*-\s*/g,' - ')
+      .replace(/\s+/g,' ')
+      .trim();
+  }catch(e){ return String(s||'').toLowerCase().trim(); }
+}
+function formatBookDisplayTitle(raw){
+  try{
+    const s = String(raw||'').trim();
+    if(!s) return '';
+    const hasMixedCase = /[A-Z]/.test(s.slice(1));
+    if(hasMixedCase) return s;
+    return s.toLowerCase().replace(/\b([a-z])/g, (_, ch)=> ch.toUpperCase());
+  }catch(e){ return String(raw||''); }
 }
 function trimToPreview(text, opts){
   try{
@@ -424,10 +851,58 @@ function toOneLiner(text){
   try{
     const s = String(text||'').replace(/\s+/g,' ').trim();
     if(!s) return '';
-    const parts = s.match(/[^.!?]+[.!?]/g) || [s];
-    let out = parts[0].trim();
-    if(out.length > 200) out = out.slice(0, 199).replace(/[\s,;:]+$/,'') + '…';
+    const parts = (s.match(/[^.!?]+[.!?]/g) || [s]).map(p=>String(p||'').trim()).filter(Boolean);
+    const weakOpenRe = /^(in\s+the\s+year\s+\d{3,4}|the\s+end\s+was\s+near|it\s+was\s+\d|there\s+was\s+|once\s+upon\s+a\s+time)/i;
+    const score = (sent)=>{
+      const words = sent.split(/\s+/).filter(Boolean);
+      const wc = words.length;
+      let sc = wc;
+      if(wc >= 12) sc += 12;
+      if(/\b(novel|story|follows|about|chronicles|journey|surviv|war|mystery|thriller|fantasy|dystopia|zombie|virtual|quest|mission|family|murder)\b/i.test(sent)) sc += 10;
+      if(weakOpenRe.test(sent)) sc -= 14;
+      if(wc < 8) sc -= 8;
+      return sc;
+    };
+    let best = parts[0] || s;
+    let bestScore = score(best);
+    for(const p of parts.slice(1,4)){
+      const sc = score(p);
+      if(sc > bestScore){ best = p; bestScore = sc; }
+    }
+    let out = best.trim();
+    if(out.length > 220) out = out.slice(0, 219).replace(/[\s,;:]+$/,'') + '…';
     return out;
+  }catch(e){ return ''; }
+}
+function getSummaryOverride(bookStr){
+  try{
+    const map = window.__summaryOverrides || {};
+    const direct = map[normalizeBookKey(bookStr)];
+    if(direct && String(direct).trim().length) return String(direct).trim();
+    const looseTarget = normalizeLooseKey(bookStr);
+    // Fast exact loose-key pass
+    for(const k of Object.keys(map)){
+      if(normalizeLooseKey(k) === looseTarget){
+        const v = map[k];
+        if(v && String(v).trim().length) return String(v).trim();
+      }
+    }
+    // Token-overlap fallback for minor typos (e.g., "readyt player one")
+    const toksA = new Set(looseTarget.split(/\s+/).filter(t=>t && t !== '-'));
+    let best = ''; let bestScore = 0;
+    for(const k of Object.keys(map)){
+      const toksB = new Set(normalizeLooseKey(k).split(/\s+/).filter(t=>t && t !== '-'));
+      let common = 0;
+      toksA.forEach(t=>{ if(toksB.has(t)) common++; });
+      const denom = Math.max(toksA.size, toksB.size, 1);
+      const j = common / denom;
+      if(j > bestScore){ bestScore = j; best = k; }
+    }
+    if(best && bestScore >= 0.6){
+      const v = map[best];
+      if(v && String(v).trim().length) return String(v).trim();
+    }
+    return '';
   }catch(e){ return ''; }
 }
 async function fetchWithTimeout(url, ms){
@@ -473,23 +948,38 @@ async function ensureGoodreadsOverridesLoaded(){
 // Summary overrides loader (optional JSON in repo)
 async function ensureSummaryOverridesLoaded(){
   try{
-    if(typeof window.__summaryOverrides !== 'undefined') return;
-    window.__summaryOverrides = {};
-    const candidates = [
-      '../book-summaries.json',
-      '/book-summaries.json',
-      './book-summaries.json'
-    ];
-    for(const url of candidates){
-      try{
-        const res = await fetch(url, {credentials:'omit'});
-        if(res && res.ok){
-          const data = await res.json();
-          if(data && typeof data === 'object'){ window.__summaryOverrides = data; }
-          break;
-        }
-      }catch(_){ /* try next */ }
+    const hasLoadedData = !!(window.__summaryOverrides && typeof window.__summaryOverrides === 'object' && Object.keys(window.__summaryOverrides).length);
+    if(hasLoadedData) return;
+
+    if(window.__summaryOverridesLoadPromise){
+      try{ await window.__summaryOverridesLoadPromise; }catch(_){ }
+      const nowHasData = !!(window.__summaryOverrides && typeof window.__summaryOverrides === 'object' && Object.keys(window.__summaryOverrides).length);
+      if(nowHasData) return;
     }
+
+    window.__summaryOverridesLoadPromise = (async ()=>{
+      window.__summaryOverrides = window.__summaryOverrides && typeof window.__summaryOverrides === 'object' ? window.__summaryOverrides : {};
+      const candidates = [
+        '../book-summaries.json',
+        '/book-summaries.json',
+        './book-summaries.json'
+      ];
+      for(const url of candidates){
+        try{
+          const res = await fetch(url, { credentials:'omit', cache:'no-store' });
+          if(res && res.ok){
+            const data = await res.json();
+            if(data && typeof data === 'object' && Object.keys(data).length){
+              window.__summaryOverrides = data;
+              return;
+            }
+          }
+        }catch(_){ /* try next */ }
+      }
+    })();
+
+    try{ await window.__summaryOverridesLoadPromise; }catch(_){ }
+    finally { try{ window.__summaryOverridesLoadPromise = null; }catch(_){ } }
   }catch(e){ window.__summaryOverrides = window.__summaryOverrides || {}; }
 }
 async function tryFetchOpenLibraryDescription(bookStr){
@@ -745,23 +1235,36 @@ function scheduleDescriptionSweep(rootEl){
 async function loadBookDescription(bookStr, mountEl){
   try{
     if(!mountEl) return;
+    try{
+      if(mountEl.__descLoadingTimer){ clearTimeout(mountEl.__descLoadingTimer); mountEl.__descLoadingTimer = null; }
+      if((mountEl.textContent||'').trim() === 'Loading summary…'){ mountEl.textContent = ''; }
+    }catch(e){}
     // Summary overrides from JSON
     try{
       await ensureSummaryOverridesLoaded();
-      const override = window.__summaryOverrides && window.__summaryOverrides[normalizeBookKey(bookStr)];
+      const override = getSummaryOverride(bookStr);
       if(override && String(override).trim().length){
         const full = String(override).trim();
+        try{ if(mountEl.__descLoadingTimer){ clearTimeout(mountEl.__descLoadingTimer); mountEl.__descLoadingTimer = null; } }catch(e){}
         applyDescWithToggle(mountEl, full);
-        try{ localStorage.setItem('bookDesc:'+bookStr, JSON.stringify({text: full, at: Date.now()})); }catch(e){}
+        try{
+          localStorage.setItem('bookDesc:'+bookStr, JSON.stringify({text: full, at: Date.now()}));
+          localStorage.setItem('bookDesc:'+normalizeBookKey(bookStr), JSON.stringify({text: full, at: Date.now()}));
+        }catch(e){}
         return;
       }
     }catch(_){ }
     const key = 'bookDesc:'+bookStr;
+    const nkey = 'bookDesc:'+normalizeBookKey(bookStr);
     // read-through cache
     let cached = null; let cachedAt = 0;
-    try{ const raw = localStorage.getItem(key); if(raw){ const obj = JSON.parse(raw); if(obj && obj.text){ cached=obj.text; cachedAt=obj.at||0; } } }catch(e){}
+    try{
+      const raw = localStorage.getItem(key) || localStorage.getItem(nkey);
+      if(raw){ const obj = JSON.parse(raw); if(obj && obj.text){ cached=obj.text; cachedAt=obj.at||0; } }
+    }catch(e){}
     const now = Date.now();
     if(cached && (now - cachedAt) < 1000*60*60*24*30){ // 30d
+      try{ if(mountEl.__descLoadingTimer){ clearTimeout(mountEl.__descLoadingTimer); mountEl.__descLoadingTimer = null; } }catch(e){}
       applyDescWithToggle(mountEl, cached);
       return;
     }
@@ -775,37 +1278,25 @@ async function loadBookDescription(bookStr, mountEl){
         fullText = toOneLiner(String(meta.description).trim());
       }
     }catch(_){ }
-    // Then try server-side Goodreads description (respects CORS)
-    try{
-      const serverBase = (window.GOODREADS_RESOLVER_URL || localStorage.getItem('grResolverBase') || '').replace(/\/$/,'');
-      if(serverBase){
-        const enc = encodeURIComponent(bookStr);
-        const isFunctionsEndpoint = /cloudfunctions\.net|run\.app/i.test(serverBase) || /resolveGoodreads$/i.test(serverBase);
-        const endpoint = serverBase + (isFunctionsEndpoint ? (`?q=${enc}&withDesc=1`) : (`/resolve?q=${enc}&withDesc=1`));
-        const resp = await fetchWithTimeout(endpoint, 4500);
-        if(resp && resp.ok){
-          const data = await resp.json().catch(()=>null);
-          const summary = data && data.summary;
-          const desc = data && data.description;
-          if(summary && String(summary).trim().length){ fullText = String(summary).trim(); }
-          else if(desc && String(desc).trim().length){ fullText = toOneLiner(String(desc).trim()); }
-        }
-      }
-    }catch(_){ /* fall back */ }
-    // Fallback to Open Library description if server couldn't provide one
-    if(!fullText){
-      const raw = await tryFetchOpenLibraryDescription(bookStr);
-      fullText = toOneLiner(raw);
-    }
+    // Do not generate summaries during voting.
+    // At this point we rely on summary overrides + Firebase-cached bookMeta only.
     if(fullText && fullText.length){
+      try{ if(mountEl.__descLoadingTimer){ clearTimeout(mountEl.__descLoadingTimer); mountEl.__descLoadingTimer = null; } }catch(e){}
       applyDescWithToggle(mountEl, fullText);
-      try{ localStorage.setItem(key, JSON.stringify({text: fullText, at: now})); }catch(e){}
+      try{
+        localStorage.setItem(key, JSON.stringify({text: fullText, at: now}));
+        localStorage.setItem(nkey, JSON.stringify({text: fullText, at: now}));
+      }catch(e){}
     } else {
-      // No description available; leave empty to avoid noise
-      mountEl.textContent = '';
+      // Keep a visible placeholder so users don't think the summary area is broken
+      try{ if(mountEl.__descLoadingTimer){ clearTimeout(mountEl.__descLoadingTimer); mountEl.__descLoadingTimer = null; } }catch(e){}
+      if(!mountEl.textContent || !mountEl.textContent.trim().length) mountEl.textContent = 'Summary unavailable.';
       scheduleDescriptionRetry(bookStr, mountEl);
     }
-  }catch(e){ try{ mountEl && (mountEl.textContent=''); }catch(_){} }
+  }catch(e){
+    try{ if(mountEl && mountEl.__descLoadingTimer){ clearTimeout(mountEl.__descLoadingTimer); mountEl.__descLoadingTimer = null; } }catch(_){ }
+    try{ if(mountEl && (!mountEl.textContent || !mountEl.textContent.trim().length)) mountEl.textContent='Summary unavailable.'; }catch(_){}
+  }
 }
 
 function normalizeBlurbText(s){
@@ -887,6 +1378,7 @@ function applyDescWithToggle(mountEl, fullText){
 function __applyPollSnapshot(state){
   try{
     if(!state) return;
+    try{ applyLiveSlotPreview(state.slotPreview || null); }catch(e){}
     // Respect ignore flag
     if(localStorage.getItem('viewerIgnoreServerPolls') || sessionStorage.getItem('viewerIgnoreServerPolls')){
       try{ debugBanner && (debugBanner.textContent = 'Viewer is ignoring server polls'); }catch(e){}
@@ -990,6 +1482,7 @@ function htmlEscape(s){ try{ return String(s||'').replace(/&/g,'&amp;').replace(
             try{ debugBanner && (debugBanner.textContent = 'Viewer is ignoring server polls'); }catch(e){}
             return;
           }
+          try{ applyLiveSlotPreview(state && state.slotPreview ? state.slotPreview : null); }catch(e){}
           // Apply winner first; if set, it should override any active runoff UI
           if(state && state.winner && state.winner.book){
             const book = state.winner.book;
@@ -1077,6 +1570,22 @@ function htmlEscape(s){ try{ return String(s||'').replace(/&/g,'&amp;').replace(
       const na = document.querySelector('.name-actions');
       if(flow) flow.style.display = visible ? '' : 'none';
       if(na) na.style.display = visible ? 'flex' : 'none';
+      try{ syncNamePanelMode(); }catch(e){}
+    }catch(e){}
+  }
+  function syncNamePanelMode(){
+    try{
+      const flow = document.getElementById('name-flow');
+      if(!flow || !nameInput) return;
+      const saved = !!(nameInput.disabled && String(nameInput.value||'').trim().length);
+      flow.classList.toggle('name-saved', saved);
+    }catch(e){}
+  }
+  function applyNameCompactState(compact){
+    try{
+      const flow = document.getElementById('name-flow');
+      if(!flow) return;
+      flow.classList.toggle('compact', !!compact);
     }catch(e){}
   }
   // Initialize name UI based on saved state; used even when poll hasn't been published yet
@@ -1089,7 +1598,9 @@ function htmlEscape(s){ try{ return String(s||'').replace(/&/g,'&amp;').replace(
         if(nameInput){ nameInput.value = saved; nameInput.disabled = true; }
         if(submitNameBtn) submitNameBtn.style.display='none';
         if(editNameBtn) editNameBtn.style.display='inline-block';
-        try{ const nt = document.querySelector('.name-title'); if(nt){ nt.textContent = `You're voting as ${saved}`; } }catch(e){}
+        try{ const nt = document.querySelector('.name-title'); if(nt){ nt.textContent = ''; } }catch(e){}
+        try{ applyNameCompactState(true); }catch(e){}
+        try{ syncNamePanelMode(); }catch(e){}
         // If poll exists later, make sure it's not dimmed
         try{ if(pollOptions) pollOptions.classList.remove('poll-needs-name'); }catch(e){}
         // Treat saved name as already entered so we skip the prompt when poll is published
@@ -1100,6 +1611,8 @@ function htmlEscape(s){ try{ return String(s||'').replace(/&/g,'&amp;').replace(
         if(submitNameBtn) submitNameBtn.style.display='inline-block';
         if(editNameBtn) editNameBtn.style.display='none';
         try{ const nt = document.querySelector('.name-title'); if(nt){ nt.textContent = 'Enter your name to join the vote'; } }catch(e){}
+        try{ applyNameCompactState(false); }catch(e){}
+        try{ syncNamePanelMode(); }catch(e){}
         // Keep viewerHasEnteredNameFlow as-is (false) until they submit
       }
     }catch(e){}
@@ -1206,6 +1719,13 @@ function htmlEscape(s){ try{ return String(s||'').replace(/&/g,'&amp;').replace(
 
   // Display poll options or waiting UI
   function renderPollOrWaiting() {
+    try{ renderLiveSlotPreview(); }catch(e){}
+    if(isLiveSlotPreviewActive()){
+      try{ hidePollEntryPrompt(); }catch(e){}
+      try{ setNameControlsVisible(false); }catch(e){}
+      showWaitingMessage('Wait until the lead has randomly chosen all three books with the slot machine.');
+      return;
+    }
     // If viewer has chosen to ignore server polls (session or persisted), do not render any stored pollChoices
     try{
         const _ign = !!(localStorage.getItem('viewerIgnoreServerPolls') || sessionStorage.getItem('viewerIgnoreServerPolls'));
@@ -1227,27 +1747,10 @@ function htmlEscape(s){ try{ return String(s||'').replace(/&/g,'&amp;').replace(
       const publishedAt = localStorage.getItem('pollPublishedAt'); 
       const savedName = (localStorage.getItem('voterName')||'').trim();
       if(!publishedAt){ 
-        // Poll not started yet
-        if(!savedName){
-          // Show ONLY name UI (no Merc waiting yet)
-          setPollOptionsVisible(false);
-          try{ const status = document.getElementById('poll-status'); if(status) status.innerHTML=''; }catch(e){}
-          try{ setNameControlsVisible(true); if(nameInput){ nameInput.disabled=false; nameInput.focus(); } if(submitNameBtn){ submitNameBtn.style.display='inline-block'; } if(editNameBtn){ editNameBtn.style.display='none'; } }catch(e){}
-          return; 
-        } else {
-          // Name submitted but poll not yet published: now show Merc waiting UI
-          setPollOptionsVisible(false);
-          showWaitingMessage('Wait until the lead has randomly chosen all three books with the slot machine.');
-          // Ensure the Edit Name button remains visible so they can adjust before the vote starts
-          try{
-            setNameControlsVisible(true);
-            if(nameInput){ nameInput.disabled = true; }
-            if(submitNameBtn){ submitNameBtn.style.display='none'; }
-            if(editNameBtn){ editNameBtn.style.display='inline-block'; }
-            if(pollOptions){ pollOptions.classList.remove('poll-needs-name'); }
-          }catch(e){}
-          return;
-        }
+        // Poll not started yet: always show waiting view (Merc or live slot preview), never name entry
+        setPollOptionsVisible(false);
+        showWaitingMessage('Wait until the lead has randomly chosen all three books with the slot machine.');
+        return;
       } 
     }catch(e){}
     // If the poll is published, require a submitted name before showing any poll UI
@@ -1304,6 +1807,7 @@ function htmlEscape(s){ try{ return String(s||'').replace(/&/g,'&amp;').replace(
       const option = document.createElement("div");
       option.className = "poll-item";
       const _book = String(choice.book||'');
+      const _bookDisplay = formatBookDisplayTitle(_book);
       const _name = String(choice.name||'');
       const votersId = slugifyId(_book);
       option.innerHTML = `
@@ -1312,12 +1816,12 @@ function htmlEscape(s){ try{ return String(s||'').replace(/&/g,'&amp;').replace(
           <label for="choice${index}" class="vote-label">Vote</label>
         </div>
         <div class="poll-content">
-          <label for="choice${index}">${htmlEscape(_book)}</label>
+          <label for="choice${index}">${htmlEscape(_bookDisplay)}</label>
           <div class="suggested-by">Suggested by ${htmlEscape(_name)}</div>
           <div class="book-meta" aria-live="polite">
             <div class="book-desc" data-book="${htmlEscape(_book)}"></div>
             <div class="book-links">
-              <a class="btn btn-sm btn-outline-secondary goodreads-link" data-book="${htmlEscape(_book)}" href="${buildGoodreadsUrl(_book)}" target="_blank" rel="noopener noreferrer" aria-label="View ${htmlEscape(_book)} on Goodreads">Goodreads</a>
+              <a class="btn btn-sm btn-outline-secondary goodreads-link" data-book="${htmlEscape(_book)}" href="${buildGoodreadsUrl(_book)}" target="_blank" rel="noopener noreferrer" aria-label="View ${htmlEscape(_bookDisplay)} on Goodreads">Goodreads</a>
             </div>
           </div>
           <div class="voters" id="${votersId}" data-book="${htmlEscape(_book)}">Voted by: ${getVoters(_book)}</div>
@@ -1348,13 +1852,26 @@ function htmlEscape(s){ try{ return String(s||'').replace(/&/g,'&amp;').replace(
       if(!winner && !runoffActive){
         const cap = document.createElement('div');
         cap.id = 'multi-choice-caption';
-        cap.className = 'text-muted small';
+        cap.className = 'text-muted small poll-top-row';
   cap.style.fontSize = '0.75rem';
   cap.style.marginTop = '12px'; // a bit more breathing room now that border removed
   cap.style.marginBottom = '6px';
   cap.style.paddingTop = '0';
   cap.style.fontWeight = '400';
-        cap.textContent = 'Multiple choices allowed';
+        const left = document.createElement('span');
+        left.textContent = 'Multiple choices allowed';
+        cap.appendChild(left);
+
+        const savedNameForInline = (localStorage.getItem('voterName')||'').trim();
+        if(savedNameForInline){
+          const inlineEditBtn = document.createElement('button');
+          inlineEditBtn.type = 'button';
+          inlineEditBtn.className = 'main-page-btn inline-edit-name-btn';
+          inlineEditBtn.textContent = 'Edit Name';
+          inlineEditBtn.addEventListener('click', ()=>{ try{ editName(); }catch(e){} });
+          cap.appendChild(inlineEditBtn);
+          try{ setNameControlsVisible(false); }catch(e){}
+        }
         // Insert before first poll item (top of list)
         if(pollOptions.firstChild){
           pollOptions.insertBefore(cap, pollOptions.firstChild);
@@ -1464,7 +1981,9 @@ function htmlEscape(s){ try{ return String(s||'').replace(/&/g,'&amp;').replace(
     nameInput.style.width = `${name.length + 2}ch`;
   submitNameBtn.style.display = "none";
   editNameBtn.style.display = "inline-block";
-    try{ const nt = document.querySelector('.name-title'); if(nt){ nt.textContent = `You're voting as ${name}`; } }catch(e){}
+    try{ const nt = document.querySelector('.name-title'); if(nt){ nt.textContent = ''; } }catch(e){}
+    try{ applyNameCompactState(true); }catch(e){}
+    try{ syncNamePanelMode(); }catch(e){}
     try{ sessionStorage.setItem('voterName', voterName); }catch(e){}
 
       const checkboxes = document.querySelectorAll('input[type="checkbox"]');
@@ -1511,6 +2030,8 @@ function htmlEscape(s){ try{ return String(s||'').replace(/&/g,'&amp;').replace(
     editNameBtn.style.display = "none";
     voterName = "";
   try{ const nt = document.querySelector('.name-title'); if(nt){ nt.textContent = 'Enter your name to join the vote'; } }catch(e){}
+  try{ applyNameCompactState(false); }catch(e){}
+  try{ syncNamePanelMode(); }catch(e){}
   // Trigger the same single fade-in used by Merc when entering edit mode
   try{ const panel = document.querySelector('.name-panel'); if(panel){ panel.classList.remove('fade-in'); void panel.offsetWidth; panel.classList.add('fade-in'); } }catch(e){}
     try{ localStorage.removeItem('voterName'); }catch(e){}
@@ -1621,29 +2142,35 @@ function htmlEscape(s){ try{ return String(s||'').replace(/&/g,'&amp;').replace(
     setTimeout(()=>{ try{ renderPollOrWaiting(); }catch(e){} target.classList.remove('fade-out'); target.classList.add('fade-in'); }, 350);
   }
   function showWaitingMessage(msg){
+    try{ renderLiveSlotPreview(); }catch(e){}
+    try{ setNameControlsVisible(false); }catch(e){}
     setPollOptionsVisible(false);
     if(pollOptions) pollOptions.innerHTML = '';
     try{ const ro = document.getElementById('runoff-options'); if(ro){ ro.style.display='none'; ro.innerHTML=''; } }catch(e){}
     const target = document.getElementById('poll-status');
     if(!target) return;
+    if(isLiveSlotPreviewActive()){
+      target.innerHTML = '';
+      return;
+    }
+    let selectionStarted = false;
+    try{
+      const publishedAt = localStorage.getItem('pollPublishedAt');
+      const lastActiveAt = Number(window.__liveSlotLastActiveAt || 0);
+      const recentlyActive = !!(lastActiveAt && ((Date.now() - lastActiveAt) < 30000));
+      selectionStarted = !!(
+        window.__slotSelectionStarted ||
+        recentlyActive ||
+        publishedAt
+      );
+    }catch(e){}
     // update debug banner with raw storage for visibility
     try{ debugBanner.textContent = 'local pollChoices: '+ (localStorage.getItem('pollChoices')||'null'); }catch(e){}
-    // NEW: If no poll has been published yet AND user has not submitted a name, suppress Merc waiting UI.
-    try {
-      const publishedAt = localStorage.getItem('pollPublishedAt');
-      const savedName = (localStorage.getItem('voterName')||'').trim();
-      if(!publishedAt && !savedName){
-        target.innerHTML = '';
-        return; // defer showing waiting UI until after name is submitted
-      }
-    } catch(e){}
-    if(msg && msg.indexOf && msg.indexOf('Wait until')===0){
+    if(msg && msg.indexOf && msg.indexOf('Wait until')===0 && !selectionStarted){
       const dogHtml = `
           <div class="wait-box">
             <img class="wait-dog dog-bob" src="../images/Merc.jpg" alt="Merc the dog" loading="lazy" />
-            <div class="wait-text">Please wait patiently with Merc — the lead will randomly choose all three books with the slot machine.</div>
-            <div class="wait-sub">We'll let you know when voting starts.</div>
-            <div class="spinner" aria-hidden="true"></div>
+            <div class="wait-text">Please wait patiently with Merc — the book selection process will begin soon.</div>
           </div>`;
       target.innerHTML = dogHtml;
       // Animate waiting area with a simple fade-in
@@ -2129,7 +2656,11 @@ function htmlEscape(s){ try{ return String(s||'').replace(/&/g,'&amp;').replace(
     }catch(e){ console.warn('[voting_poll] storage handler error', e); }
   });
   window.addEventListener('pollPublished', (ev)=>{ try{ renderPollOrWaiting(); }catch(e){} });
-  window.addEventListener('pollCleared', (ev)=>{ try{ renderPollOrWaiting(); }catch(e){} });
+  window.addEventListener('pollCleared', (ev)=>{
+    try{ window.__slotSelectionStarted = false; }catch(e){}
+    try{ window.__liveSlotLastActiveAt = 0; }catch(e){}
+    try{ renderPollOrWaiting(); }catch(e){}
+  });
     // Listen for winner announcements from admin and broadcast channel
   window.addEventListener('pollWinner', (ev)=>{
       try{
@@ -2247,8 +2778,20 @@ function htmlEscape(s){ try{ return String(s||'').replace(/&/g,'&amp;').replace(
       // Respect name gating: don't auto-insert Merc waiting box if user hasn't submitted a name yet
       let savedName = '';
       let publishedAt = '';
+      let livePreviewActive = false;
+      let selectionStarted = false;
       try { savedName = (localStorage.getItem('voterName')||'').trim(); } catch(e){}
       try { publishedAt = localStorage.getItem('pollPublishedAt')||''; } catch(e){}
+      try {
+        const lastActiveAt = Number(window.__liveSlotLastActiveAt || 0);
+        const recentlyActive = !!(lastActiveAt && ((Date.now() - lastActiveAt) < 30000));
+        selectionStarted = !!(window.__slotSelectionStarted || recentlyActive || publishedAt);
+      } catch(e){}
+      try {
+        const preview = window.__liveSlotPreview;
+        const reels = Array.isArray(preview && preview.reels) ? preview.reels.slice(0,3) : [];
+        livePreviewActive = !!(preview && preview.active && reels.length && !publishedAt);
+      } catch(e){}
       const nothingShown = !winnerEl && (
         !options || options.style.display==='none' || options.children.length===0
       ) && (
@@ -2259,18 +2802,18 @@ function htmlEscape(s){ try{ return String(s||'').replace(/&/g,'&amp;').replace(
         !status || !hasContent(status)
       );
       if(nothingShown && status){
-        // Only show Merc failsafe if they have already entered a name OR the poll has been published.
-        if(savedName || publishedAt){
-          status.innerHTML = '<div class="wait-box" data-src="failsafe">\
-            <img class="wait-dog dog-bob" src="../images/Merc.jpg" alt="Merc the dog" loading="lazy" />\
-            <div class="wait-text">Please wait patiently with Merc — the lead will randomly choose all three books with the slot machine.</div>\
-            <div class="wait-sub">We\'ll let you know when voting starts.</div>\
-            <div class="spinner" aria-hidden="true"></div>\
-          </div>';
-        } else {
-          // Clear any accidental content so only the name input (prompt) area can be shown by main render function.
+        if(livePreviewActive){
           status.innerHTML = '';
+          return;
         }
+        if(selectionStarted){
+          status.innerHTML = '';
+          return;
+        }
+        status.innerHTML = '<div class="wait-box" data-src="failsafe">\
+          <img class="wait-dog dog-bob" src="../images/Merc.jpg" alt="Merc the dog" loading="lazy" />\
+          <div class="wait-text">Please wait patiently with Merc — the book selection process will begin soon.</div>\
+        </div>';
       }
     }catch(e){}
   }

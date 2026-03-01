@@ -187,6 +187,70 @@ exports.getBookMeta = onRequest(async (req, res) => {
   }
 });
 
+// Prewarm metadata (url/description/summary) for a list of books.
+// Intended to run before voting starts so viewers only read cached data.
+exports.warmBookMeta = onRequest(async (req, res) => {
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Methods', 'POST,OPTIONS');
+  res.set('Access-Control-Allow-Headers', 'Content-Type');
+  res.set('Vary', 'Origin');
+  if (req.method === 'OPTIONS') return res.status(204).send('');
+  if (req.method !== 'POST') return json(res, 405, { error: 'method_not_allowed' });
+
+  try {
+    const body = parseRequestBody(req);
+    const list = Array.isArray(body && body.books) ? body.books : [];
+    if (!list.length) return json(res, 200, { ok: true, warmed: 0, skipped: 0, failed: 0 });
+
+    const dedup = new Map();
+    for (const raw of list) {
+      const q = String(raw || '').trim();
+      if (!q) continue;
+      const key = normalizeBookKey(q);
+      if (!key) continue;
+      if (!dedup.has(key)) dedup.set(key, q);
+    }
+
+    const maxBooks = Math.max(1, Math.min(200, parseInt(body && body.limit, 10) || 120));
+    const targets = Array.from(dedup.entries()).slice(0, maxBooks);
+
+    let warmed = 0;
+    let skipped = 0;
+    let failed = 0;
+    const failures = [];
+
+    for (const [key, query] of targets) {
+      try {
+        const cached = await getCachedBookMeta(key);
+        if (cached && (cached.summary || cached.description || cached.url)) {
+          skipped++;
+          continue;
+        }
+
+        const resolved = await resolveFromOpenLibrary(query);
+        const payload = resolved || { url: '', description: '', summary: '', source: 'openlibrary' };
+        if (!payload.summary && payload.description) payload.summary = toOneLiner(payload.description);
+        await saveBookMeta(key, payload, { query });
+        warmed++;
+      } catch (e) {
+        failed++;
+        failures.push({ book: query, error: String(e && e.message ? e.message : e || 'failed') });
+      }
+    }
+
+    return json(res, 200, {
+      ok: true,
+      total: targets.length,
+      warmed,
+      skipped,
+      failed,
+      failures: failures.slice(0, 15)
+    });
+  } catch (e) {
+    return json(res, 500, { error: 'server_error', detail: String(e) });
+  }
+});
+
 function json(res, status, obj) {
   res.set('Content-Type', 'application/json; charset=utf-8');
   return res.status(status || 200).send(JSON.stringify(obj));
