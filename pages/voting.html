@@ -2,237 +2,126 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Book Club Voting</title>
+  <title>Book Club Links</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <!-- Bootstrap CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="../css/styles.css" rel="stylesheet">
-  <!-- Favicons -->
   <link rel="icon" href="../favicon/favicon.ico" />
   <link rel="icon" type="image/png" sizes="32x32" href="../favicon/favicon-32x32.png" />
   <link rel="icon" type="image/png" sizes="16x16" href="../favicon/favicon-16x16.png" />
   <link rel="apple-touch-icon" sizes="180x180" href="../favicon/apple-touch-icon.png" />
   <link rel="manifest" href="../favicon/site.webmanifest" />
   <meta name="theme-color" content="#ffffff">
-  <!-- Animate.css for slot spin effect -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
   <style>
-    /* -----------------------
-       Consolidated / cleaned styles
-       ----------------------- */
-
-    :root{
-      --slot-viewport-height: 64px;    /* default; adjusted by media queries */
-      --slot-reel-bottom-space: 64px;
+    body { background: #f8fafc; }
+    .scan-wrap { max-width: 1020px; margin: 0 auto; padding: 4px 10px 12px; }
+    .scan-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+      align-items: start;
+      max-width: 860px;
+      margin: 0 auto;
     }
-
-    body {
-      font-family: 'Segoe UI', 'Inter', Arial, sans-serif;
-      background: #f8fafc;
-    }
-
-    .winner-item {
-      font-size: 1rem;
+    .scan-card {
+      background: #fff;
+      border: 2px solid #e8e8e8;
+      border-radius: 14px;
+      padding: 14px 16px;
+      text-align: left;
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      gap: 0.5rem;
-      margin-bottom: 0.5rem;
+      justify-content: flex-start;
+      gap: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+      max-width: 760px;
+      margin: 0 auto;
     }
-
-
-    /* Slot machine frame */
-    .slot-machine-frame {
-      background: #444;
-      border-radius: 24px;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.25);
-      padding: 2rem 1rem 2.5rem 1rem;
-      max-width: 1100px;
-      margin: 2rem auto;
-      position: relative;
-      border: 8px solid #ffc107;
-      color: #fff;
-    }
-    .slot-machine-title {
-      color: #ffc107;
-      font-size: 2rem;
-      font-weight: bold;
+    .scan-label {
+      font-size: 2.15rem;
+      font-weight: 900;
+      letter-spacing: 1px;
+      margin: 0;
+      text-shadow: 0 1px 0 rgba(255,255,255,0.45);
+      border-radius: 12px;
+      padding: 10px 14px;
+      width: 380px;
+      flex: 0 0 380px;
       text-align: center;
-      margin-bottom: 1.5rem;
-      letter-spacing: 2px;
-      text-shadow: 0 2px 8px #000;
+      line-height: 1.1;
     }
-
-    /* Reels layout */
-    .slot-reels { display: flex; flex-direction: column; gap: 1.5rem; align-items: center; }
-
-    .slot-reel {
-      background: linear-gradient(180deg, #fff 80%, #eee 100%);
-      border-radius: 16px;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.15);
-      border: 4px solid #ffc107;
-      width: 88%;
-      max-width: 980px;
-      min-width: 320px;
-      padding: 0.75rem 1rem;
-      display: flex;
-      flex-direction: column;
-      align-items: stretch;
-      justify-content: center;
-      font-size: 1.15rem;
-      font-weight: bold;
-      color: #222;
-      text-align: left;
-      overflow: visible;
-      position: relative;
-      word-break: break-word;
-    }
-
-    /* viewport */
-    .slot-scroll {
-      width: 100%;
-      height: calc(1.2em * 2 + 1.2rem); /* viewport for ~2 lines */
-      max-height: calc(1.2em * 2 + 1.2rem);
-      overflow: hidden;
-      position: relative;
+    .scan-label-link {
       display: flex;
       align-items: center;
       justify-content: center;
+      text-decoration: none;
     }
-
-    .slot-scroll-list {
-      position: absolute;
-      left: 0;
-      top: 0;
-      width: 100%;
-      display: flex;
-      flex-direction: column;
-      align-items: stretch;
-      will-change: transform;
+    .scan-label-link:hover,
+    .scan-label-link:focus {
+      text-decoration: none;
     }
-
-    .slot-scroll-item {
-      box-sizing: border-box;
-      width: 100%;
-      padding: 0.45rem 0.75rem;
-      line-height: 1.2;
-      font-size: 1.05rem;
-      text-align: left;
-      white-space: normal;
-      word-break: break-word;
-      border-bottom: 1px solid #ffc107;
-      background: transparent;
-
-      display: -webkit-box;
-      -webkit-box-orient: vertical;
-      -webkit-line-clamp: 2;
-      overflow: hidden;
-      max-height: calc(1.2em * 2 + 1.2rem);
+    .scan-card > a {
+      flex: 0 0 auto;
+      display: block;
     }
-
-    .slot-reel.winner {
-      border-color: #28a745;
-      background: linear-gradient(180deg, #ffe066 80%, #ffc107 100%);
-      color: #28a745;
-      animation: winnerPop 0.7s;
+    .scan-card.suggest .scan-label {
+      color: #0b5ed7;
+      background: rgba(11, 94, 215, 0.14);
     }
-    /* Prevent unintended capitalization in titles */
-    .slot-machine-title,
-    .slot-scroll-item,
-    .suggested-by,
-    .winner-title {
-      text-transform: none;
+    .scan-card.vote .scan-label {
+      color: #b02a37;
+      background: rgba(176, 42, 55, 0.14);
     }
-    @keyframes winnerPop { 0%{transform:scale(1)}50%{transform:scale(1.08)}100%{transform:scale(1)} }
-
-    /* Spin button centered style */
-    .spin-center-btn {
-      font-weight: 700;
-      font-size: 1.05rem;
-      padding: 0.7rem 2.2rem;
-      border-radius: 999px;
-      box-shadow: 0 6px 18px rgba(0,0,0,0.25);
-      border: 4px solid #ffc107;
-      background: linear-gradient(180deg, #ffd54a, #ffc107);
-      color: #222;
-      transition: transform 120ms ease, box-shadow 120ms;
-      -webkit-tap-highlight-color: transparent;
+    .scan-card.submissions .scan-label {
+      color: #495057;
+      background: rgba(73, 80, 87, 0.12);
+      font-size: 1.25rem;
+      width: 230px;
+      flex: 0 0 230px;
+      padding: 8px 10px;
     }
-    .spin-center-btn:active { transform: translateY(3px) scale(0.995); box-shadow: 0 3px 10px rgba(0,0,0,0.2); }
-
-    /* Reset button look (same sizing as SPIN) */
-    #slotSpinBtn.reset-btn {
-      font-weight: 700;
-      font-size: 1.05rem;
-      padding: 0.7rem 2.2rem;
-      border-radius: 999px;
-      box-shadow: 0 6px 18px rgba(0,0,0,0.25);
-      border: 4px solid #c82333;
-      background: linear-gradient(180deg, #ff7b7b, #c82333);
-      color: #fff;
-      transition: transform 120ms ease, box-shadow 120ms;
-      -webkit-tap-highlight-color: transparent;
-      display: inline-block;
+    .scan-card.submissions {
+      max-width: 470px;
+      padding: 9px 11px;
     }
-    #slotSpinBtn.reset-btn[disabled] {
-      background: linear-gradient(180deg,#f0f0f0,#e0e0e0);
-      border-color: #cfcfcf;
-      color: #777;
-      box-shadow: none;
-      cursor: not-allowed;
-      opacity: 0.95;
+    .scan-qr {
+      width: 250px;
+      height: 250px;
+      max-width: 100%;
+      border-radius: 8px;
+      border: 1px solid #eee;
+      display: block;
+      margin: 0 auto;
+      background: #fff;
     }
-
-    /* Stop / Respin buttons */
-    .stop-btn,
-    .reel-respin {
-      width: 100%;
-      font-weight: 700;
-      font-size: 1rem;
-      padding: 0.55rem 0.75rem;
-      border-radius: 10px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.5rem;
+    .scan-card.submissions .scan-qr {
+      width: 112px;
+      height: 112px;
     }
-    .stop-btn { border: 4px solid #28a745; background: linear-gradient(180deg, #5cd27a, #28a745); color: #fff; box-shadow: 0 4px 10px rgba(0,0,0,0.12); }
-    .stop-btn[disabled] { background: linear-gradient(180deg,#e9f7ee,#dfecec); border-color: #cfe9d6; color: #6c757d; box-shadow:none; cursor:not-allowed; }
-    .reel-respin { border: 2px solid #6c757d; background:#fff; color:#333; }
-    .reel-respin.d-none { display: none !important; }
-    .reel-respin[disabled] { opacity: 0.6; pointer-events: none; }
-
-    /* small utility for hiding elements */
-    .d-none { display: none !important; }
-
-    /* ensure stopped single-item state is centered */
-    .slot-machine-frame .slot-reel.winner .slot-scroll,
-    .slot-machine-frame .slot-scroll.stopped {
-      display: flex;
-      align-items: center;
-      justify-content: center;
+    @media (max-width: 700px) {
+      .scan-card {
+        padding: 10px;
+        gap: 6px;
+      }
+      .scan-label {
+        font-size: 1.6rem;
+        width: 170px;
+        flex: 0 0 170px;
+        padding: 7px 9px;
+      }
+      .scan-qr { width: 230px; height: 230px; }
+      .scan-card.submissions {
+        max-width: 340px;
+        padding: 8px 9px;
+      }
+      .scan-card.submissions .scan-label {
+        font-size: 1.05rem;
+        width: 165px;
+        flex: 0 0 165px;
+        padding: 6px 8px;
+      }
+      .scan-card.submissions .scan-qr { width: 88px; height: 88px; }
     }
-    .slot-machine-frame .slot-scroll.stopped .slot-scroll-list { position: relative; transform: translateY(0); }
-
-    /* Responsive tuning */
-    @media (max-width: 1200px) {
-      .slot-machine-frame { max-width: 98vw; padding: 1rem 0.2rem 1.5rem 0.2rem; }
-      .slot-reel { width: 98vw; font-size: 1.05rem; min-width: 0; max-width:none; }
-      .slot-scroll { height: calc(1.15em*2 + 1.1rem); max-height: calc(1.15em*2 + 1.1rem); }
-    }
-    @media (max-width: 900px) {
-      .slot-machine-frame .slot-reel { width: 96%; padding: 0.6rem; }
-    }
-    @media (max-width: 600px) {
-      :root { --slot-viewport-height: 68px; --slot-reel-bottom-space: 72px; }
-      .slot-machine-frame { max-width: 420px; margin: 12px auto; padding: 12px; }
-      .slot-machine-frame .slot-reel { min-height: calc(var(--slot-viewport-height) + var(--slot-reel-bottom-space)); padding:8px 12px; justify-content:flex-start; }
-      .slot-scroll { height: var(--slot-viewport-height); max-height: var(--slot-viewport-height); }
-      .slot-scroll-item { min-height: var(--slot-viewport-height); max-height: var(--slot-viewport-height); line-height:1.15; font-size:16px; }
-    }
-
-    /* hide legacy lever if present */
-    .slot-lever { display: none !important; }
   </style>
 </head>
 <body>
@@ -240,55 +129,29 @@
     <a href="../index.html" class="btn btn-secondary">🏠 Main Page</a>
   </header>
 
-  <div class="container my-4">
-    <div class="card shadow-sm mb-4">
-      <div class="card-body">
-        <h1 class="card-title text-center mb-3 fw-bold">📚 Book Club Voting</h1>
-      </div>
-    </div>
+  <main class="scan-wrap">
+    <section class="scan-grid">
+      <article class="scan-card suggest">
+        <a class="scan-label scan-label-link" href="https://docs.google.com/forms/d/e/1FAIpQLSeD3-geAx7_nxHsgw1xWYR_gDncmhAlswwrsX4gIJdgKj9tQw/viewform?usp=dialog" target="_blank" rel="noopener noreferrer">SUGGEST BOOKS</a>
+        <a href="https://docs.google.com/forms/d/e/1FAIpQLSeD3-geAx7_nxHsgw1xWYR_gDncmhAlswwrsX4gIJdgKj9tQw/viewform?usp=dialog" target="_blank" rel="noopener noreferrer">
+          <img class="scan-qr" src="https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=https://docs.google.com/forms/d/e/1FAIpQLSeD3-geAx7_nxHsgw1xWYR_gDncmhAlswwrsX4gIJdgKj9tQw/viewform?usp=dialog" alt="Suggest QR">
+        </a>
+      </article>
 
-    <div class="row g-4">
-      <div class="col-12 col-md-6">
-        <div class="card h-100 shadow-sm">
-          <div class="card-body">
-            <h2 class="card-title mb-2 fs-5">📖 Book Suggestion</h2>
-            <p class="text-muted small mb-2">Please use this form to submit your book suggestions. Remember to only suggest one book per form submission. Make a new submission for each additional book.</p>
-            <a href="https://docs.google.com/forms/d/e/1FAIpQLSeD3-geAx7_nxHsgw1xWYR_gDncmhAlswwrsX4gIJdgKj9tQw/viewform?usp=dialog" target="_blank">
-              <button class="btn btn-primary w-100 mb-2">Suggest a Book (Google Form)</button>
-            </a>
-            <img class="qr" src="https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=https://docs.google.com/forms/d/e/1FAIpQLSeD3-geAx7_nxHsgw1xWYR_gDncmhAlswwrsX4gIJdgKj9tQw/viewform?usp=dialog" alt="QR code for suggestion form">
-            <div class="text-muted small qr-caption">(Scan QR or click to open)</div>
-          </div>
-        </div>
-      </div>
+      <article class="scan-card vote">
+        <a class="scan-label scan-label-link" href="voting_poll.html" target="_blank" rel="noopener noreferrer">VOTE</a>
+        <a href="voting_poll.html" target="_blank" rel="noopener noreferrer">
+          <img class="scan-qr" src="https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=https%3A%2F%2Fpaulbenson88.github.io%2FBook-Club%2Fpages%2Fvoting_poll.html" alt="Vote QR">
+        </a>
+      </article>
 
-      <div class="col-12 col-md-6">
-        <div class="card h-100 shadow-sm">
-          <div class="card-body">
-            <h2 class="card-title mb-2 fs-5">📋 View All Submissions</h2>
-            <p class="text-muted small mb-2">You can view all book suggestions and their details in the submissions sheet, as well as delete any unwanted entries.</p>
-            <a href="https://docs.google.com/spreadsheets/d/1VCHJO67_pYjNWEceSRwb4jotF7GO3L8uFaLo3HUJmnk/edit" target="_blank">
-              <button class="btn btn-success w-100 mb-2">Open Submissions Sheet (Google Sheets)</button>
-            </a>
-            <img class="qr" src="https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=https://docs.google.com/spreadsheets/d/1VCHJO67_pYjNWEceSRwb4jotF7GO3L8uFaLo3HUJmnk/edit" alt="QR code for submissions sheet">
-            <div class="text-muted small qr-caption">(Scan QR or click to open)</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Voting Poll card (added) -->
-    <div class="card shadow-sm mb-4">
-      <div class="card-body">
-        <h2 class="card-title mb-2 fs-5">Voting Poll</h2>
-        <p class="text-muted small mb-2">Once you are done submitting books, go to this link. Please wait for the vote to start after the lead spins the slot machine and three choices have been randomly chosen.</p>
-                <a href="voting_poll.html" target="_blank"><span class="btn btn-info w-100 mb-2" role="button">Go to Voting Poll</span></a>
-  <img class="qr" src="https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=https%3A%2F%2Fpaulbenson88.github.io%2FBook-Club%2Fpages%2Fvoting_poll.html" alt="QR code for voting poll">
-  <div class="text-muted small qr-caption">(Scan QR or click to open)</div>
-      </div>
-    </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-  </div>
+      <article class="scan-card submissions">
+        <a class="scan-label scan-label-link" href="https://docs.google.com/spreadsheets/d/1VCHJO67_pYjNWEceSRwb4jotF7GO3L8uFaLo3HUJmnk/edit" target="_blank" rel="noopener noreferrer">VIEW ALL SUBMISSIONS</a>
+        <a href="https://docs.google.com/spreadsheets/d/1VCHJO67_pYjNWEceSRwb4jotF7GO3L8uFaLo3HUJmnk/edit" target="_blank" rel="noopener noreferrer">
+          <img class="scan-qr" src="https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=https://docs.google.com/spreadsheets/d/1VCHJO67_pYjNWEceSRwb4jotF7GO3L8uFaLo3HUJmnk/edit" alt="Submissions QR">
+        </a>
+      </article>
+    </section>
+  </main>
 </body>
 </html>

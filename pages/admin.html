@@ -108,7 +108,11 @@
         <div class="my-3">
           <button id="topStartNewSessionBtn" type="button" class="btn btn-primary w-100" style="font-size:1.15rem;padding:14px;">Start new book voting session</button>
         </div>
+        <div class="my-2">
+          <a id="collectSubmissionsBtn" href="https://wa.me/?text=Click%20here%20to%20submit%20books%20before%20the%20vote%3A%20https%3A%2F%2Fdocs.google.com%2Fspreadsheets%2Fd%2F1VCHJO67_pYjNWEceSRwb4jotF7GO3L8uFaLo3HUJmnk%2Fedit" target="_blank" rel="noopener noreferrer" class="btn btn-success w-100" style="font-size:1.05rem;padding:12px;">Collect submissions</a>
+        </div>
   <div id="admin-msg" class="mt-2"><small id="qr-status" class="text-muted"></small></div>
+  <div id="whatsapp-status-wrap" class="mt-1"><small id="whatsapp-status" class="text-muted">WhatsApp: checking…</small></div>
         <div class="mt-3">
           <a href="voting.html" class="btn btn-secondary me-2">Member View</a>
           <a href="voting_poll.html" class="btn btn-info">Open Voting Poll</a>
@@ -416,20 +420,103 @@
 
       function showMemberPanel(){ try{ if(memberShare){ memberShare.classList.remove('d-none'); memberShare.style.display='block'; } }catch(e){}
       }
+      function getFunctionUrl(functionName, overrideGlobalName, overrideStorageKey){
+        try{
+          if(overrideGlobalName && window[overrideGlobalName]) return String(window[overrideGlobalName]);
+          if(overrideStorageKey){
+            const v = localStorage.getItem(overrideStorageKey);
+            if(v) return String(v);
+          }
+          const pid = window.FIREBASE_CONFIG && window.FIREBASE_CONFIG.projectId;
+          if(pid) return `https://us-central1-${pid}.cloudfunctions.net/${functionName}`;
+        }catch(e){}
+        return '';
+      }
+      function setWhatsAppStatus(text, kind){
+        try{
+          const el = document.getElementById('whatsapp-status');
+          if(!el) return;
+          el.textContent = text || 'WhatsApp: unknown';
+          el.classList.remove('text-muted','text-success','text-danger','text-warning');
+          if(kind === 'ok') el.classList.add('text-success');
+          else if(kind === 'err') el.classList.add('text-danger');
+          else if(kind === 'warn') el.classList.add('text-warning');
+          else el.classList.add('text-muted');
+        }catch(e){}
+      }
+      async function callBookClubFunction(url, payload){
+        if(!url) throw new Error('Missing function URL');
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload || {})
+        });
+        let data = null;
+        try{ data = await res.json(); }catch(e){}
+        if(!res.ok){
+          if(res.status === 429){
+            const msg429 = data && (data.detail || data.error) ? String(data.detail || data.error) : 'WhatsApp provider rate-limited requests. Try again later.';
+            const err429 = new Error(msg429);
+            err429.code = 'rate_limited';
+            throw err429;
+          }
+          const detail = data && (data.detail || data.error) ? String(data.detail || data.error) : 'Request failed';
+          throw new Error(detail);
+        }
+        return data || {};
+      }
+      function openWhatsAppCompose(messageText){
+        try{
+          const msg = String(messageText||'').trim();
+          if(!msg) throw new Error('Missing WhatsApp message text');
+          const url = 'https://wa.me/?text=' + encodeURIComponent(msg);
+          const w = window.open(url, '_blank');
+          if(!w){
+            try{ window.location.assign(url); }catch(_e){ window.location.href = url; }
+          }
+          return Promise.resolve({ ok:true, mode:'manual_compose' });
+        }catch(e){
+          return Promise.reject(e);
+        }
+      }
+      function sendPollPublishedWhatsapp(pollUrl){
+        const url = String(pollUrl||'').trim() || 'https://paulbenson88.github.io/Book-Club/pages/voting.html';
+        const msg = `VOTING STARTS NOW: ${url}`;
+        return openWhatsAppCompose(msg);
+      }
+      function sendSubmissionWhatsapp(submissionsUrl){
+        const url = String(submissionsUrl||'').trim() || 'https://docs.google.com/spreadsheets/d/1VCHJO67_pYjNWEceSRwb4jotF7GO3L8uFaLo3HUJmnk/edit';
+        const msg = `📚 Book Club: submissions are open!\n\nPlease add your suggestions here:\n${url}`;
+        return openWhatsAppCompose(msg);
+      }
+      function sendCollectSubmissionsWhatsapp(submissionsUrl){
+        const url = String(submissionsUrl||'').trim() || 'https://docs.google.com/spreadsheets/d/1VCHJO67_pYjNWEceSRwb4jotF7GO3L8uFaLo3HUJmnk/edit';
+        const msg = `Click here to submit books before the vote: ${url}`;
+        return openWhatsAppCompose(msg);
+      }
+      function sendWinnerWhatsapp(winnerTitle, suggestedBy, pollUrl){
+        const winner = String(winnerTitle||'').trim();
+        const sugg = String(suggestedBy||'').trim();
+        const url = String(pollUrl||'').trim() || (window.adminPollUrl || 'https://paulbenson88.github.io/Book-Club/pages/voting_poll.html');
+        const byLine = sugg ? `\nSuggested by: ${sugg}` : '';
+        const msg = `🏆 Winner announced: ${winner}${byLine}\n\nThanks everyone for voting!\n${url}`;
+        return openWhatsAppCompose(msg);
+      }
+      async function checkWhatsAppReady(){
+        setWhatsAppStatus('WhatsApp: manual share mode ready', 'ok');
+      }
       // Admin force publish button (ensures poll is only published when admin confirms)
       try{
         const forceBtn = document.getElementById('forcePublishBtn');
         const forceClear = document.getElementById('forceClearBtn');
         const announceBtn = document.getElementById('announceWinnerBtn');
   if(forceBtn){ forceBtn.addEventListener('click', (ev)=>{ try{ ev && ev.preventDefault && ev.preventDefault(); if(window.adminPublishPoll) window.adminPublishPoll(); try{ showAdminToast('Poll published'); }catch(_e){} console.log('[admin] forcePublish clicked'); try{ if(window.showAdminPollShare) window.showAdminPollShare(); else { const _ps = document.getElementById('poll-share'); if(_ps){ _ps.classList.remove('d-none'); _ps.style.display='block'; try{ if(window.renderAdminPollQR) window.renderAdminPollQR(); }catch(e){} } } }catch(e){}
-            // Use branded modal to confirm opening in a new tab
             try{
-              const inp = document.getElementById('pollLink');
-              const url = (inp && inp.value) || (window.adminPollUrl || 'pages/voting_poll.html');
-              if(window.showOpenPollConfirm) window.showOpenPollConfirm(url); else {
-                const want = confirm('Open the voting poll in a new tab now?');
-                if(want){ const w = window.open(url, '_blank'); try{ if(w) w.opener = null; }catch(_e){} }
-              }
+              const memberInput = document.getElementById('memberLink');
+              const pollUrl = (memberInput && memberInput.value) || 'https://paulbenson88.github.io/Book-Club/pages/voting.html';
+              sendPollPublishedWhatsapp(pollUrl)
+                .then(()=>{ try{ showAdminToast('WhatsApp opened: review and send poll link'); setWhatsAppStatus('WhatsApp: compose opened (poll link)', 'ok'); }catch(_e){} })
+                .catch((err)=>{ console.warn('[admin] sendPollPublished failed', err); try{ if(err && err.code === 'rate_limited'){ showAdminToast('WhatsApp rate-limited: try again later'); } else { showAdminToast('WhatsApp send failed (poll link)'); } setWhatsAppStatus('WhatsApp: last send failed (poll link)', 'err'); }catch(_e){} });
             }catch(_e){}
           }catch(e){ console.warn(e); } }); }
         // Make Clear Poll harder to press accidentally: two-step confirm with timeout
@@ -509,6 +596,7 @@
           }catch(e){ console.warn(e); }
         }); }
       }catch(e){}
+      try{ checkWhatsAppReady(); }catch(e){}
 
       function renderMemberQR(url){
         try{
@@ -548,7 +636,17 @@
     (function(){
       try{
         const topBtn = document.getElementById('topStartNewSessionBtn');
-  if(topBtn){ topBtn.addEventListener('click', ()=>{ try{ if(window.adminStartNewSession) window.adminStartNewSession(); console.log('[admin] top startNewSession clicked'); const _pollShare = document.getElementById('poll-share'); if(_pollShare) _pollShare.classList.add('d-none'); showAdminToast('Started a new voting session (cleared winner and poll choices).'); }catch(e){ console.warn(e); } }); }
+        if(topBtn){ topBtn.addEventListener('click', ()=>{ try{ if(window.adminStartNewSession) window.adminStartNewSession(); console.log('[admin] top startNewSession clicked'); const _pollShare = document.getElementById('poll-share'); if(_pollShare) _pollShare.classList.add('d-none'); showAdminToast('Started a new voting session (cleared winner and poll choices).'); }catch(e){ console.warn(e); } }); }
+
+        const collectBtn = document.getElementById('collectSubmissionsBtn');
+        if(collectBtn){ collectBtn.addEventListener('click', ()=>{
+          try{
+            const submissionsUrl = 'https://docs.google.com/spreadsheets/d/1VCHJO67_pYjNWEceSRwb4jotF7GO3L8uFaLo3HUJmnk/edit';
+            sendCollectSubmissionsWhatsapp(submissionsUrl)
+              .then(()=>{ try{ showAdminToast('WhatsApp opened: review and send submissions request'); setWhatsAppStatus('WhatsApp: compose opened (collect submissions)', 'ok'); }catch(_e){} })
+              .catch((err)=>{ console.warn('[admin] sendCollectSubmissions failed', err); try{ showAdminToast('WhatsApp send failed (collect submissions)'); setWhatsAppStatus('WhatsApp: last send failed (collect submissions)', 'err'); }catch(_e){} });
+          }catch(e){ console.warn(e); }
+        }); }
       }catch(e){}
     })();
 
@@ -708,6 +806,13 @@
             showAdminToast('Winner announced: '+winner);
             try{ if(window.showWinnerConfirm) window.showWinnerConfirm(); }catch(e){}
             try{ if(_pendingState && _pendingState.runoff && _pendingState.runoff.active && typeof window.fbEndRunoff === 'function') window.fbEndRunoff(); }catch(e){}
+            try{
+              const pollInput = document.getElementById('pollLink');
+              const pollUrl = (pollInput && pollInput.value) || (window.adminPollUrl || 'https://paulbenson88.github.io/Book-Club/pages/voting_poll.html');
+              sendWinnerWhatsapp(winner, sugg, pollUrl)
+                .then(()=>{ try{ showAdminToast('WhatsApp opened: review and send winner message'); setWhatsAppStatus('WhatsApp: compose opened (winner)', 'ok'); }catch(_e){} })
+                .catch((err)=>{ console.warn('[admin] sendWinnerAnnounced failed', err); try{ if(err && err.code === 'rate_limited'){ showAdminToast('WhatsApp rate-limited: try again later'); } else { showAdminToast('WhatsApp send failed (winner)'); } setWhatsAppStatus('WhatsApp: last send failed (winner)', 'err'); }catch(_e){} });
+            }catch(_e){}
           }
           try{
             const parts = parseBookParts(winner);

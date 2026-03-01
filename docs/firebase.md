@@ -79,3 +79,49 @@ Optionally enable anonymous auth in the console; the compat bridge will attempt 
 5) That’s it — admin actions (publish/clear/winner) will write to Firestore; viewers will live-update via a snapshot listener.
 
 Security note: Set Firestore rules to allow writes only for an authenticated admin, or restrict by IP during testing.
+
+## Optional: WhatsApp notifications from admin actions
+
+Two HTTP functions are available for admin-triggered WhatsApp sends:
+
+- `sendSubmissionCall` (used when starting a new voting session)
+- `sendPollPublished` (used when publishing the voting poll)
+- `sendWinnerAnnounced` (used when winner is announced)
+
+Set these environment variables for Cloud Functions:
+
+- `WHATSAPP_RAPIDAPI_KEY` — your RapidAPI key
+- `WHATSAPP_RAPIDAPI_HOST` — default: `whatsapp-messaging-bot.p.rapidapi.com`
+- `WHATSAPP_SESSION` — session name created in the provider
+- `WHATSAPP_GROUP_CHAT_ID` — group id like `1203...@g.us`
+- `WHATSAPP_SEND_TEXT_PATH` — optional explicit send route (for provider-specific routing), e.g. `/v1/sessions/{session}/messages/text` or `/v1/messages/sendText`
+- `BOOK_SUBMISSIONS_URL` — optional default submissions sheet URL
+- `BOOK_POLL_URL` — optional default voting poll URL
+
+Notes:
+
+- `WHATSAPP_SESSION` can be either full session name (for example `session_paul...`) or the short id suffix if your provider expects that in body-style routes.
+- Sender logic automatically tries multiple endpoint/payload shapes, including path-session and body-session formats.
+
+Frontend admin page URL resolution order for each function call:
+
+1) `window.SEND_SUBMISSION_CALL_URL` / `window.SEND_POLL_PUBLISHED_URL`
+2) `window.SEND_WINNER_ANNOUNCED_URL`
+3) `localStorage.sendSubmissionCallUrl` / `localStorage.sendPollPublishedUrl` / `localStorage.sendWinnerAnnouncedUrl`
+3) Auto-built from `window.FIREBASE_CONFIG.projectId`
+
+Example local override in browser console:
+
+```javascript
+localStorage.setItem('sendSubmissionCallUrl', 'https://us-central1-YOUR_PROJECT.cloudfunctions.net/sendSubmissionCall');
+localStorage.setItem('sendPollPublishedUrl', 'https://us-central1-YOUR_PROJECT.cloudfunctions.net/sendPollPublished');
+localStorage.setItem('sendWinnerAnnouncedUrl', 'https://us-central1-YOUR_PROJECT.cloudfunctions.net/sendWinnerAnnounced');
+```
+
+Quick verification:
+
+```powershell
+Invoke-RestMethod -Method Post -Uri "https://us-central1-YOUR_PROJECT.cloudfunctions.net/sendSubmissionCall" -ContentType "application/json" -Body '{"text":"TEST submissions"}'
+Invoke-RestMethod -Method Post -Uri "https://us-central1-YOUR_PROJECT.cloudfunctions.net/sendPollPublished" -ContentType "application/json" -Body '{"text":"TEST poll"}'
+Invoke-RestMethod -Method Post -Uri "https://us-central1-YOUR_PROJECT.cloudfunctions.net/sendWinnerAnnounced" -ContentType "application/json" -Body '{"winnerTitle":"TEST Winner"}'
+```
