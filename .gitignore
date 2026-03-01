@@ -13,3 +13,7 @@ ngrok.exe
 # dependencies
 node_modules/
 functions/node_modules/
+
+# local secrets and debug logs
+functions/book-club-hub-*.json
+tmp-sendpoll.log

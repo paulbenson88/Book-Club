@@ -14,6 +14,8 @@
     w.fbPublishPoll = function(){ log('no-op publish (no Firebase)'); };
     w.fbClearPoll = function(){ log('no-op clear (no Firebase)'); };
     w.fbAnnounceWinner = function(){ log('no-op winner (no Firebase)'); };
+    w.fbUpdateSlotPreview = function(){ log('no-op slot preview update (no Firebase)'); };
+    w.fbClearSlotPreview = function(){ log('no-op slot preview clear (no Firebase)'); };
     w.fbSubscribe = function(){ log('no-op subscribe (no Firebase)'); return function(){}; };
     return;
   }
@@ -46,11 +48,30 @@
       return pcs.map(p=>({ book: String((p && (p.book||p.title||p.display||''))||'').trim(), name: String((p && (p.name||p.suggestedBy||''))||'').trim() })).filter(p=>p.book);
     }
 
+    function sanitizeSlotPreview(preview){
+      const p = preview && typeof preview === 'object' ? preview : {};
+      const reels = Array.isArray(p.reels) ? p.reels.slice(0,3).map(r=>({
+        state: String((r && r.state) || 'idle').trim() || 'idle',
+        book: String((r && r.book) || '').trim(),
+        name: String((r && r.name) || '').trim()
+      })) : [];
+      const entries = Array.isArray(p.entries) ? p.entries.slice(0,120).map(item => ({
+        book: String((item && item.book) || '').trim(),
+        name: String((item && item.name) || '').trim()
+      })).filter(item => item.book) : [];
+      return {
+        active: !!p.active,
+        reels,
+        entries,
+        updatedAt: p.updatedAt || new Date().toISOString()
+      };
+    }
+
   w.fbPublishPoll = async function(pollChoices){
       try{
     await ensureAuth();
         const pcs = sanitizePollChoices(pollChoices);
-        const payload = { pollChoices: pcs, pollPublishedAt: new Date().toISOString(), winner: null, runoff: null };
+        const payload = { pollChoices: pcs, pollPublishedAt: new Date().toISOString(), winner: null, runoff: null, slotPreview: null };
         await docRef.set(payload, { merge: true });
         // Clear previous votes (both regular and runoff) at publish time
         try{
@@ -72,7 +93,7 @@
     w.fbClearPoll = async function(){
       try{
         await ensureAuth();
-        await docRef.set({ pollChoices: [], pollPublishedAt: null, winner: null, runoff: null }, { merge: true });
+        await docRef.set({ pollChoices: [], pollPublishedAt: null, winner: null, runoff: null, slotPreview: null }, { merge: true });
         // Clear all votes collections
         try{ const snaps = await votesCol().get(); const batch = db.batch(); snaps.forEach(d=> batch.delete(d.ref)); await batch.commit(); }catch(e){}
         try{ const snaps2 = await runoffVotesCol().get(); const batch2 = db.batch(); snaps2.forEach(d=> batch2.delete(d.ref)); await batch2.commit(); }catch(e){}
@@ -83,10 +104,27 @@
     w.fbAnnounceWinner = async function(book, suggestedBy){
       try{
         await ensureAuth();
-        const payload = { winner: { book: String(book||'').trim(), suggestedBy: String(suggestedBy||'').trim(), when: new Date().toISOString() } };
+        const payload = { winner: { book: String(book||'').trim(), suggestedBy: String(suggestedBy||'').trim(), when: new Date().toISOString() }, slotPreview: null };
         await docRef.set(payload, { merge: true });
         log('winner', payload);
       }catch(e){ warn('winner failed', e); }
+    };
+
+    w.fbUpdateSlotPreview = async function(preview){
+      try{
+        await ensureAuth();
+        const payload = { slotPreview: sanitizeSlotPreview(preview), winner: null };
+        await docRef.set(payload, { merge: true });
+        log('slot preview updated', payload.slotPreview);
+      }catch(e){ warn('slot preview update failed', e); }
+    };
+
+    w.fbClearSlotPreview = async function(){
+      try{
+        await ensureAuth();
+        await docRef.set({ slotPreview: null }, { merge: true });
+        log('slot preview cleared');
+      }catch(e){ warn('slot preview clear failed', e); }
     };
 
     w.fbSubscribe = function(onChange){
@@ -94,7 +132,7 @@
     return docRef.onSnapshot((snap)=>{
           const data = snap && snap.data ? snap.data() : (snap && snap.exists ? snap.data() : null);
           const d = snap && snap.exists ? (data || {}) : {};
-          const out = { pollChoices: Array.isArray(d.pollChoices) ? d.pollChoices : [], pollPublishedAt: d.pollPublishedAt || null, winner: d.winner || null, runoff: d.runoff || null };
+          const out = { pollChoices: Array.isArray(d.pollChoices) ? d.pollChoices : [], pollPublishedAt: d.pollPublishedAt || null, winner: d.winner || null, runoff: d.runoff || null, slotPreview: d.slotPreview || null };
           onChange && onChange(out);
         }, (err)=> warn('snapshot error', err));
       }catch(e){ warn('subscribe failed', e); return function(){}; }
@@ -104,10 +142,10 @@
     w.fbGetState = async function(){
       try{
         const snap = await docRef.get();
-        if(!snap.exists) return { pollChoices: [], pollPublishedAt: null, winner: null, runoff: null };
+        if(!snap.exists) return { pollChoices: [], pollPublishedAt: null, winner: null, runoff: null, slotPreview: null };
         const d = snap.data()||{};
-        return { pollChoices: Array.isArray(d.pollChoices)?d.pollChoices:[], pollPublishedAt: d.pollPublishedAt||null, winner: d.winner||null, runoff: d.runoff||null };
-      }catch(e){ warn('getState failed', e); return { pollChoices: [], pollPublishedAt: null, winner: null, runoff: null }; }
+        return { pollChoices: Array.isArray(d.pollChoices)?d.pollChoices:[], pollPublishedAt: d.pollPublishedAt||null, winner: d.winner||null, runoff: d.runoff||null, slotPreview: d.slotPreview||null };
+      }catch(e){ warn('getState failed', e); return { pollChoices: [], pollPublishedAt: null, winner: null, runoff: null, slotPreview: null }; }
     };
 
     // Runoff: start/end and voting

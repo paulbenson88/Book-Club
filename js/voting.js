@@ -18,6 +18,64 @@
   function loadState(){ try { return JSON.parse(localStorage.getItem(STORAGE_KEY)); } catch { return null; } }
   function getAvailableIndices(){ const a=[]; for(let i=0;i<slotBooks.length;i++) if(!chosenSet.has(i)) a.push(i); return a; }
 
+  function buildLiveSlotPreview(){
+    const entries = slotBooks
+      .map((book, idx) => ({ book: String(book || '').trim(), name: String(slotNames[idx] || '').trim() }))
+      .filter(entry => entry.book)
+      .slice(0, 120);
+    const reels = [0,1,2].map((i)=>{
+      if(spinning[i]) return { state: 'spinning', book: '', name: '' };
+      const idx = chosenIdxs[i];
+      if(idx != null && slotBooks[idx]){
+        return { state: 'stopped', book: slotBooks[idx] || '', name: slotNames[idx] || '' };
+      }
+      return { state: localStateSpun ? 'pending' : 'idle', book: '', name: '' };
+    });
+    const active = !!(localStateSpun && (spinning.some(Boolean) || chosenIdxs.some(v => v != null)));
+    return { active, reels, entries, updatedAt: new Date().toISOString() };
+  }
+
+  function pushLiveSlotPreview(){
+    try{
+      if(window.fbSyncAvailable && typeof window.fbUpdateSlotPreview === 'function'){
+        window.fbUpdateSlotPreview(buildLiveSlotPreview());
+      }
+    }catch(e){}
+  }
+
+  function clearLiveSlotPreview(){
+    try{
+      if(window.fbSyncAvailable && typeof window.fbClearSlotPreview === 'function'){
+        window.fbClearSlotPreview();
+      }
+    }catch(e){}
+  }
+
+  function getWarmBookMetaUrl(){
+    try{
+      const explicit = String(window.WARM_BOOK_META_URL || localStorage.getItem('warmBookMetaUrl') || '').trim();
+      if(explicit) return explicit;
+      const base = String(window.GOODREADS_RESOLVER_URL || localStorage.getItem('grResolverBase') || '').trim().replace(/\/$/, '');
+      if(!base) return '';
+      if(/resolveGoodreads$/i.test(base)) return base.replace(/resolveGoodreads$/i, 'warmBookMeta');
+      return '';
+    }catch(e){ return ''; }
+  }
+
+  async function prewarmBookMeta(books){
+    try{
+      const url = getWarmBookMetaUrl();
+      if(!url || !Array.isArray(books) || !books.length) return;
+      const uniq = Array.from(new Set(books.map(b => String(b || '').trim()).filter(Boolean))).slice(0, 160);
+      if(!uniq.length) return;
+      await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ books: uniq, limit: 160 })
+      });
+    }catch(e){}
+  }
+
   // Publish pollChoices derived from chosenIdxs
   function publishPoll(){
     try{
@@ -30,6 +88,7 @@
       console.log('[voting] publishPoll called, pollChoices=', pollChoices);
       // Push to Firestore if bridge available
       try{ if(window.fbSyncAvailable && typeof window.fbPublishPoll === 'function') window.fbPublishPoll(pollChoices); }catch(e){}
+      try{ clearLiveSlotPreview(); }catch(e){}
       // Notify same-window listeners via custom event
       try{ window.dispatchEvent(new CustomEvent('pollPublished', { detail: { pollChoices, publishedAt: localStorage.getItem('pollPublishedAt') } })); }catch(e){}
       // Broadcast the published pollChoices for cross-tab delivery
@@ -60,6 +119,7 @@
       try{ localStorage.removeItem('pollPublishedAt'); }catch(e){}
       // Push to Firestore
       try{ if(window.fbSyncAvailable && typeof window.fbAnnounceWinner === 'function') window.fbAnnounceWinner(payload.book, payload.suggestedBy); }catch(e){}
+      try{ clearLiveSlotPreview(); }catch(e){}
       try{ window.dispatchEvent(new CustomEvent('pollWinner', { detail: payload })); }catch(e){}
       try{ if(_bc) _bc.postMessage({ type: 'pollWinner', winner: payload }); }catch(e){}
       // also notify same-window listeners that pollChoices were cleared
@@ -112,6 +172,7 @@
 
   function renderScrollList(reelIdx, offset=0, stopped=false){
     const scroll = slotScrolls[reelIdx]; if(!scroll) return;
+    scroll.classList.toggle('stopped', !!stopped);
     scroll.innerHTML = '';
     const list = document.createElement('div'); list.className = 'slot-scroll-list';
     if(stopped){
@@ -135,6 +196,7 @@
 
   function renderIdle(reelIdx){
     const scroll = slotScrolls[reelIdx]; if(!scroll) return;
+    scroll.classList.remove('stopped');
     scroll.innerHTML = '';
     const list = document.createElement('div'); list.className = 'slot-scroll-list';
     const item = document.createElement('div'); item.className = 'slot-scroll-item';
@@ -146,6 +208,16 @@
 
   function updateResetState(){
     if(!slotSpinBtn) return;
+    const anySpinning = spinning.some(Boolean);
+    if(localStateSpun && anySpinning){
+      slotSpinBtn.textContent = 'RESET';
+      slotSpinBtn.classList.remove('spin-center-btn'); slotSpinBtn.classList.add('reset-btn');
+      slotSpinBtn.classList.add('spinning-reset');
+      slotSpinBtn.disabled = false;
+      slotSpinBtn.style.pointerEvents = 'auto';
+      return;
+    }
+    slotSpinBtn.classList.remove('spinning-reset');
     const anyChosen = chosenIdxs.some(v=>v!==null && v!==undefined);
     if(!localStateSpun || !anyChosen){
       slotSpinBtn.textContent = 'SPIN';
@@ -192,6 +264,7 @@
     if(slotSpinBtn){ slotSpinBtn.style.pointerEvents = 'none'; slotSpinBtn.disabled = true; }
     localStateSpun = true; saveState(); updateResetState();
     intervals[0] = startReelScroll(0); intervals[1] = startReelScroll(1); intervals[2] = startReelScroll(2);
+    pushLiveSlotPreview();
   }
 
   function stopReel(reelIdx){
@@ -234,6 +307,7 @@
     }
 
     saveState();
+    pushLiveSlotPreview();
     if(spinning.every(s=>!s)){
   // all stopped — show admin preview and wait for explicit publish action
   try{ showPublishPreview(); }catch(e){ /* fallback to immediate publish */ publishPoll(); }
@@ -301,6 +375,7 @@
   // mark that the machine was reset so other pages can react (e.g., clear poll votes)
   try{ localStorage.setItem('slotMachineReset', '1'); }catch(e){}
     clearPoll(); // remove persisted pollChoices on reset
+    clearLiveSlotPreview();
     slotReels.forEach((r,i)=>{ r.classList.remove('winner'); renderIdle(i); });
     slotStopBtns.forEach(btn=>{ if(btn){ btn.classList.remove('d-none'); btn.disabled = true; btn.setAttribute('disabled',''); btn.classList.add('disabled'); btn.style.pointerEvents = 'none'; btn.tabIndex = -1; }});
     slotRespinBtns.forEach(b=>{ if(b){ b.classList.add('d-none'); b.disabled = true; }});
@@ -312,6 +387,18 @@
 
   function respinReel(reelIdx){
     if(spinning[reelIdx] || slotBooks.length < 3) return;
+
+    // Defensive lock: keep all non-target reels frozen during a single-reel respin
+    for(let j=0;j<3;j++){
+      if(j===reelIdx) continue;
+      if(intervals[j]){ clearInterval(intervals[j]); intervals[j] = null; }
+      spinning[j] = false;
+      if(chosenIdxs[j] != null && typeof chosenIdxs[j] === 'number' && slotBooks[chosenIdxs[j]]){
+        slotReels[j].classList.add('winner');
+        renderScrollList(j, chosenIdxs[j], true);
+      }
+    }
+
     if(chosenIdxs[reelIdx] != null){ chosenSet.delete(chosenIdxs[reelIdx]); chosenIdxs[reelIdx] = null; }
     const sEl = document.getElementById(`suggested${reelIdx+1}-name`); if(sEl) sEl.textContent = '';
     slotReels[reelIdx].classList.remove('winner');
@@ -338,13 +425,13 @@
 
     for(let j=0;j<3;j++){
       if(j===reelIdx) continue;
-      if(spinning[j]){
-        const avail = getAvailableIndices();
-        if(!avail || avail.length === 0){ renderIdle(j); offsets[j] = 0; } else { offsets[j] = ((Number.isFinite(offsets[j])?Math.floor(offsets[j]):0) % avail.length + avail.length) % avail.length; renderScrollList(j, offsets[j]); }
+      if(chosenIdxs[j] != null && typeof chosenIdxs[j] === 'number' && slotBooks[chosenIdxs[j]]){
+        renderScrollList(j, chosenIdxs[j], true);
       }
     }
 
     localStateSpun = true; saveState(); updateResetState();
+    pushLiveSlotPreview();
   }
 
   function loadBooksAndRestore(){
@@ -402,12 +489,32 @@
           return { title, author };
         }
 
+        function normalizeBookTitle(raw){
+          const s = String(raw || '').trim();
+          if(!s) return '';
+          const hasInternalUpper = /[A-Z]/.test(s.slice(1));
+          if(hasInternalUpper) return s;
+          return s
+            .toLowerCase()
+            .replace(/\b([a-z])/g, (_, ch) => ch.toUpperCase());
+        }
+
         data.forEach(cols => {
           const rawBook = (cols[titleIdx] || '').trim();
           const rawName = (cols[nameIdx] || '').trim();
           const parsed = splitTitleAndAuthor(rawBook, rawName);
-          if(parsed.title){ slotBooks.push(parsed.title); slotNames.push(parsed.author); }
+          if(parsed.title){
+            slotBooks.push(normalizeBookTitle(parsed.title));
+            slotNames.push(parsed.author);
+          }
         });
+        try{
+          const booksForWarm = slotBooks.map((title, i)=>{
+            const author = String(slotNames[i] || '').trim();
+            return author ? `${title} - ${author}` : title;
+          });
+          prewarmBookMeta(booksForWarm);
+        }catch(e){}
         if(slotLoadingDiv) slotLoadingDiv.style.display='none';
         for(let i=1;i<=3;i++){ const el=document.getElementById(`suggested${i}-name`); if(el) el.textContent=''; }
 
@@ -452,6 +559,7 @@
           if(chosenIdxs.every(v => v === null) === false){
             console.log('[voting] chosenIdxs restored but auto-publish disabled; admin must explicitly publish the poll');
           }
+          try{ if(localStateSpun){ pushLiveSlotPreview(); } }catch(e){}
           updateResetState();
         }
         }).catch(()=>{ if(slotLoadingDiv) slotLoadingDiv.textContent="Failed to load book list."; slotReels.forEach((r,i)=>{ r.classList.remove('winner'); slotScrolls[i].innerHTML=`<div class=\"slot-scroll-list\"><div class=\"slot-scroll-item\">Error</div></div>`; }); slotStopBtns.forEach(b=>b.disabled=true); if(slotSpinBtn) slotSpinBtn.disabled=true; });
@@ -484,7 +592,7 @@
     if(slotSpinBtn){
       slotSpinBtn.addEventListener('click', function(){
         if(localStateSpun){
-          if(!slotSpinBtn.disabled) resetMachine();
+          resetMachine();
         } else {
           // If books not yet loaded, queue a spin so first tap counts when ready
           if(slotBooks.length < 3){

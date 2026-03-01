@@ -10,6 +10,88 @@ setGlobalOptions({ region: 'us-central1', timeoutSeconds: 20, memoryMiB: 256, ma
 
 const BOOK_META_TTL_MS = 0; // 0 = no expiry
 const BOOK_META_COLLECTION = 'bookMeta';
+const WHATSAPP_SECRETS = [
+  'WHATSAPP_RAPIDAPI_KEY',
+  'WHATSAPP_RAPIDAPI_HOST',
+  'WHATSAPP_SESSION',
+  'WHATSAPP_GROUP_CHAT_ID'
+];
+
+exports.sendSubmissionCall = onRequest({ secrets: WHATSAPP_SECRETS }, async (req, res) => {
+  setCors(res, 'POST,OPTIONS');
+  if (req.method === 'OPTIONS') return res.status(204).send('');
+  if (req.method !== 'POST') return json(res, 405, { error: 'method_not_allowed' });
+
+  try {
+    const body = parseRequestBody(req);
+    if (body && body.dryRun === true) {
+      const cfg = getWhatsAppConfig();
+      console.log('[sendSubmissionCall] dryRun', { ready: cfg.ready, host: cfg.host, hasApiKey: cfg.hasApiKey, hasSession: cfg.hasSession, hasChatId: cfg.hasChatId });
+      return json(res, 200, { ok: cfg.ready, dryRun: true, type: 'submission_call', config: toPublicWhatsAppConfig(cfg) });
+    }
+    const submissionsUrl = String(body.submissionsUrl || process.env.BOOK_SUBMISSIONS_URL || 'https://docs.google.com/spreadsheets/d/1VCHJO67_pYjNWEceSRwb4jotF7GO3L8uFaLo3HUJmnk/edit').trim();
+    const text = String(body.text || '').trim() || `📚 Book Club: submissions are open!\n\nPlease add your book suggestions here:\n${submissionsUrl}`;
+    const sent = await sendRapidApiWhatsAppText(text);
+    console.log('[sendSubmissionCall] sent', { ok: true, providerSuccess: sent && sent.success === true });
+    return json(res, 200, { ok: true, type: 'submission_call', sent });
+  } catch (e) {
+    const info = classifySendError(e);
+    console.error('[sendSubmissionCall] failed', info.detail);
+    return json(res, info.status, { error: info.code, detail: info.detail });
+  }
+});
+
+exports.sendPollPublished = onRequest({ secrets: WHATSAPP_SECRETS }, async (req, res) => {
+  setCors(res, 'POST,OPTIONS');
+  if (req.method === 'OPTIONS') return res.status(204).send('');
+  if (req.method !== 'POST') return json(res, 405, { error: 'method_not_allowed' });
+
+  try {
+    const body = parseRequestBody(req);
+    if (body && body.dryRun === true) {
+      const cfg = getWhatsAppConfig();
+      console.log('[sendPollPublished] dryRun', { ready: cfg.ready, host: cfg.host, hasApiKey: cfg.hasApiKey, hasSession: cfg.hasSession, hasChatId: cfg.hasChatId });
+      return json(res, 200, { ok: cfg.ready, dryRun: true, type: 'poll_published', config: toPublicWhatsAppConfig(cfg) });
+    }
+    const pollUrl = String(body.pollUrl || process.env.BOOK_POLL_URL || 'https://paulbenson88.github.io/Book-Club/pages/voting_poll.html').trim();
+    const text = String(body.text || '').trim() || `🗳️ Book Club voting is live!\n\nVote here:\n${pollUrl}`;
+    const sent = await sendRapidApiWhatsAppText(text);
+    console.log('[sendPollPublished] sent', { ok: true, providerSuccess: sent && sent.success === true });
+    return json(res, 200, { ok: true, type: 'poll_published', sent });
+  } catch (e) {
+    const info = classifySendError(e);
+    console.error('[sendPollPublished] failed', info.detail);
+    return json(res, info.status, { error: info.code, detail: info.detail });
+  }
+});
+
+exports.sendWinnerAnnounced = onRequest({ secrets: WHATSAPP_SECRETS }, async (req, res) => {
+  setCors(res, 'POST,OPTIONS');
+  if (req.method === 'OPTIONS') return res.status(204).send('');
+  if (req.method !== 'POST') return json(res, 405, { error: 'method_not_allowed' });
+
+  try {
+    const body = parseRequestBody(req);
+    if (body && body.dryRun === true) {
+      const cfg = getWhatsAppConfig();
+      console.log('[sendWinnerAnnounced] dryRun', { ready: cfg.ready, host: cfg.host, hasApiKey: cfg.hasApiKey, hasSession: cfg.hasSession, hasChatId: cfg.hasChatId });
+      return json(res, 200, { ok: cfg.ready, dryRun: true, type: 'winner_announced', config: toPublicWhatsAppConfig(cfg) });
+    }
+    const winnerTitle = String(body.winnerTitle || body.winner || '').trim();
+    const suggestedBy = String(body.suggestedBy || '').trim();
+    const pollUrl = String(body.pollUrl || process.env.BOOK_POLL_URL || 'https://paulbenson88.github.io/Book-Club/pages/voting_poll.html').trim();
+    if (!winnerTitle) return json(res, 400, { error: 'missing_winner' });
+    const byLine = suggestedBy ? `\nSuggested by: ${suggestedBy}` : '';
+    const text = String(body.text || '').trim() || `🏆 Winner announced: ${winnerTitle}${byLine}\n\nThanks everyone for voting!\n${pollUrl}`;
+    const sent = await sendRapidApiWhatsAppText(text);
+    console.log('[sendWinnerAnnounced] sent', { ok: true, providerSuccess: sent && sent.success === true });
+    return json(res, 200, { ok: true, type: 'winner_announced', sent });
+  } catch (e) {
+    const info = classifySendError(e);
+    console.error('[sendWinnerAnnounced] failed', info.detail);
+    return json(res, info.status, { error: info.code, detail: info.detail });
+  }
+});
 
 exports.finalizeWinner = onRequest(async (req, res) => {
   // CORS
@@ -105,9 +187,248 @@ exports.getBookMeta = onRequest(async (req, res) => {
   }
 });
 
+// Prewarm metadata (url/description/summary) for a list of books.
+// Intended to run before voting starts so viewers only read cached data.
+exports.warmBookMeta = onRequest(async (req, res) => {
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Methods', 'POST,OPTIONS');
+  res.set('Access-Control-Allow-Headers', 'Content-Type');
+  res.set('Vary', 'Origin');
+  if (req.method === 'OPTIONS') return res.status(204).send('');
+  if (req.method !== 'POST') return json(res, 405, { error: 'method_not_allowed' });
+
+  try {
+    const body = parseRequestBody(req);
+    const list = Array.isArray(body && body.books) ? body.books : [];
+    if (!list.length) return json(res, 200, { ok: true, warmed: 0, skipped: 0, failed: 0 });
+
+    const dedup = new Map();
+    for (const raw of list) {
+      const q = String(raw || '').trim();
+      if (!q) continue;
+      const key = normalizeBookKey(q);
+      if (!key) continue;
+      if (!dedup.has(key)) dedup.set(key, q);
+    }
+
+    const maxBooks = Math.max(1, Math.min(200, parseInt(body && body.limit, 10) || 120));
+    const targets = Array.from(dedup.entries()).slice(0, maxBooks);
+
+    let warmed = 0;
+    let skipped = 0;
+    let failed = 0;
+    const failures = [];
+
+    for (const [key, query] of targets) {
+      try {
+        const cached = await getCachedBookMeta(key);
+        if (cached && (cached.summary || cached.description || cached.url)) {
+          skipped++;
+          continue;
+        }
+
+        const resolved = await resolveFromOpenLibrary(query);
+        const payload = resolved || { url: '', description: '', summary: '', source: 'openlibrary' };
+        if (!payload.summary && payload.description) payload.summary = toOneLiner(payload.description);
+        await saveBookMeta(key, payload, { query });
+        warmed++;
+      } catch (e) {
+        failed++;
+        failures.push({ book: query, error: String(e && e.message ? e.message : e || 'failed') });
+      }
+    }
+
+    return json(res, 200, {
+      ok: true,
+      total: targets.length,
+      warmed,
+      skipped,
+      failed,
+      failures: failures.slice(0, 15)
+    });
+  } catch (e) {
+    return json(res, 500, { error: 'server_error', detail: String(e) });
+  }
+});
+
 function json(res, status, obj) {
   res.set('Content-Type', 'application/json; charset=utf-8');
   return res.status(status || 200).send(JSON.stringify(obj));
+}
+
+function setCors(res, methods) {
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Methods', methods || 'GET,POST,OPTIONS');
+  res.set('Access-Control-Allow-Headers', 'Content-Type');
+  res.set('Vary', 'Origin');
+}
+
+function parseRequestBody(req) {
+  const body = req && req.body;
+  if (!body) return {};
+  if (typeof body === 'string') {
+    try { return JSON.parse(body || '{}'); } catch (_) { return {}; }
+  }
+  return body;
+}
+
+async function sendRapidApiWhatsAppText(text) {
+  const cfg = getWhatsAppConfig();
+  if (!cfg.hasApiKey) throw new Error('Missing WHATSAPP_RAPIDAPI_KEY');
+  if (!cfg.hasSession) throw new Error('Missing WHATSAPP_SESSION');
+  if (!cfg.hasChatId) throw new Error('Missing WHATSAPP_GROUP_CHAT_ID');
+
+  const basePayload = { chatId: cfg.chatId, text: String(text || '').trim() };
+  const sessions = getSessionCandidates(cfg.session);
+  const configuredPath = normalizeRapidApiPath(process.env.WHATSAPP_SEND_TEXT_PATH || '');
+  const paths = [
+    configuredPath,
+    '/v1/sessions/{session}/messages/text',
+    '/v1/sessions/{session}/messages/send-text',
+    '/v1/sessions/{session}/messages/sendText',
+    '/v1/sessions/{session}/messages/send',
+    `/v1/messages/text`,
+    `/v1/messages/send-text`,
+    `/v1/messages/sendText`
+  ].filter(Boolean);
+
+  let lastErr = 'unknown_error';
+  for (const pathTemplate of paths) {
+    const usesPathSession = pathTemplate.includes('{session}');
+    const scopedSessions = usesPathSession ? sessions : [sessions[0]];
+    for (const sessionCandidate of scopedSessions) {
+      const encodedSession = encodeURIComponent(sessionCandidate);
+      const path = usesPathSession ? pathTemplate.replace('{session}', encodedSession) : pathTemplate;
+      const bodyCandidates = usesPathSession
+        ? [basePayload]
+        : [
+            { ...basePayload, session: sessionCandidate },
+            { ...basePayload, session: encodedSession },
+            { chat_id: cfg.chatId, text: basePayload.text, session: sessionCandidate, reply_to: '', mentions: [] },
+            { chatId: cfg.chatId, text: basePayload.text, session: sessionCandidate, reply_to: '', mentions: [] }
+          ];
+
+      for (const payload of bodyCandidates) {
+        const url = `https://${cfg.host}${path}`;
+        const resp = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'x-rapidapi-key': cfg.apiKey,
+            'x-rapidapi-host': cfg.host,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(payload)
+        });
+
+        let data = null;
+        let textBody = '';
+        try { data = await resp.json(); } catch (_) {
+          try { textBody = await resp.text(); } catch (_) { textBody = ''; }
+        }
+
+        if (resp.ok) return data || { success: true, path };
+
+        const detail = data && data.error
+          ? JSON.stringify(data.error)
+          : (data && data.message ? String(data.message) : (textBody ? textBody.slice(0, 240) : `HTTP ${resp.status}`));
+
+        if (resp.status === 429) {
+          lastErr = `429 on ${path}${detail ? ` :: ${detail}` : ''}`;
+          continue;
+        }
+        if (resp.status === 403 || resp.status === 404 || resp.status === 422) {
+          lastErr = `${resp.status} on ${path}${detail ? ` :: ${detail}` : ''}`;
+          continue;
+        }
+        if (resp.status === 401) {
+          throw new Error(`RapidAPI send failed: HTTP ${resp.status} (path=${path})`);
+        }
+        throw new Error(`RapidAPI send failed: ${detail} (path=${path})`);
+      }
+    }
+  }
+
+  throw new Error(`RapidAPI send failed: ${lastErr}`);
+}
+
+function classifySendError(err) {
+  const detail = String(err && err.message ? err.message : err || 'send_failed');
+  if (/Too many requests|HTTP\s*429|429\s+on/i.test(detail)) {
+    return { status: 429, code: 'rate_limited', detail: 'WhatsApp provider is rate-limiting requests. Please try again later.' };
+  }
+  if (/HTTP\s*403/i.test(detail)) {
+    return { status: 403, code: 'provider_forbidden', detail: 'WhatsApp provider rejected the API key or access for this route.' };
+  }
+  if (/HTTP\s*401/i.test(detail)) {
+    return { status: 401, code: 'provider_unauthorized', detail: 'WhatsApp provider API key is invalid or expired.' };
+  }
+  if (/404\s+on/i.test(detail)) {
+    return { status: 502, code: 'provider_route_not_found', detail };
+  }
+  if (/422\s+on/i.test(detail)) {
+    return { status: 400, code: 'provider_validation_failed', detail };
+  }
+  return { status: 500, code: 'send_failed', detail };
+}
+
+function getSessionCandidates(rawSession) {
+  const base = String(rawSession || '').trim();
+  if (!base) return [''];
+  const out = [base];
+  const m = base.match(/([0-9]{10,}_[a-z0-9]+)$/i);
+  if (m && m[1] && !out.includes(m[1])) out.push(m[1]);
+  return out;
+}
+
+function getWhatsAppConfig() {
+  const host = normalizeRapidApiHost(process.env.WHATSAPP_RAPIDAPI_HOST || 'whatsapp-messaging-bot.p.rapidapi.com');
+  const apiKey = String(process.env.WHATSAPP_RAPIDAPI_KEY || '').trim();
+  const session = String(process.env.WHATSAPP_SESSION || '').trim();
+  const chatId = String(process.env.WHATSAPP_GROUP_CHAT_ID || '').trim();
+  const hasApiKey = !!apiKey;
+  const hasSession = !!session;
+  const hasChatId = !!chatId;
+  return {
+    host,
+    apiKey,
+    session,
+    chatId,
+    hasApiKey,
+    hasSession,
+    hasChatId,
+    ready: hasApiKey && hasSession && hasChatId
+  };
+}
+
+function normalizeRapidApiHost(rawHost) {
+  const fallback = 'whatsapp-messaging-bot.p.rapidapi.com';
+  const src = String(rawHost || '').trim();
+  if (!src) return fallback;
+
+  let h = src.replace(/^https?:\/\//i, '').replace(/\/+$/g, '');
+  const match = h.match(/([a-z0-9.-]+\.rapidapi\.com)/i);
+  if (match && match[1]) h = match[1].toLowerCase();
+
+  if (h === 'rapidapi.com') return fallback;
+  return h;
+}
+
+function normalizeRapidApiPath(rawPath) {
+  const p = String(rawPath || '').trim();
+  if (!p) return '';
+  const noHost = p.replace(/^https?:\/\/[^/]+/i, '').trim();
+  if (!noHost) return '';
+  return noHost.startsWith('/') ? noHost : `/${noHost}`;
+}
+
+function toPublicWhatsAppConfig(cfg) {
+  return {
+    host: cfg && cfg.host ? cfg.host : '',
+    hasApiKey: !!(cfg && cfg.hasApiKey),
+    hasSession: !!(cfg && cfg.hasSession),
+    hasChatId: !!(cfg && cfg.hasChatId),
+    ready: !!(cfg && cfg.ready)
+  };
 }
 
 function normalizeBookKey(s) {
