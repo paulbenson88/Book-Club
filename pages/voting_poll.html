@@ -299,7 +299,7 @@
     will-change: transform;
   }
   .live-slot-window.live-slot-slowing .live-slot-track {
-    animation: slotRollSlow 8.4s linear 1 forwards;
+    animation: slotRollSlow 5s linear 1 forwards;
   }
   .live-slot-track-item {
     height: 48px;
@@ -533,6 +533,8 @@ function applyLiveSlotPreview(preview){
 }
 
 function renderLiveSlotPreview(){
+  const LIVE_SLOT_SLOW_MS = 5000;
+  const LIVE_SLOT_SLOW_BUFFER_MS = 120;
   const host = document.getElementById('live-slot-preview');
   const pollTitle = document.querySelector('.poll-title');
   if(!host) return;
@@ -598,6 +600,32 @@ function renderLiveSlotPreview(){
           if(title && author) return { title, author };
         }
       }
+      const byMatch = raw.match(/\s+by\s+/i);
+      if(byMatch){
+        const parts = raw.split(/\s+by\s+/i);
+        const title = String(parts[0] || '').trim();
+        const author = String(parts.slice(1).join(' by ') || '').trim();
+        if(title && author) return { title, author };
+      }
+      const commaPos = raw.lastIndexOf(',');
+      if(commaPos > 0 && commaPos < raw.length - 1){
+        const title = raw.slice(0, commaPos).trim();
+        const author = raw.slice(commaPos + 1).trim();
+        if(title && author) return { title, author };
+      }
+
+      const knownAuthorSuffixes = ['Claire Leslie Hall', 'Brandon Sanderson'];
+      const compact = raw.replace(/\s+/g, ' ').trim();
+      const lowerCompact = compact.toLowerCase();
+      for(const suffix of knownAuthorSuffixes){
+        const suffixNorm = String(suffix || '').trim();
+        if(!suffixNorm) continue;
+        const lowerSuffix = suffixNorm.toLowerCase();
+        if(lowerCompact.endsWith(' ' + lowerSuffix)){
+          const title = compact.slice(0, compact.length - suffixNorm.length).trim();
+          if(title) return { title, author: suffixNorm };
+        }
+      }
       return { title: raw, author: 'Unknown author' };
     };
     const parsed = splitBookAuthor(book);
@@ -613,8 +641,8 @@ function renderLiveSlotPreview(){
 
     const rawJustStopped = (state === 'stopped' && prevRaw !== 'stopped');
     if(!hasUnsettledBefore && rawJustStopped && !(slowUntil[idx] > now)){
-      slowUntil[idx] = now + 8400;
-      try{ setTimeout(()=>{ try{ renderLiveSlotPreview(); }catch(e){} }, 8480); }catch(e){}
+      slowUntil[idx] = now + LIVE_SLOT_SLOW_MS;
+      try{ setTimeout(()=>{ try{ renderLiveSlotPreview(); }catch(e){} }, LIVE_SLOT_SLOW_MS + LIVE_SLOT_SLOW_BUFFER_MS); }catch(e){}
     }
     if(state === 'stopped' && !(slowUntil[idx] > now) && !hasUnsettledBefore){
       try{ delete slowUntil[idx]; }catch(e){}
