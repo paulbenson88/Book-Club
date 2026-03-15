@@ -8,6 +8,12 @@
   let offsets = [0,0,0];
   let chosenSet = new Set();
   let localStateSpun = false;
+  const ADMIN_REEL_SLOWDOWN_MS = 4900;
+  const VIEWER_REEL_SETTLE_MS = 5000;
+  const VIEWER_REEL_SETTLE_BUFFER_MS = 180;
+  let stopGateOpenAt = [0, Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY];
+  let stopGateTimers = [null, null, null];
+  let previewStopOverrides = [null, null, null];
   // If user taps SPIN before books finish loading, remember and start as soon as ready
   let pendingSpin = false;
   // BroadcastChannel for reliable same-origin cross-tab messaging (fallbacks to storage events remain)
@@ -24,6 +30,10 @@
       .filter(entry => entry.book)
       .slice(0, 120);
     const reels = [0,1,2].map((i)=>{
+      const stopOverride = previewStopOverrides[i];
+      if(stopOverride && stopOverride.book){
+        return { state: 'stopped', book: stopOverride.book, name: stopOverride.name || '' };
+      }
       if(spinning[i]) return { state: 'spinning', book: '', name: '' };
       const idx = chosenIdxs[i];
       if(idx != null && slotBooks[idx]){
@@ -74,6 +84,71 @@
         body: JSON.stringify({ books: uniq, limit: 160 })
       });
     }catch(e){}
+  }
+
+  function clearStopGateTimers(){
+    for(let i=0;i<stopGateTimers.length;i++){
+      if(stopGateTimers[i]){
+        clearTimeout(stopGateTimers[i]);
+        stopGateTimers[i] = null;
+      }
+    }
+  }
+
+  function setStopButtonEnabled(reelIdx, enabled){
+    const btn = slotStopBtns && slotStopBtns[reelIdx];
+    if(!btn) return;
+    btn.classList.remove('d-none');
+    btn.disabled = !enabled;
+    if(enabled){
+      btn.removeAttribute('disabled');
+      btn.classList.remove('disabled');
+      btn.style.pointerEvents = 'auto';
+      btn.tabIndex = 0;
+    } else {
+      btn.setAttribute('disabled','');
+      btn.classList.add('disabled');
+      btn.style.pointerEvents = 'none';
+      btn.tabIndex = -1;
+    }
+  }
+
+  function refreshStopGateUi(){
+    const now = Date.now();
+    for(let i=0;i<3;i++){
+      if(!spinning[i]) continue;
+      const openAt = Number(stopGateOpenAt[i]);
+      const enabled = Number.isFinite(openAt) && now >= openAt;
+      setStopButtonEnabled(i, enabled);
+    }
+  }
+
+  function scheduleGateOpen(reelIdx, delayMs){
+    if(reelIdx < 0 || reelIdx > 2) return;
+    if(stopGateTimers[reelIdx]){ clearTimeout(stopGateTimers[reelIdx]); stopGateTimers[reelIdx] = null; }
+    const waitMs = Math.max(0, Number(delayMs) || 0);
+    stopGateOpenAt[reelIdx] = Date.now() + waitMs;
+    refreshStopGateUi();
+    if(waitMs > 0){
+      stopGateTimers[reelIdx] = setTimeout(()=>{
+        stopGateTimers[reelIdx] = null;
+        if(spinning[reelIdx]) refreshStopGateUi();
+      }, waitMs + 24);
+    }
+  }
+
+  function syncStopGateFromState(){
+    clearStopGateTimers();
+    stopGateOpenAt = [Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY];
+    let opened = false;
+    for(let i=0;i<3;i++){
+      if(!spinning[i]) continue;
+      if(!opened){
+        stopGateOpenAt[i] = Date.now();
+        opened = true;
+      }
+    }
+    refreshStopGateUi();
   }
 
   // Publish pollChoices derived from chosenIdxs
@@ -247,6 +322,7 @@
     if(slotBooks.length < 3) return;
     if(slotResultDiv) slotResultDiv.textContent = '';
     chosenIdxs = [null,null,null];
+    previewStopOverrides = [null, null, null];
     chosenSet.clear();
   // clear any previously published pollChoices when a new spin starts
   try{ clearPoll(); }catch(e){ try{ localStorage.removeItem('pollChoices'); }catch(e){} }
@@ -256,7 +332,9 @@
     const available = getAvailableIndices();
     for(let i=0;i<3;i++) offsets[i] = Math.floor(Math.random() * Math.max(1, available.length));
     slotReels.forEach((r,i)=>{ r.classList.remove('winner'); renderScrollList(i, offsets[i]); });
-    slotStopBtns.forEach(btn=>{ if(btn){ btn.classList.remove('d-none'); btn.disabled = false; btn.removeAttribute('disabled'); btn.classList.remove('disabled'); btn.style.pointerEvents = 'auto'; btn.tabIndex = 0; }});
+    clearStopGateTimers();
+    stopGateOpenAt = [Date.now(), Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY];
+    slotStopBtns.forEach((btn, i)=>{ if(btn){ setStopButtonEnabled(i, i === 0); }});
     slotRespinBtns.forEach(b=>{ if(b){ b.classList.add('d-none'); b.disabled = true; }});
     spinning = [true,true,true];
   // hide any Edit buttons while a spin is in progress
@@ -269,6 +347,12 @@
 
   function stopReel(reelIdx){
     if(!spinning[reelIdx]) return;
+    const gateAt = Number(stopGateOpenAt[reelIdx]);
+    if(!Number.isFinite(gateAt) || Date.now() < gateAt){
+      const waitMs = Number.isFinite(gateAt) ? Math.max(0, gateAt - Date.now()) : (VIEWER_REEL_SETTLE_MS + VIEWER_REEL_SETTLE_BUFFER_MS);
+      try{ if(typeof showAdminToast === 'function') showAdminToast(`Please wait ${Math.ceil(waitMs/1000)}s for Book ${reelIdx+1} to settle on viewer`); }catch(e){}
+      return;
+    }
     if(intervals[reelIdx]){ clearInterval(intervals[reelIdx]); intervals[reelIdx] = null; }
     const available = getAvailableIndices();
     if(!available || available.length === 0){
@@ -281,41 +365,85 @@
     let idxInAvailable = ((curOffset + 2) % available.length + available.length) % available.length;
     let chosenOriginal = available[idxInAvailable];
     if(chosenOriginal === undefined) chosenOriginal = available[Math.floor(Math.random()*available.length)];
-    chosenIdxs[reelIdx] = chosenOriginal;
-    const suggestedEl = document.getElementById(`suggested${reelIdx+1}-name`); if(suggestedEl) suggestedEl.textContent = slotNames[chosenOriginal] || '';
-    chosenSet.add(chosenOriginal);
-    spinning[reelIdx] = false;
-    slotReels[reelIdx].classList.add('winner');
-    const btn = slotStopBtns[reelIdx]; if(btn){ btn.classList.add('d-none'); btn.disabled = true; btn.setAttribute('disabled',''); btn.classList.add('disabled'); btn.style.pointerEvents = 'none'; btn.tabIndex = -1; }
-    renderScrollList(reelIdx, chosenOriginal, true);
-
-  const resp = document.querySelector(`.reel-respin[data-reel="${reelIdx}"]`);
-    if(resp){ resp.classList.remove('d-none'); resp.disabled = false; }
-
-    // Reveal the Edit button for this reel now that it has stopped
-    try{
-      const editBtn = document.querySelector(`.edit-choice[data-reel="${reelIdx}"]`);
-      if(editBtn) editBtn.classList.remove('d-none');
-    }catch(e){}
-
-    for(let j=0;j<3;j++){
-      if(j===reelIdx) continue;
-      if(spinning[j]){
-        const avail = getAvailableIndices();
-        if(!avail || avail.length === 0){ renderIdle(j); offsets[j] = 0; } else { offsets[j] = ((Number.isFinite(offsets[j])?Math.floor(offsets[j]):0) % avail.length + avail.length) % avail.length; renderScrollList(j, offsets[j]); }
-      }
-    }
-
-    saveState();
+    previewStopOverrides[reelIdx] = {
+      book: String(slotBooks[chosenOriginal] || '').trim(),
+      name: String(slotNames[chosenOriginal] || '').trim()
+    };
     pushLiveSlotPreview();
-    if(spinning.every(s=>!s)){
-  // all stopped — show admin preview and wait for explicit publish action
-  try{ showPublishPreview(); }catch(e){ /* fallback to immediate publish */ publishPoll(); }
-      if(slotSpinBtn){ slotSpinBtn.style.pointerEvents = 'auto'; slotSpinBtn.disabled = false; }
-      if(slotResultDiv) slotResultDiv.innerHTML = '';
+    const btn = slotStopBtns[reelIdx]; if(btn){ btn.classList.add('d-none'); btn.disabled = true; btn.setAttribute('disabled',''); btn.classList.add('disabled'); btn.style.pointerEvents = 'none'; btn.tabIndex = -1; }
+
+    const slowDurationMs = ADMIN_REEL_SLOWDOWN_MS;
+    const delayStart = 95;
+    const delayEnd = 520;
+    const slowStartAt = Date.now();
+
+    const finishStop = ()=>{
+      previewStopOverrides[reelIdx] = null;
+      chosenIdxs[reelIdx] = chosenOriginal;
+      const suggestedEl = document.getElementById(`suggested${reelIdx+1}-name`); if(suggestedEl) suggestedEl.textContent = slotNames[chosenOriginal] || '';
+      chosenSet.add(chosenOriginal);
+      spinning[reelIdx] = false;
+      slotReels[reelIdx].classList.add('winner');
+      renderScrollList(reelIdx, chosenOriginal, true);
+
+      const resp = document.querySelector(`.reel-respin[data-reel="${reelIdx}"]`);
+      if(resp){ resp.classList.remove('d-none'); resp.disabled = false; }
+
+      try{
+        const editBtn = document.querySelector(`.edit-choice[data-reel="${reelIdx}"]`);
+        if(editBtn) editBtn.classList.remove('d-none');
+      }catch(e){}
+
+      for(let j=0;j<3;j++){
+        if(j===reelIdx) continue;
+        if(spinning[j]){
+          const avail = getAvailableIndices();
+          if(!avail || avail.length === 0){ renderIdle(j); offsets[j] = 0; } else { offsets[j] = ((Number.isFinite(offsets[j])?Math.floor(offsets[j]):0) % avail.length + avail.length) % avail.length; renderScrollList(j, offsets[j]); }
+        }
+      }
+
       saveState();
-    }
-    updateResetState();
+      pushLiveSlotPreview();
+      if(reelIdx < 2 && spinning[reelIdx + 1]){
+        scheduleGateOpen(reelIdx + 1, VIEWER_REEL_SETTLE_MS + VIEWER_REEL_SETTLE_BUFFER_MS);
+      }
+      if(spinning.every(s=>!s)){
+        clearStopGateTimers();
+        stopGateOpenAt = [Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY];
+        try{ showPublishPreview(); }catch(e){ publishPoll(); }
+        if(slotSpinBtn){ slotSpinBtn.style.pointerEvents = 'auto'; slotSpinBtn.disabled = false; }
+        if(slotResultDiv) slotResultDiv.innerHTML = '';
+        saveState();
+      }
+      updateResetState();
+    };
+
+    const runSlowStep = ()=>{
+      const elapsed = Date.now() - slowStartAt;
+      const t = Math.max(0, Math.min(1, elapsed / slowDurationMs));
+      const eased = 1 - Math.pow(1 - t, 1.7);
+      const delay = Math.floor(delayStart + (delayEnd - delayStart) * eased);
+
+      const availNow = getAvailableIndices();
+      if(!availNow || availNow.length === 0){
+        finishStop();
+        return;
+      }
+
+      offsets[reelIdx] = Number.isFinite(offsets[reelIdx]) ? Math.floor(offsets[reelIdx]) : 0;
+      offsets[reelIdx] = ((offsets[reelIdx] + 1) % availNow.length + availNow.length) % availNow.length;
+      renderScrollList(reelIdx, offsets[reelIdx]);
+
+      if(t >= 1){
+        finishStop();
+      } else {
+        const remainingMs = Math.max(0, slowDurationMs - (Date.now() - slowStartAt));
+        const nextDelay = Math.max(16, Math.min(delay, remainingMs));
+        setTimeout(runSlowStep, nextDelay);
+      }
+    };
+
+    runSlowStep();
   }
 
   // Publish preview helpers: show a preview of the three chosen books and publish button
@@ -368,6 +496,9 @@
   function resetMachine(){
     localStateSpun = false; chosenIdxs = [null,null,null]; offsets = [0,0,0]; spinning = [false,false,false];
     intervals.forEach(i=>{ if(i) clearInterval(i); }); intervals = [null,null,null];
+    clearStopGateTimers();
+    stopGateOpenAt = [0, Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY];
+    previewStopOverrides = [null, null, null];
     chosenSet.clear();
     for(let i=1;i<=3;i++){ const el = document.getElementById(`suggested${i}-name`); if(el) el.textContent = ''; }
     if(slotResultDiv) slotResultDiv.textContent = '';
@@ -400,6 +531,7 @@
     }
 
     if(chosenIdxs[reelIdx] != null){ chosenSet.delete(chosenIdxs[reelIdx]); chosenIdxs[reelIdx] = null; }
+    previewStopOverrides[reelIdx] = null;
     const sEl = document.getElementById(`suggested${reelIdx+1}-name`); if(sEl) sEl.textContent = '';
     slotReels[reelIdx].classList.remove('winner');
 
@@ -417,8 +549,12 @@
     offsets[reelIdx] = Math.floor(Math.random() * Math.max(1, available.length));
     spinning[reelIdx] = true;
 
-  const stop = slotStopBtns[reelIdx];
-    if(stop){ stop.classList.remove('d-none'); stop.disabled = false; stop.removeAttribute('disabled'); stop.classList.remove('disabled'); stop.style.pointerEvents = 'auto'; stop.tabIndex = 0; }
+    clearStopGateTimers();
+    stopGateOpenAt = [Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY];
+    scheduleGateOpen(reelIdx, 0);
+    for(let i=0;i<3;i++){
+      if(i !== reelIdx) setStopButtonEnabled(i, false);
+    }
 
     if(intervals[reelIdx]){ clearInterval(intervals[reelIdx]); intervals[reelIdx] = null; }
     intervals[reelIdx] = startReelScroll(reelIdx);
@@ -483,6 +619,37 @@
                 const parts = title.split(/\s+by\s+/i);
                 title = parts[0].trim();
                 author = parts.slice(1).join(' by ').trim();
+              } else {
+                // Fallback to comma-separated "Title, Author"
+                const commaPos = title.lastIndexOf(',');
+                if(commaPos > 0 && commaPos < title.length - 1){
+                  const maybeTitle = title.slice(0, commaPos).trim();
+                  const maybeAuthor = title.slice(commaPos + 1).trim();
+                  if(maybeTitle && maybeAuthor){
+                    title = maybeTitle;
+                    author = maybeAuthor;
+                  }
+                }
+              }
+            }
+
+            // Known undelimited fallback, e.g. "Broken Country Claire Leslie Hall"
+            if(!author && title){
+              const knownAuthorSuffixes = ['Claire Leslie Hall', 'Brandon Sanderson'];
+              const compact = title.replace(/\s+/g, ' ').trim();
+              for(const suffix of knownAuthorSuffixes){
+                const suffixNorm = String(suffix || '').trim();
+                if(!suffixNorm) continue;
+                const lowerCompact = compact.toLowerCase();
+                const lowerSuffix = suffixNorm.toLowerCase();
+                if(lowerCompact.endsWith(' ' + lowerSuffix)){
+                  const cut = compact.slice(0, compact.length - suffixNorm.length).trim();
+                  if(cut){
+                    title = cut;
+                    author = suffixNorm;
+                    break;
+                  }
+                }
               }
             }
           }
@@ -545,7 +712,7 @@
                 const available = getAvailableIndices();
                 offsets[i] = Math.floor(Math.random() * Math.max(1, available.length));
                 renderScrollList(i, offsets[i]);
-                slotStopBtns[i].classList.remove('d-none'); slotStopBtns[i].disabled=false; slotStopBtns[i].removeAttribute('disabled'); slotStopBtns[i].classList.remove('disabled'); slotStopBtns[i].style.pointerEvents='auto'; slotStopBtns[i].tabIndex=0;
+                setStopButtonEnabled(i, true);
                 spinning[i]=true; if(!intervals[i]) intervals[i]=startReelScroll(i);
               } else {
                 renderIdle(i);
@@ -554,6 +721,7 @@
               }
             }
           });
+          syncStopGateFromState();
           // If we have chosenIdxs persisted, do NOT auto-publish here.
           // Publishing must be an explicit admin action (publishPoll is exposed to admin page).
           if(chosenIdxs.every(v => v === null) === false){

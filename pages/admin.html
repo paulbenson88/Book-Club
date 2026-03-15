@@ -95,7 +95,7 @@
   .poll-action-bar .btn { min-width:230px; }
   </style>
 </head>
-<body>
+<body class="admin-page">
   <header style="text-align:center; margin:1rem 0;">
   <a href="../index.html" class="btn btn-secondary">🏠 Main Page</a>
   </header>
@@ -152,6 +152,7 @@
           <div class="d-flex justify-content-center my-3"><button id="slotSpinBtn" type="button" class="btn spin-center-btn">SPIN</button></div>
           <div class="slot-reels">
             <div class="slot-reel" id="slot1">
+              <div class="slot-slot-label">Book 1</div>
               <div class="slot-scroll" id="slotScroll1"><div class="slot-scroll-list"></div></div>
               <button id="slotStopBtn1" type="button" class="btn stop-btn mt-2" disabled>Stop</button>
               <button class="btn reel-respin mt-2 d-none" type="button" data-reel="0" disabled>⟲ Respin</button>
@@ -165,6 +166,7 @@
                <div class="suggested-by text-muted small mt-1 text-center">Suggested by: <span id="suggested1-name"></span></div>
             </div>
             <div class="slot-reel" id="slot2">
+              <div class="slot-slot-label">Book 2</div>
               <div class="slot-scroll" id="slotScroll2"><div class="slot-scroll-list"></div></div>
               <button id="slotStopBtn2" type="button" class="btn stop-btn mt-2" disabled>Stop</button>
               <button class="btn reel-respin mt-2 d-none" type="button" data-reel="1" disabled>⟲ Respin</button>
@@ -178,6 +180,7 @@
               <div class="suggested-by text-muted small mt-1 text-center">Suggested by: <span id="suggested2-name"></span></div>
             </div>
             <div class="slot-reel" id="slot3">
+              <div class="slot-slot-label">Book 3</div>
               <div class="slot-scroll" id="slotScroll3"><div class="slot-scroll-list"></div></div>
               <button id="slotStopBtn3" type="button" class="btn stop-btn mt-2" disabled>Stop</button>
               <button class="btn reel-respin mt-2 d-none" type="button" data-reel="2" disabled>⟲ Respin</button>

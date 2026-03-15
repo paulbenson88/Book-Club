@@ -45,6 +45,7 @@ gh pr create --title "Short PR title" --body "What changed and how to test"
 - docs/practice-plan.md — step-by-step practice plan
 - docs/personas.md — persona profiles & user stories
 - docs/accessibility.md — accessibility checklist and notes
+- docs/issues/feat-admin-slot-machine-parity.md — reminder to align admin slot machine with voting poll UX
 - docs/case-studies/ — place case study markdown files here
 - .github/CONTRIBUTING.md — contribution guidelines
 - .github/PULL_REQUEST_TEMPLATE.md and .github/ISSUE_TEMPLATE/ — templates for PRs and issues
