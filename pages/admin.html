@@ -482,7 +482,7 @@
         }
       }
       function sendPollPublishedWhatsapp(pollUrl){
-        const url = String(pollUrl||'').trim() || 'https://paulbenson88.github.io/Book-Club/pages/voting.html';
+        const url = String(pollUrl||'').trim() || 'https://paulbenson88.github.io/Book-Club/pages/voting_poll.html';
         const msg = `VOTING STARTS NOW: ${url}`;
         return openWhatsAppCompose(msg);
       }
@@ -513,8 +513,8 @@
         const announceBtn = document.getElementById('announceWinnerBtn');
   if(forceBtn){ forceBtn.addEventListener('click', (ev)=>{ try{ ev && ev.preventDefault && ev.preventDefault(); if(window.adminPublishPoll) window.adminPublishPoll(); try{ showAdminToast('Poll published'); }catch(_e){} console.log('[admin] forcePublish clicked'); try{ if(window.showAdminPollShare) window.showAdminPollShare(); else { const _ps = document.getElementById('poll-share'); if(_ps){ _ps.classList.remove('d-none'); _ps.style.display='block'; try{ if(window.renderAdminPollQR) window.renderAdminPollQR(); }catch(e){} } } }catch(e){}
             try{
-              const memberInput = document.getElementById('memberLink');
-              const pollUrl = (memberInput && memberInput.value) || 'https://paulbenson88.github.io/Book-Club/pages/voting.html';
+              const pollInput = document.getElementById('pollLink');
+              const pollUrl = (pollInput && pollInput.value) || (window.adminPollUrl || 'https://paulbenson88.github.io/Book-Club/pages/voting_poll.html');
               sendPollPublishedWhatsapp(pollUrl)
                 .then(()=>{ try{ showAdminToast('WhatsApp opened: review and send poll link'); setWhatsAppStatus('WhatsApp: compose opened (poll link)', 'ok'); }catch(_e){} })
                 .catch((err)=>{ console.warn('[admin] sendPollPublished failed', err); try{ if(err && err.code === 'rate_limited'){ showAdminToast('WhatsApp rate-limited: try again later'); } else { showAdminToast('WhatsApp send failed (poll link)'); } setWhatsAppStatus('WhatsApp: last send failed (poll link)', 'err'); }catch(_e){} });
