@@ -22,7 +22,32 @@
 
   function saveState(){ localStorage.setItem(STORAGE_KEY, JSON.stringify({spun:!!localStateSpun, chosenIdxs})); }
   function loadState(){ try { return JSON.parse(localStorage.getItem(STORAGE_KEY)); } catch { return null; } }
-  function getAvailableIndices(){ const a=[]; for(let i=0;i<slotBooks.length;i++) if(!chosenSet.has(i)) a.push(i); return a; }
+  function normalizeSubmitterName(v){
+    return String(v || '').trim().replace(/\s+/g, ' ').toLowerCase();
+  }
+
+  function getBlockedSubmitters(){
+    const blocked = new Set();
+    for(let i=0;i<chosenIdxs.length;i++){
+      const idx = chosenIdxs[i];
+      if(idx == null || !Number.isFinite(idx)) continue;
+      const submitter = normalizeSubmitterName(slotNames[idx]);
+      if(submitter) blocked.add(submitter);
+    }
+    return blocked;
+  }
+
+  function getAvailableIndices(){
+    const a=[];
+    const blockedSubmitters = getBlockedSubmitters();
+    for(let i=0;i<slotBooks.length;i++){
+      if(chosenSet.has(i)) continue;
+      const submitter = normalizeSubmitterName(slotNames[i]);
+      if(submitter && blockedSubmitters.has(submitter)) continue;
+      a.push(i);
+    }
+    return a;
+  }
 
   function buildLiveSlotPreview(){
     const entries = slotBooks
