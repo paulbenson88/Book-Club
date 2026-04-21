@@ -90,14 +90,18 @@
       }catch(e){ warn('publish failed', e); }
     };
 
-    w.fbClearPoll = async function(){
+    w.fbClearPoll = async function(options){
       try{
         await ensureAuth();
-        await docRef.set({ pollChoices: [], pollPublishedAt: null, winner: null, runoff: null, slotPreview: null }, { merge: true });
+        const preserveSlotPreview = !!(options && options.preserveSlotPreview);
+        const payload = preserveSlotPreview
+          ? { pollChoices: [], pollPublishedAt: null, winner: null, runoff: null }
+          : { pollChoices: [], pollPublishedAt: null, winner: null, runoff: null, slotPreview: null };
+        await docRef.set(payload, { merge: true });
         // Clear all votes collections
         try{ const snaps = await votesCol().get(); const batch = db.batch(); snaps.forEach(d=> batch.delete(d.ref)); await batch.commit(); }catch(e){}
         try{ const snaps2 = await runoffVotesCol().get(); const batch2 = db.batch(); snaps2.forEach(d=> batch2.delete(d.ref)); await batch2.commit(); }catch(e){}
-        log('cleared');
+        log('cleared', { preserveSlotPreview });
       }catch(e){ warn('clear failed', e); }
     };
 

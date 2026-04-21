@@ -648,14 +648,14 @@ function renderLiveSlotPreview(){
       try{ delete slowUntil[idx]; }catch(e){}
     }
 
-    if(hasUnsettledBefore){
-      displayState = 'pending';
-    } else if(state === 'spinning'){
-      displayState = 'spinning';
+    if(state === 'spinning'){
+      displayState = hasUnsettledBefore ? 'pending' : 'spinning';
     } else if(state === 'stopped' && (slowUntil[idx] > now)){
       displayState = 'slowing';
     } else if(state === 'stopped'){
       displayState = 'stopped';
+    } else if(hasUnsettledBefore){
+      displayState = 'pending';
     }
 
     nextStates[idx] = displayState;
@@ -1451,7 +1451,11 @@ function __applyPollSnapshot(state){
 }
 (function(){
   try{
+    if(window.__pollPrimarySubscribed){
+      return;
+    }
     if(window.fbSyncAvailable && typeof window.fbSubscribe === 'function'){
+      window.__pollPrimarySubscribed = true;
       window.fbSubscribe(function(state){
         try{
           console.log('[voting_poll] snapshot received', state);
@@ -1502,6 +1506,9 @@ function htmlEscape(s){ try{ return String(s||'').replace(/&/g,'&amp;').replace(
 
 (function(){
   try{
+    if(window.__pollPrimarySubscribed){
+      return;
+    }
     if(window.fbSyncAvailable && typeof window.fbSubscribe === 'function'){
       window.fbSubscribe(function(state){
         try{

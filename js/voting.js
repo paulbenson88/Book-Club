@@ -173,11 +173,16 @@
     }catch(e){}
   }
 
-  function clearPoll(){
+  function clearPoll(options){
+    const opts = options && typeof options === 'object' ? options : {};
     try{ localStorage.removeItem('pollChoices'); }catch(e){}
     try{ localStorage.removeItem('pollPublishedAt'); }catch(e){}
     // Clear remote as well
-    try{ if(window.fbSyncAvailable && typeof window.fbClearPoll === 'function') window.fbClearPoll(); }catch(e){}
+    try{
+      if(window.fbSyncAvailable && typeof window.fbClearPoll === 'function'){
+        window.fbClearPoll({ preserveSlotPreview: !!opts.preserveSlotPreview });
+      }
+    }catch(e){}
     try{ window.dispatchEvent(new Event('pollCleared')); }catch(e){}
     try{ if(_bc) _bc.postMessage({ type: 'pollCleared' }); }catch(e){}
   }
@@ -336,12 +341,14 @@
     stopGateOpenAt = [Date.now(), Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY];
     slotStopBtns.forEach((btn, i)=>{ if(btn){ setStopButtonEnabled(i, i === 0); }});
     slotRespinBtns.forEach(b=>{ if(b){ b.classList.add('d-none'); b.disabled = true; }});
-    spinning = [true,true,true];
+    spinning = [true,false,false];
   // hide any Edit buttons while a spin is in progress
   try{ document.querySelectorAll('.edit-choice').forEach(b=>{ if(b) b.classList.add('d-none'); }); }catch(e){}
     if(slotSpinBtn){ slotSpinBtn.style.pointerEvents = 'none'; slotSpinBtn.disabled = true; }
     localStateSpun = true; saveState(); updateResetState();
-    intervals[0] = startReelScroll(0); intervals[1] = startReelScroll(1); intervals[2] = startReelScroll(2);
+    intervals[0] = startReelScroll(0);
+    intervals[1] = null;
+    intervals[2] = null;
     pushLiveSlotPreview();
   }
 
@@ -404,8 +411,19 @@
 
       saveState();
       pushLiveSlotPreview();
-      if(reelIdx < 2 && spinning[reelIdx + 1]){
-        scheduleGateOpen(reelIdx + 1, VIEWER_REEL_SETTLE_MS + VIEWER_REEL_SETTLE_BUFFER_MS);
+      if(reelIdx < 2){
+        const nextReel = reelIdx + 1;
+        if(!spinning[nextReel] && chosenIdxs[nextReel] == null){
+          const availNext = getAvailableIndices();
+          offsets[nextReel] = Math.floor(Math.random() * Math.max(1, availNext.length));
+          spinning[nextReel] = true;
+          if(intervals[nextReel]){ clearInterval(intervals[nextReel]); intervals[nextReel] = null; }
+          intervals[nextReel] = startReelScroll(nextReel);
+          setStopButtonEnabled(nextReel, false);
+        }
+        if(spinning[nextReel]){
+          scheduleGateOpen(nextReel, VIEWER_REEL_SETTLE_MS + VIEWER_REEL_SETTLE_BUFFER_MS);
+        }
       }
       if(spinning.every(s=>!s)){
         clearStopGateTimers();
@@ -544,7 +562,7 @@
       if(editBtn) editBtn.classList.add('d-none');
     }catch(e){}
 
-  clearPoll(); // pollChoices changed when respin starts
+  // Keep existing poll choices intact while one reel respins; only the target reel should change visually.
     const available = getAvailableIndices();
     offsets[reelIdx] = Math.floor(Math.random() * Math.max(1, available.length));
     spinning[reelIdx] = true;
