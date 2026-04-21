@@ -9,18 +9,18 @@
 <link rel="preconnect" href="https://covers.openlibrary.org" crossorigin>
 <link rel="dns-prefetch" href="https://openlibrary.org">
 <link rel="dns-prefetch" href="https://covers.openlibrary.org">
-<!-- Early migration: ensure viewerIgnore flag is persisted before any snapshot handlers run -->
+<!-- Early guard: keep viewerIgnore session-scoped so stale local flags cannot hide polls indefinitely -->
 <script>
   try{
-    if(sessionStorage.getItem('viewerIgnoreServerPolls') && !localStorage.getItem('viewerIgnoreServerPolls')){
-      localStorage.setItem('viewerIgnoreServerPolls','1');
-      console.log('[voting_poll] early migrated viewerIgnoreServerPolls from sessionStorage -> localStorage');
-    }
     if(localStorage.getItem('viewerIgnoreServerPolls')){
+      try{ localStorage.removeItem('viewerIgnoreServerPolls'); }catch(e){}
+      console.log('[voting_poll] cleared legacy persistent viewerIgnoreServerPolls flag');
+    }
+    if(sessionStorage.getItem('viewerIgnoreServerPolls')){
   // Set a runtime global so later code (including snapshot handlers) can skip work immediately
   try{ window.__viewerIgnoreServerPolls = true; }catch(e){}
       try{ localStorage.removeItem('pollChoices'); }catch(e){}
-      console.log('[voting_poll] early cleared local pollChoices because viewerIgnore is set');
+      console.log('[voting_poll] early cleared local pollChoices because session ignore is set');
   // Debug banner for diagnosing publish/show issues
   function updateDebugBanner(){
     try{
@@ -1408,7 +1408,7 @@ function __applyPollSnapshot(state){
     if(!state) return;
     try{ applyLiveSlotPreview(state.slotPreview || null); }catch(e){}
     // Respect ignore flag
-    if(localStorage.getItem('viewerIgnoreServerPolls') || sessionStorage.getItem('viewerIgnoreServerPolls')){
+    if(sessionStorage.getItem('viewerIgnoreServerPolls')){
       try{ debugBanner && (debugBanner.textContent = 'Viewer is ignoring server polls'); }catch(e){}
       return;
     }
@@ -1473,6 +1473,27 @@ function __applyPollSnapshot(state){
     }
   }catch(e){ console.warn('[voting_poll] fb subscribe setup error', e); }
 })();
+// Fallback refresh: periodically fetch current server state in case a realtime snapshot is missed.
+(function(){
+  try{
+    if(window.__pollStateRefreshTimer) return;
+    if(!(window.fbSyncAvailable && typeof window.fbGetState === 'function')) return;
+    const runRefresh = async function(){
+      try{
+        if(sessionStorage.getItem('viewerIgnoreServerPolls')) return;
+        const state = await window.fbGetState();
+        if(!state) return;
+        if(window.__viewerBlockApply){
+          window.__queuedSnapshot = state;
+          return;
+        }
+        __applyPollSnapshot(state);
+      }catch(e){ /* keep silent; realtime subscription remains primary */ }
+    };
+    window.__pollStateRefreshTimer = setInterval(runRefresh, 12000);
+    setTimeout(runRefresh, 1400);
+  }catch(e){ /* ignore */ }
+})();
 // Default Goodreads resolver base to Firebase Functions if FIREBASE_CONFIG is present
 (function(){
   try{
@@ -1513,7 +1534,7 @@ function htmlEscape(s){ try{ return String(s||'').replace(/&/g,'&amp;').replace(
       window.fbSubscribe(function(state){
         try{
           // Respect viewer ignore flag: don't apply remote state
-          if(localStorage.getItem('viewerIgnoreServerPolls') || sessionStorage.getItem('viewerIgnoreServerPolls')){
+          if(sessionStorage.getItem('viewerIgnoreServerPolls')){
             try{ debugBanner && (debugBanner.textContent = 'Viewer is ignoring server polls'); }catch(e){}
             return;
           }
@@ -1589,15 +1610,15 @@ function htmlEscape(s){ try{ return String(s||'').replace(/&/g,'&amp;').replace(
     }catch(e){ /* ignore if DOM not ready */ }
   }
 
-  // Early migration: if an older session set the sessionStorage ignore flag, persist it to localStorage
+  // Cleanup legacy persistent ignore flag from older builds.
   try{
-    if(sessionStorage.getItem('viewerIgnoreServerPolls') && !localStorage.getItem('viewerIgnoreServerPolls')){
-      try{ localStorage.setItem('viewerIgnoreServerPolls','1'); console.log('[voting_poll] migrated viewerIgnoreServerPolls from sessionStorage -> localStorage (early)'); }catch(e){}
+    if(localStorage.getItem('viewerIgnoreServerPolls')){
+      try{ localStorage.removeItem('viewerIgnoreServerPolls'); console.log('[voting_poll] removed legacy local viewerIgnoreServerPolls'); }catch(e){}
     }
   }catch(e){}
 
-  // Helper to determine if the viewer is ignoring server polls (accept either old session flag or new persistent local flag)
-  function viewerIsIgnoring(){ try{ return !!(localStorage.getItem('viewerIgnoreServerPolls') || sessionStorage.getItem('viewerIgnoreServerPolls')); }catch(e){ return false; } }
+  // Helper to determine if the viewer is ignoring server polls for this tab/session only.
+  function viewerIsIgnoring(){ try{ return !!sessionStorage.getItem('viewerIgnoreServerPolls'); }catch(e){ return false; } }
 
   function setNameControlsVisible(visible){
     try{
@@ -1763,8 +1784,8 @@ function htmlEscape(s){ try{ return String(s||'').replace(/&/g,'&amp;').replace(
     }
     // If viewer has chosen to ignore server polls (session or persisted), do not render any stored pollChoices
     try{
-        const _ign = !!(localStorage.getItem('viewerIgnoreServerPolls') || sessionStorage.getItem('viewerIgnoreServerPolls'));
-        console.log('[voting_poll] viewerIsIgnoring?', _ign, 'local:', localStorage.getItem('viewerIgnoreServerPolls'), 'session:', sessionStorage.getItem('viewerIgnoreServerPolls'));
+        const _ign = !!sessionStorage.getItem('viewerIgnoreServerPolls');
+        console.log('[voting_poll] viewerIsIgnoring?', _ign, 'session:', sessionStorage.getItem('viewerIgnoreServerPolls'));
         if(_ign){
           try{ debugBanner.textContent = 'Viewer is ignoring server polls'; }catch(e){}
           setPollOptionsVisible(false);
@@ -2751,16 +2772,16 @@ function htmlEscape(s){ try{ return String(s||'').replace(/&/g,'&amp;').replace(
       } else {
         console.log('[voting_poll] pollChoices present on load');
       }
-      // Migrate session-only ignore flag to persistent localStorage so a prior Clear persists across reloads
+      // Keep ignore flag scoped to this tab/session only.
       try{
-        if(sessionStorage.getItem('viewerIgnoreServerPolls') && !localStorage.getItem('viewerIgnoreServerPolls')){
-          localStorage.setItem('viewerIgnoreServerPolls', '1');
-          console.log('[voting_poll] migrated viewerIgnoreServerPolls from sessionStorage -> localStorage');
+        if(localStorage.getItem('viewerIgnoreServerPolls')){
+          localStorage.removeItem('viewerIgnoreServerPolls');
+          console.log('[voting_poll] removed legacy local viewerIgnoreServerPolls during load');
         }
       }catch(e){}
       // If this viewer previously cleared the poll and chose to ignore server polls, reflect that in the UI
       try{
-        if(localStorage.getItem('viewerIgnoreServerPolls')){
+        if(sessionStorage.getItem('viewerIgnoreServerPolls')){
           try{ debugBanner.textContent = 'Viewer is ignoring server polls'; }catch(e){}
         }
       }catch(e){}
