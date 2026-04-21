@@ -109,7 +109,7 @@
           <button id="topStartNewSessionBtn" type="button" class="btn btn-primary w-100" style="font-size:1.15rem;padding:14px;">Start new book voting session</button>
         </div>
         <div class="my-2">
-          <button id="shareWithGroupBtn" type="button" class="btn btn-success w-100" style="font-size:1.05rem;padding:12px;">📲 Share with group (submissions + vote link)</button>
+          <a id="shareWithGroupBtn" href="https://wa.me/?text=%F0%9F%93%9A%20Book%20Club%20voting%20time!%0A%0ASubmit%20your%20book%20suggestion%3A%0Ahttps%3A%2F%2Fdocs.google.com%2Fforms%2Fd%2Fe%2F1FAIpQLSeD3-geAx7_nxHsgw1xWYR_gDncmhAlswwrsX4gIJdgKj9tQw%2Fviewform%0A%0AThen%20open%20the%20live%20vote%20to%20watch%20the%20spin%3A%0Ahttps%3A%2F%2Fpaulbenson88.github.io%2FBook-Club%2Fpages%2Fvoting_poll.html" target="_blank" rel="noopener noreferrer" class="btn btn-success w-100" style="font-size:1.05rem;padding:12px;">📲 Share with group (submissions + vote link)</a>
         </div>
   <div id="admin-msg" class="mt-2"><small id="qr-status" class="text-muted"></small></div>
   <div id="whatsapp-status-wrap" class="mt-1"><small id="whatsapp-status" class="text-muted">WhatsApp: checking…</small></div>
@@ -614,14 +614,23 @@
         if(topBtn){ topBtn.addEventListener('click', ()=>{ try{ if(window.adminStartNewSession) window.adminStartNewSession(); console.log('[admin] top startNewSession clicked'); const _pollShare = document.getElementById('poll-share'); if(_pollShare) _pollShare.classList.add('d-none'); showAdminToast('Started a new voting session (cleared winner and poll choices).'); }catch(e){ console.warn(e); } }); }
 
         const shareWithGroupBtn = document.getElementById('shareWithGroupBtn');
-        if(shareWithGroupBtn){ shareWithGroupBtn.addEventListener('click', ()=>{
+        if(shareWithGroupBtn){ shareWithGroupBtn.addEventListener('click', (ev)=>{
           try{
+            if(ev && ev.preventDefault) ev.preventDefault();
             const submissionsUrl = 'https://docs.google.com/forms/d/e/1FAIpQLSeD3-geAx7_nxHsgw1xWYR_gDncmhAlswwrsX4gIJdgKj9tQw/viewform';
             const pollUrl = 'https://paulbenson88.github.io/Book-Club/pages/voting_poll.html';
             const msg = `📚 Book Club voting time!\n\nSubmit your book suggestion:\n${submissionsUrl}\n\nThen open the live vote to watch the spin:\n${pollUrl}`;
             openWhatsAppCompose(msg)
               .then(()=>{ try{ showAdminToast('WhatsApp opened: review and send message'); setWhatsAppStatus('WhatsApp: compose opened', 'ok'); }catch(_e){} })
-              .catch((err)=>{ console.warn('[admin] shareWithGroup failed', err); try{ showAdminToast('WhatsApp send failed'); setWhatsAppStatus('WhatsApp: last send failed', 'err'); }catch(_e){} });
+              .catch((err)=>{
+                console.warn('[admin] shareWithGroup failed', err);
+                try{
+                  const fallback = shareWithGroupBtn.getAttribute('href');
+                  if(fallback) window.open(fallback, '_blank');
+                  showAdminToast('WhatsApp opened (fallback link)');
+                  setWhatsAppStatus('WhatsApp: compose opened (fallback)', 'warn');
+                }catch(_e){}
+              });
           }catch(e){ console.warn(e); }
         }); }
       }catch(e){}
